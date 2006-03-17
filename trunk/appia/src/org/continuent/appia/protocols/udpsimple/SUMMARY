@@ -1,0 +1,6 @@
+NAME="UDP Simple"
+FILE="udpSimple"
+VERSION="0.5"
+AUTHOR="Hugo Miranda, Pedro Vicente, M.Joao Monteiro, Alexandre Pinto"
+DATE="Setembro 2003"
+DESCRIPTION="UDP network interface protocol." 

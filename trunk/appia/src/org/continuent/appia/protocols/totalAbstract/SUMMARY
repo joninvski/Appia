@@ -1,0 +1,6 @@
+NAME="Abstract Total Order"
+FILE="TotalAbstract"
+VERSION="1.0"
+DATE="2001/05/24"
+AUTHOR="Pedro Vicente"
+DESCRIPTION="Abstract classes from each all Total Order protocols must descend. This is useful for detecting if a given stack of protocols has a Total Order Layer."

@@ -1,0 +1,22 @@
+NAME="Group Communication support infrastructure"
+FILE="appiaGroup"
+VERSION="0.6"
+AUTHOR="Alexandre Pinto"
+DATE="September 2003"
+DESCRIPTION="
+The basis, the infrastructure, that supports <i>Group Communication</i> in Appia.
+<br>
+It is composed of several specific classes (ex: ViewState, ViewID, Group, Endpt, ...), generic group events (ex: GroupEvent, GroupSendableEvent, ...) and several basic Group Communication protocols.
+<br>
+There are 8 protocols:
+<ul>
+<li><b>bottom - </b>The bottommost of all group communication. Provides interface between the group communication layers above and the point-to-point layers below.
+<li><b>suspect - </b>The <i>failure detector</i>. Also propagates suspicions to other members.
+<li><b>sync - </b>Enforces a <i>virtual-synchronous</i> view change. It basically blocks all group members, and checks if all members have received the same messages, before the view change.
+<li><b>stable - </b>Guarantees that all messages received by any alive member, are received by all alive members.
+<li><b>intra - </b>Performs a view change. Interacts with other layers to guarantee a correct view change.
+<li><b>inter - </b>Performs the correct merge of two different, concurrent, views of the same group.
+<li><b>heal - </b>Heals a partitioned group. Detects the existence of different, concurrent, views of the group. Uses the <i>GossipServer</i> to achieve this.
+<li><b>leave - </b>Gracefully removes a member from the group. Forces a view change.
+</ul>
+"

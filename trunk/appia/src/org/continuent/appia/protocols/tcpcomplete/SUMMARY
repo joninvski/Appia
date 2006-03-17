@@ -1,0 +1,7 @@
+NAME="TcpComplete"
+FILE="tcpcomplete"
+VERSION="0.5"
+AUTHOR="Pedro Vicente, João Martins, Alexandre Pinto"
+DATE="September 2003"
+DESCRIPTION="Layer that provides tcp semantics with an interface like the udpsimple layer"
+

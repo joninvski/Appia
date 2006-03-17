@@ -1,0 +1,6 @@
+NAME="FIFO Unreliable"
+FILE="fifounreliable"
+VERSION="0.1"
+AUTHOR="Sandra Teixeira"
+DATE="Oct 2003"
+DESCRIPTION="Protocol providing FIFO order on delivery for SendableEvents."

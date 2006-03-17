@@ -1,0 +1,15 @@
+NAME="NAKFIFO"
+FILE="nakfifo"
+VERSION="0.1"
+AUTHOR="Alexandre Pinto"
+DATE="Nov 2003"
+DESCRIPTION="
+Protocol providing reliable point-to-point FIFO delivery for SendableEvents.
+The main difference between this and the other <i>fifo</i> protocol is the use of NAKs for
+message retransmission.
+<br>
+The <b>NakFifo</b> protocols operates better when not using network multicast support.
+It offers <i>AppiaMulticast</i> support to above layers by sending a event to each destination.
+<br>
+The <b>NakFifoMulticast</b> offers better results when using network multicast support."
+
