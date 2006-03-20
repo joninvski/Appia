@@ -69,7 +69,7 @@
     <target name="doc" depends="init" description="Creates Appia Javadoc">
         <javadoc sourcepath="${APPIA.src}" destdir="${APPIA.doc}" charset="ISO8859-1" encoding="ISO8859-1" use="true" >
         	<header>Appia Documentation</header>
-        	<doctitle>Appia</doctitle>
+        	<doctitle>Appia version ${APPIA.version}</doctitle>
         	<bottom>
         		<![CDATA[COPYRIGHT 2006, University of Lisbon<BR>For updates and related information please see <A HREF="http://appia.di.fc.ul.pt/">Appia Home Page</A> or <A HREF="http://appia.continuent.org">Continuent GForge</A><BR>Send questions, sugestions or remarks to <A HREF="mailto:appia@continuent.org">appia@continuent.org</A>]]>
         	</bottom>
