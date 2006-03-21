@@ -25,18 +25,19 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
+import org.apache.log4j.Logger;
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.SendableEvent;
 import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.tcpcomplete.TcpUndeliveredEvent;
-
-
 
 /**
  * @author pedrofrv
  *
  */
 public class TcpReader extends Thread {
+	
+	private static Logger log = Logger.getLogger(TcpReader.class);
 	
 	private Socket s;
 	private InputStream is=null;
@@ -82,7 +83,7 @@ public class TcpReader extends Thread {
 				undelivered.asyncGo(channel,Direction.UP);
 				parentSession.removeSocket(iwp);
 			} catch (AppiaEventException exception) {
-				exception.printStackTrace();
+				log.debug("Could not insert event: "+exception);
 			}					
 			return;						
 		}
@@ -101,7 +102,7 @@ public class TcpReader extends Thread {
 						event.asyncGo(event.getChannel(), Direction.UP);						
 					}
 				} catch (AppiaEventException ex) {
-					ex.printStackTrace();
+					log.debug("Could not insert event: "+ex);
 		        } catch(SocketTimeoutException ste){
 				} catch (IOException ex) {
 					//send_undelivered :(
