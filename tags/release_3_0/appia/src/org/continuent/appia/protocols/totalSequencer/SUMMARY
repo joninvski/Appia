@@ -1,0 +1,6 @@
+NAME="Sequencer based Total Order Protocol"
+FILE="TotalSequencer"
+VERSION="1.0"
+DATE="2001/05/24"
+AUTHOR="Pedro Vicente, Sandra Teixeira e Maria João Monteiro"
+DESCRIPTION="Total Order protocol that uses a sequencer that orders the messages. All the other members respect that order, before delivering the messages."

@@ -1,0 +1,14 @@
+NAME="Utils"
+FILE="utils"
+VERSION="0.1"
+AUTHOR="Nuno Carvalho"
+DATE="Oct 2003"
+DESCRIPTION="
+This package has some utilities that can be used to build protocols in <i>Appia</i>:
+<br>
+<ul>
+<li><b>Buffer generic interface</b> - This can be used in protocols that need buffers, but the user can choose which implementation wants to use.
+<li><b>List implementation of the Buffer</b> - This is a linked list implementation of the generic buffer.
+<li><b>Semantic implementation of the Buffer</b> - This Buffer can be used in protocols that want to provide semantic reliability.
+</ul>
+"
