@@ -1,3 +1,3 @@
 @echo off
 
-java -classpath $CLASSPATH org.continuent.appia.gossip.GossipServer %*
+java org.continuent.appia.gossip.GossipServer %*
