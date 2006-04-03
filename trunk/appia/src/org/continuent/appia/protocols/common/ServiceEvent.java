@@ -24,28 +24,29 @@ import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.Event;
 import org.continuent.appia.core.Session;
+import org.continuent.appia.core.message.Message;
 
 public class ServiceEvent extends Event {
 	
-	private Object messageID;
+	private Message message;
 
-	public ServiceEvent(Object mid) {
+	/**
+	 * basic Service event contructor. The agument passed should be used only to distinguish between several messages (as msgID).
+	 * @param m the message concering the notification service.
+	 */
+	public ServiceEvent(Message m) {
 		super();
-		messageID = mid;
+		message = m;
 	}
 
-	public ServiceEvent(Channel channel, int dir, Session src, Object mid)
+	public ServiceEvent(Channel channel, int dir, Session src, Message msg)
 			throws AppiaEventException {
 		super(channel, dir, src);
-		messageID = mid;
+		message = msg;
 	}
 
-	public Object getMessageID() {
-		return messageID;
-	}
-
-	public void setMessageID(Object messageID) {
-		this.messageID = messageID;
+	public Message getMessageID() {
+		return message;
 	}
 
 }

@@ -23,15 +23,16 @@ package org.continuent.appia.protocols.total.common;
 import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.Session;
+import org.continuent.appia.core.message.Message;
 import org.continuent.appia.protocols.common.ServiceEvent;
 
 public class UniformServiceEvent extends ServiceEvent {
 
-	public UniformServiceEvent(Object mid) {
+	public UniformServiceEvent(Message mid) {
 		super(mid);
 	}
 
-	public UniformServiceEvent(Channel channel, int dir, Session src, Object mid)
+	public UniformServiceEvent(Channel channel, int dir, Session src, Message mid)
 			throws AppiaEventException {
 		super(channel, dir, src, mid);
 	}
