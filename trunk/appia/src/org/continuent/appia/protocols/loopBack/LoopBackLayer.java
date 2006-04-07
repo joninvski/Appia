@@ -20,6 +20,9 @@
  package org.continuent.appia.protocols.loopBack;
 
 import org.continuent.appia.core.*;
+import org.continuent.appia.core.events.channel.ChannelInit;
+import org.continuent.appia.protocols.group.events.GroupSendableEvent;
+import org.continuent.appia.protocols.group.intra.View;
 
 
 /**
@@ -44,26 +47,19 @@ public class LoopBackLayer extends Layer {
      */
     public LoopBackLayer() {
 
-	try {
-	    // Events that the protocol needs.
-	    evRequire=new Class[1];
-	    evRequire[0]=
-		Class.forName("appia.protocols.group.events.GroupSendableEvent");
-
-	    // Events that the protocol accepts.
-	    evAccept=new Class[3];
-	    evAccept[0]=evRequire[0];
-	    evAccept[1]=Class.forName("appia.events.channel.ChannelInit");
-	    evAccept[2]=Class.forName("appia.protocols.group.intra.View");
-
-	    // Events provided by this layer
-	    evProvide=new Class[1];
+    	// Events that the protocol needs.
+    	evRequire=new Class[1];
+    	evRequire[0]=GroupSendableEvent.class;
+    	
+    	// Events that the protocol accepts.
+    	evAccept=new Class[3];
+    	evAccept[0]=evRequire[0];
+    	evAccept[1]=ChannelInit.class;
+    	evAccept[2]=View.class;
+    	
+    	// Events provided by this layer
+    	evProvide=new Class[1];
 	    evProvide[0]=evRequire[0];
-	}
-	catch(ClassNotFoundException ex) {
-	    System.err.println("error , class not found");
-			       
-	}
     }
 
     /**
@@ -73,8 +69,6 @@ public class LoopBackLayer extends Layer {
         return new LoopBackSession(this);
     }
 
-    public void channelDispose(Session session,Channel channel) {
-    }
 }
     
 
