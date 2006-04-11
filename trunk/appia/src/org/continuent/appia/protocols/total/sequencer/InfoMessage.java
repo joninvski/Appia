@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package org.continuent.appia.protocols.totalSequencer;
+ package org.continuent.appia.protocols.total.sequencer;
 
 import org.continuent.appia.protocols.group.events.*;
 

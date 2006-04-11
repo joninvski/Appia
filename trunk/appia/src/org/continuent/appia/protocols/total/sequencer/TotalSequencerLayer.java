@@ -17,16 +17,17 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
-package org.continuent.appia.protocols.totalSequencer;
+package org.continuent.appia.protocols.total.sequencer;
 
-import org.continuent.appia.core.*;
-import org.continuent.appia.protocols.totalAbstract.*;
+import org.continuent.appia.core.Channel;
+import org.continuent.appia.core.Layer;
+import org.continuent.appia.core.Session;
 
 
 /**
  * Defines the events that the layer accepts, provides and requires
  */
-public class TotalSequencerLayer extends TotalAbstractLayer {
+public class TotalSequencerLayer extends Layer {
 	
 	/** Constructor*/
 	public TotalSequencerLayer() {
@@ -34,7 +35,7 @@ public class TotalSequencerLayer extends TotalAbstractLayer {
 		evRequire=new Class[3];
 		evRequire[0]=org.continuent.appia.protocols.group.events.GroupSendableEvent.class;
 		evRequire[1]=org.continuent.appia.protocols.group.intra.View.class;
-		evRequire[2]=org.continuent.appia.protocols.totalSequencer.TotalOrderEvent.class;
+		evRequire[2]=org.continuent.appia.protocols.total.sequencer.TotalOrderEvent.class;
 		
 		evAccept=new Class[5];
 		evAccept[0]=evRequire[0];

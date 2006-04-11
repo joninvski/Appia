@@ -17,12 +17,32 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package org.continuent.appia.protocols.totalAbstract;
 
-import org.continuent.appia.core.*;
+
+package org.continuent.appia.protocols.total.token;
+
+import org.continuent.appia.core.AppiaEventException;
+import org.continuent.appia.core.Channel;
+import org.continuent.appia.core.Session;
+import org.continuent.appia.protocols.group.Group;
+import org.continuent.appia.protocols.group.ViewID;
+import org.continuent.appia.protocols.group.events.GroupSendableEvent;
+
 
 /**
- * This is the basic layer for all the total order protocols.
- * All the total order protocols should extend this layer.
+ * Event used by the totaltoken protocol to change the token when it does not have any messages to send.
+ * @author Nuno Carvalho
+ *
  */
-public abstract class TotalAbstractLayer extends Layer{}
+public class TokenEvent extends GroupSendableEvent {
+
+	public TokenEvent(Channel channel, int dir, Session source, Group group,
+			ViewID view_id) throws AppiaEventException {
+		super(channel, dir, source, group, view_id);
+	}
+
+	public TokenEvent() {
+		super();
+	}
+
+}

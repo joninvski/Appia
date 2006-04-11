@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package org.continuent.appia.protocols.totalAbstract;
+ package org.continuent.appia.protocols.total.abstractProtocol;
 
 import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.Channel;
@@ -25,21 +25,25 @@ import org.continuent.appia.core.Event;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 
-
-public class RegularEvent extends Event {
+/**
+ * @deprecated
+ * @author nuno
+ *
+ */
+public class SpontaneousEvent extends Event {
 	
 	private GroupSendableEvent event;
 
-	public RegularEvent() {
+	public SpontaneousEvent() {
 		super();
 	}
 
-	public RegularEvent(GroupSendableEvent e) {
+	public SpontaneousEvent(GroupSendableEvent e) {
 		super();
 		event = e;
 	}
 	
-	public RegularEvent(Channel channel, int dir, Session src, GroupSendableEvent e)
+	public SpontaneousEvent(Channel channel, int dir, Session src, GroupSendableEvent e)
 			throws AppiaEventException {
 		super(channel, dir, src);
 		event = e;

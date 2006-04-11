@@ -17,13 +17,13 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package org.continuent.appia.protocols.totalSequencer;
+ package org.continuent.appia.protocols.total.abstractProtocol;
+
+import org.continuent.appia.core.*;
 
 /**
- * configures static final variables.
- * @author pedrofrv
- *
+ * This is the basic layer for all the total order protocols.
+ * All the total order protocols should extend this layer.
+ * @deprecated
  */
-public class TotalSequencerConfig {
-	public static final boolean debugOn = false;
-}
+public abstract class TotalAbstractLayer extends Layer{}

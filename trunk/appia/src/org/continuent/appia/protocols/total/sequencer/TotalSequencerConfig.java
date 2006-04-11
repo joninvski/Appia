@@ -17,32 +17,13 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
-
-
-package org.continuent.appia.protocols.totaltoken;
-
-import org.continuent.appia.core.AppiaEventException;
-import org.continuent.appia.core.Channel;
-import org.continuent.appia.core.Session;
-import org.continuent.appia.protocols.group.Group;
-import org.continuent.appia.protocols.group.ViewID;
-import org.continuent.appia.protocols.group.events.GroupSendableEvent;
-
+ package org.continuent.appia.protocols.total.sequencer;
 
 /**
- * Event used by the totaltoken protocol to change the token when it does not have any messages to send.
- * @author Nuno Carvalho
+ * configures static final variables.
+ * @author pedrofrv
  *
  */
-public class TokenEvent extends GroupSendableEvent {
-
-	public TokenEvent(Channel channel, int dir, Session source, Group group,
-			ViewID view_id) throws AppiaEventException {
-		super(channel, dir, source, group, view_id);
-	}
-
-	public TokenEvent() {
-		super();
-	}
-
+public class TotalSequencerConfig {
+	public static final boolean debugOn = false;
 }

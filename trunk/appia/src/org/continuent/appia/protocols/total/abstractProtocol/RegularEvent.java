@@ -17,45 +17,44 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
+ package org.continuent.appia.protocols.total.abstractProtocol;
 
-
-package org.continuent.appia.protocols.totaltoken;
-
+import org.continuent.appia.core.AppiaEventException;
+import org.continuent.appia.core.Channel;
+import org.continuent.appia.core.Event;
 import org.continuent.appia.core.Session;
-import org.continuent.appia.core.events.channel.ChannelClose;
-import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
-import org.continuent.appia.protocols.group.intra.View;
-import org.continuent.appia.protocols.group.sync.BlockOk;
-import org.continuent.appia.protocols.totalAbstract.TotalAbstractLayer;
 
 
 /**
- * Layer that provides regular Total Order of events. This layer requires the
- * virtual synchrony protocols in order to work.
- * @author Nuno Carvalho
+ *@deprecated
+ * @author nuno
  *
  */
-public class TotalTokenLayer extends TotalAbstractLayer {
+public class RegularEvent extends Event {
+	
+	private GroupSendableEvent event;
 
-	public TotalTokenLayer() {
+	public RegularEvent() {
 		super();
-		evProvide = new Class[]{
-				TokenEvent.class,
-		};
-		evRequire = new Class[]{};
-		evAccept = new Class[]{
-				TokenEvent.class,
-				GroupSendableEvent.class,
-				BlockOk.class,
-				View.class,
-				ChannelInit.class,
-				ChannelClose.class,
-		};
 	}
 
-	public Session createSession() {
-		return new TotalTokenSession(this);
+	public RegularEvent(GroupSendableEvent e) {
+		super();
+		event = e;
+	}
+	
+	public RegularEvent(Channel channel, int dir, Session src, GroupSendableEvent e)
+			throws AppiaEventException {
+		super(channel, dir, src);
+		event = e;
+	}
+	
+	public GroupSendableEvent getEvent() {
+		return event;
 	}
 
+	public void setEvent(GroupSendableEvent event) {
+		this.event = event;
+	}
 }

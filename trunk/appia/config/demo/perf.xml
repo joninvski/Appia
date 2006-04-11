@@ -167,7 +167,7 @@
 
 	<channel name="Perf Channel" template="Perf Tcp Template" initialized="yes">
 		<chsession name="perf">
-			<!-- Example for ring test with two members and IP-Multicast addres for gossip dissemination. -->
+			<!-- Example for ring test with two members and IP-Multicast address for gossip dissemination. -->
 			<parameter name="n">2</parameter>
 			<parameter name="k">100</parameter>
 			<parameter name="r">10</parameter>

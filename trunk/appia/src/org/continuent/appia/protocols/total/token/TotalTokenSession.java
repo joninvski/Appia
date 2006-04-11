@@ -18,7 +18,7 @@
  * Contributor(s): See Appia web page for a list of contributors.
  */
 
-package org.continuent.appia.protocols.totaltoken;
+package org.continuent.appia.protocols.total.token;
 
 import java.util.LinkedList;
 import java.util.ListIterator;

@@ -17,7 +17,11 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package org.continuent.appia.protocols.totalAbstract;
+ /*
+ * Created on 12-Apr-2005
+ *
+ */
+package org.continuent.appia.protocols.total.abstractProtocol;
 
 import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.Channel;
@@ -26,29 +30,58 @@ import org.continuent.appia.core.Session;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 
 
-public class SpontaneousEvent extends Event {
+/**
+ * Event used by total order protocols to deliver messages with optimistic assumptions
+ * The original message is encapsulated inside this event.
+ * @author nunomrc
+ * 
+ * @deprecated
+ */
+public class OptimisticEvent extends Event {
 	
+	// the event to deliver
 	private GroupSendableEvent event;
 
-	public SpontaneousEvent() {
+	/**
+	 * Basic constructor.
+	 */
+	public OptimisticEvent() {
 		super();
 	}
 
-	public SpontaneousEvent(GroupSendableEvent e) {
+	/**
+	 * Builds a new OptimisticEvent with the message to deliver
+	 * @param e the message to deliver.
+	 */
+	public OptimisticEvent(GroupSendableEvent e) {
 		super();
 		event = e;
 	}
-	
-	public SpontaneousEvent(Channel channel, int dir, Session src, GroupSendableEvent e)
+
+	/**
+	 * @param channel the message channel
+	 * @param dir direction of the event
+	 * @param src source session
+	 * @param e the event to deliver
+	 * @throws AppiaEventException
+	 */
+	public OptimisticEvent(Channel channel, int dir, Session src, GroupSendableEvent e)
 			throws AppiaEventException {
 		super(channel, dir, src);
 		event = e;
 	}
-	
+
+	/**
+	 * Gets the stored event to deliver.
+	 * @return Returns the event.
+	 */
 	public GroupSendableEvent getEvent() {
 		return event;
 	}
-
+	/**
+	 * Sets the event to deliver.
+	 * @param event The event to set.
+	 */
 	public void setEvent(GroupSendableEvent event) {
 		this.event = event;
 	}
