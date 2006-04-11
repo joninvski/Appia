@@ -1,34 +1,22 @@
 
-/*
+/**
+ * Appia: Group communication and protocol composition framework library
+ * Copyright 2006 University of Lisbon
  *
- * APPIA: Protocol composition and execution framework
- * Copyright (C) 2005 Laboratorio de Sistemas Informaticos de Grande Escala (LASIGE)
- * 
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * 
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
- * 
- * Contact
- * 	Address:
- * 		LASIGE, Departamento de Informatica, Bloco C6
- * 		Faculdade de Ciencias, Universidade de Lisboa
- * 		Campo Grande, 1749-016 Lisboa
- * 		Portugal
- * 	Email:
- * 		appia@di.fc.ul.pt
- * 	Web:
- * 		http://appia.di.fc.ul.pt
- * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License. 
+ *
+ * Initial developer(s):Jose Mocito.
+ * Contributor(s): See Appia web page for a list of contributors.
  */
  package org.continuent.appia.protocols.total.seto;
 
@@ -37,7 +25,6 @@ import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 /**
  * Event used to exchange the uniformity information of messages flowing in the group.
  * 
- * @author Jose Mocito
  */
 public class UniformInfoEvent extends GroupSendableEvent {
 }
