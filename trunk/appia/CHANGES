@@ -1,4 +1,18 @@
 ======================
+XX/04/2006 Version 3.1
+======================
+
+- Added generic events to be used by total order protocols that need to provide information about message guarantees. 
+  These events are used to provide optimistic assumptions and guarantees about message delivery.
+- Added an optimistic sequencer based total order protocol that provides optimistic assumptions about message delivery.
+  Upon reception of a message, it forwards that message to the application and after that sends notifications about message
+  guaranties: SETO, when the message is considered optimistically ordered; Regular, when the message is ordered by the 
+  sequencer; Uniform, when the message is considered uniform.  
+- Refactored the total order protocols.
+- Removed several minor bug fixes.
+- Updated some javadoc information.
+
+======================
 20/03/2006 Version 3.0
 ======================
 

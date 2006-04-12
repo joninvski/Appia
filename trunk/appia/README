@@ -32,7 +32,7 @@ installed in your computer. Appia currently requires the JDK version
 document. See http://java.sun.com/ for more info about this
 subject.
 
-Appia was tested under Linux Mandrake, Ubuntu and Windows XP and 
+Appia was tested under Linux Mandrake, Ubuntu, Windows XP and 
 MacOS X.
 
 Appia requires 17Mb of disk space (space required if you compile all
@@ -122,8 +122,6 @@ steps:
   following command:
 
      $ ant
-	   or
-     $ make
 
   this will compile the source and create the jar file. All the needed
   libraries are placed in the "dist" directory.
@@ -170,9 +168,6 @@ The main demo applications are:
    Example (see previous paragraph for how to start the gossip server):
    $ java org.continuent.appia.demo.Appl -gossip <gossip server host>:<gossip server port>"
 
- - p2pSsl - Point to point communication using SSL.
- - p2pTcp - Point to point communication using TCP/IP.
- - p2pUdp - Point to point communication using UDP/IP.
  - Perf - Provides Appia Performance tests.
 
 __________________________________________________________________________
@@ -185,7 +180,9 @@ For additional documentation and tutorials see Appia web at:
 or
  - http://appia.continuent.org
 
-You can subscribe to the Appia mailing list, using one of the lists provided. The lists can be accessed on the GForge continuent.org site, where Appia is hosted. More information:
+You can subscribe to the Appia mailing list, using one of the lists provided.
+The lists can be accessed on the GForge continuent.org site, where Appia is hosted. 
+More information:
  - http://appia.continuent.org
 
 
