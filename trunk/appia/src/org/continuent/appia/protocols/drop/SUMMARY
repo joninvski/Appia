@@ -1,6 +1,0 @@
-NAME="Drop"
-FILE="drop"
-VERSION="0.1"
-AUTHOR="Hugo Miranda"
-DATE="May 2000"
-DESCRIPTION="Protocol that randomly drops messages. Useful for testing reliable delivery protocols." 

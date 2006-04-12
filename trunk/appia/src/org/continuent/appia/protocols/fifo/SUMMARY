@@ -1,6 +1,0 @@
-NAME="FIFO"
-FILE="fifo"
-VERSION="0.3"
-AUTHOR="Nuno Carvalho"
-DATE="Oct 2003"
-DESCRIPTION="Protocol providing reliable point-to-point and Multicast FIFO delivery for SendableEvents. In this protocol, multicast is simulated by sending poit to point messages to all members of a group."

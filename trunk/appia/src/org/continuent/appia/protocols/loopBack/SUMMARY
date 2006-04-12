@@ -1,6 +1,0 @@
-NAME="LoopBack protocol"
-FILE="LoopBack"
-VERSION="1.0"
-DATE="2001/05/24"
-AUTHOR="Pedro Vicente"
-DESCRIPTION="This protocol sends a copy to the upper layers of all GroupSendableEvents that it receives from above. This is used to simulate broadcast (all members, including the sender receive the message)."

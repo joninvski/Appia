@@ -1,6 +1,0 @@
-NAME="Fragmentation"
-FILE="frag"
-VERSION="0.1"
-AUTHOR="Hugo Miranda, Alexandre Pinto"
-DATE="September 2003"
-DESCRIPTION="Fragments and reassembles long SendableEvents." 

@@ -1,7 +1,0 @@
-NAME="SslComplete"
-FILE="sslcomplete"
-VERSION="1.1"
-DATE="September 2003"
-AUTHOR="Pedro Vicente, Alexandre Pinto"
-DESCRIPTION="Ssl transport protocol. Supports various concorrent connections"
-

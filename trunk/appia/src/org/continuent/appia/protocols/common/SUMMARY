@@ -1,9 +1,0 @@
-NAME="Classes Common to several protocols"
-FILE="common"
-VERSION="0.1"
-AUTHOR="Alexandre Pinto"
-DATE="September 2003"
-DESCRIPTION="
-Consists of several classes common to several protocols.<br>
-The current classes were all removed from the UdpSimple protocol.
-"
