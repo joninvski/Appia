@@ -59,27 +59,21 @@ public class DropLayer extends Layer {
      * @see Layer
      */
 
-    public DropLayer() {
-	super();
-        evProvide=new Class[0];
-        evRequire=new Class[0];
-        evAccept=new Class[2];
-	try {
-	    evAccept[0]=Class.forName("appia.events.SendableEvent");
-            evAccept[1]=Class.forName("appia.events.channel.Debug");
+	public DropLayer() {
+		super();
+		evProvide=new Class[0];
+		evRequire=new Class[0];
+		evAccept=new Class[2];
+		evAccept[0]=org.continuent.appia.core.events.SendableEvent.class;
+		evAccept[1]=org.continuent.appia.core.events.channel.Debug.class;
 	}
-	catch(ClassNotFoundException ex) {
-	    System.err.println("Class Not Found Exception in DropLayer. "+
-			       "Check CLASSPATH information.");
+	
+	/**
+	 * Session constructor.
+	 * @see Layer
+	 */
+	
+	public Session createSession() {
+		return new DropSession(this);
 	}
-    }
-
-    /**
-     * Session constructor.
-     * @see Layer
-     */
-
-    public Session createSession() {
-	return new DropSession(this);
-    }
 }
