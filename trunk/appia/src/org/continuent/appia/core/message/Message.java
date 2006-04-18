@@ -52,6 +52,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.UTFDataFormatException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.memoryManager.*;
@@ -1166,6 +1169,19 @@ public class Message implements Cloneable {
 			}
 		}
 	}
+	
+	/**
+	 * Pushes the given address into the message.
+	 * @param address the address to push
+	 */
+	public void pushInetSocketAddress(InetSocketAddress address){
+		MsgBuffer mbuf = new MsgBuffer();
+		mbuf.len = 6;
+		push(mbuf);
+		mbuf.data[mbuf.off + 0] = (byte) ((address.getPort() >>> 8) & 0xFF);
+		mbuf.data[mbuf.off + 1] = (byte) ((address.getPort() >>> 0) & 0xFF);
+		System.arraycopy(address.getAddress().getAddress(), 0, mbuf.data, mbuf.off + 2, 4);
+	}
 
 	/**
 	 * Pops a {@link java.lang.Object Object} from the message.
@@ -1438,6 +1454,24 @@ public class Message implements Cloneable {
 		return new String(str, 0, strlen);
 	}
 
+	public InetSocketAddress popInetSocketAddress() {
+		MsgBuffer mbuf = new MsgBuffer();
+		mbuf.len = 6;
+		pop(mbuf);
+		String ip = new String();
+		for (int i = 0; i < 3; i++) {
+			ip += (mbuf.data[mbuf.off + i + 2] & 0xff) + ".";
+		}
+		ip += (int) mbuf.data[mbuf.off + 3 + 2] & 0xff;
+		InetAddress inet = null;
+		try {
+			inet = InetAddress.getByName(ip);
+		} catch (UnknownHostException ex) {}
+		int port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
+		port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
+		return new InetSocketAddress(inet,port);
+	}
+	
 	/**
 	 * Returns the <i>Object</i> from the head of the message, without removing it.
 	 * <br>
@@ -1718,6 +1752,24 @@ public class Message implements Cloneable {
 		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 8) & 0xFF);
 		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 0) & 0xFF);
 		return new String(str, 0, strlen);
+	}
+	
+	public InetSocketAddress peekInetSocketAddress() {
+		MsgBuffer mbuf = new MsgBuffer();
+		mbuf.len = 6;
+		peek(mbuf);
+		String ip = new String();
+		for (int i = 0; i < 3; i++) {
+			ip += (mbuf.data[mbuf.off + i + 2] & 0xff) + ".";
+		}
+		ip += (int) mbuf.data[mbuf.off + 3 + 2] & 0xff;
+		InetAddress inet = null;
+		try {
+			inet = InetAddress.getByName(ip);
+		} catch (UnknownHostException ex) {}
+		int port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
+		port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
+		return new InetSocketAddress(inet,port);
 	}
 
 	public class AuxOutputStream extends OutputStream {
