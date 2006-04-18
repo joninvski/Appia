@@ -238,7 +238,7 @@ public class HealSession extends Session implements InitializableSession {
     if ((ls == null) || !ls.am_coord)
       return;
     
-    long now=System.currentTimeMillis();
+    long now=ev.getChannel().getTimeProvider().currentTimeMillis();
     
     if (now-last_gossip > gossip_time) {
       last_gossip=now;
