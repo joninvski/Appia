@@ -2,6 +2,7 @@
 XX/04/2006 Version 3.1
 ======================
 
+- Added push, pop and peek for InetSocketAddress in the Message class.
 - Added generic events to be used by total order protocols that need to provide information about message guarantees. 
   These events are used to provide optimistic assumptions and guarantees about message delivery.
 - Added an optimistic sequencer based total order protocol that provides optimistic assumptions about message delivery.
