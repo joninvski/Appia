@@ -51,8 +51,7 @@ import org.continuent.appia.protocols.udpsimple.MulticastInitEvent;
 
 /*
  * Change Log:
- * Nuno Carvalho: 7/Aug/2002 - Alterei o protocolo para nao usar
- *                        codigo deprecated (asynEvent)
+ * Nuno Carvalho: 7/Aug/2002 - removed deprecated code;
  * Alexandre Pinto: 15/Oct/2002 - Added configuration options.
  */
 
@@ -408,13 +407,8 @@ public class ApplSession extends Session {
             
             msgEvent.source = vs.view[ls.my_rank];
             
-            String msg = new String(e.msg + e.thisResend);
-            
-            byte[] data = new byte[msg.length() + 4];
-            lengthToByte(data, msg.length());
-            System.arraycopy(msg.getBytes(), 0, data, 4, msg.length());
-            
-            msgEvent.getMessage().setByteArray(data, 0, data.length);
+            ApplMessageHeader header = new ApplMessageHeader(e.msg,e.thisResend);
+            header.pushMySelf(msgEvent.getMessage());
             msgEvent.go();
 
             /////////////////////////////////////////
@@ -509,10 +503,6 @@ public class ApplSession extends Session {
         /* Echoes received messages to the user */
         if (e.getDir() == Direction.UP) {
             Message m = e.getMessage();
-            MsgBuffer msgBuf = new MsgBuffer();
-            msgBuf.len = 4;
-            m.pop(msgBuf);
-            int l = byteToLength(msgBuf);
             
             if (e instanceof ApplSendEvent)
                 out.print("Message (pt2pt)");
@@ -520,13 +510,11 @@ public class ApplSession extends Session {
                 out.print("Message (multicast)");
             
             out.println(" received from " + ((Endpt) e.source).toString());
-            while (l > 0) {
-                msgBuf.len = l;
-                m.pop(msgBuf);
-                out.print(new String(msgBuf.data, msgBuf.off, msgBuf.len));
-                l -= msgBuf.len;
-            }
-            System.out.println();
+            ApplMessageHeader header = new ApplMessageHeader(m);
+            // OR
+            // header.popMySelf(m);
+            
+            System.out.println(header);
         }
         try {
             e.go();

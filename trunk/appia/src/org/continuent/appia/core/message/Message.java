@@ -82,6 +82,9 @@ public class Message implements Cloneable {
 	private static final int INTSIZE = 4;
 	private static final int LONGSIZE = 8;
 	private static final int BOOLSIZE = 1;
+	
+	private static final byte GENERIC_OBJECT = 0;
+	private static final byte INET_SOCKET_ADDR = 1;
 
 	private AuxOutputStream aos = null;
 	private AuxInputStream ais = null;
@@ -965,6 +968,12 @@ public class Message implements Cloneable {
 	 * @see org.continuent.appia.core.message.MessageException
 	 */
 	public void pushObject(Object obj) {
+		if(obj instanceof InetSocketAddress){
+			pushInetSocketAddress((InetSocketAddress) obj);
+			pushByte(INET_SOCKET_ADDR);
+			return;
+		}
+		
 		if (aos == null)
 			aos = new AuxOutputStream();
 
@@ -981,6 +990,7 @@ public class Message implements Cloneable {
 		push(mbuf);
 		aos.copyInternalTo(mbuf.data, mbuf.off, mbuf.len);
 		pushInt(mbuf.len);
+		pushByte(GENERIC_OBJECT);
 	}
 
 	/**
@@ -1174,7 +1184,7 @@ public class Message implements Cloneable {
 	 * Pushes the given address into the message.
 	 * @param address the address to push
 	 */
-	public void pushInetSocketAddress(InetSocketAddress address){
+	private void pushInetSocketAddress(InetSocketAddress address){
 		MsgBuffer mbuf = new MsgBuffer();
 		mbuf.len = 6;
 		push(mbuf);
@@ -1193,6 +1203,12 @@ public class Message implements Cloneable {
 	 * @see org.continuent.appia.core.message.MessageException
 	 */
 	public Object popObject() {
+		byte objectType = popByte();
+		if(objectType == INET_SOCKET_ADDR){
+			InetSocketAddress addr = popInetSocketAddress();
+			return addr;
+		}
+		// else, is the generic object
 		if (ais == null)
 			ais=new AuxInputStream();
 			
@@ -1454,7 +1470,7 @@ public class Message implements Cloneable {
 		return new String(str, 0, strlen);
 	}
 
-	public InetSocketAddress popInetSocketAddress() {
+	private InetSocketAddress popInetSocketAddress() {
 		MsgBuffer mbuf = new MsgBuffer();
 		mbuf.len = 6;
 		pop(mbuf);
@@ -1485,6 +1501,13 @@ public class Message implements Cloneable {
 		if (size <= 0)
 			return null;
 			
+		byte objectType = popByte();
+		if(objectType == INET_SOCKET_ADDR){
+			InetSocketAddress addr = peekInetSocketAddress();
+			pushByte(objectType);
+			return addr;
+		}
+		
 		if (ais == null)
 		 ais=new AuxInputStream();
 
@@ -1496,9 +1519,11 @@ public class Message implements Cloneable {
 			ObjectInputStream ois = new ObjectInputStream(ais);
 			Object obj = ois.readObject();
 			pushInt(size);
+			pushByte(objectType);
 			return obj;
 		} catch (Exception ex) {
 			pushInt(size);
+			pushByte(objectType);
 			throw new MessageException(ex);
 		}
 	}
@@ -1754,7 +1779,7 @@ public class Message implements Cloneable {
 		return new String(str, 0, strlen);
 	}
 	
-	public InetSocketAddress peekInetSocketAddress() {
+	private InetSocketAddress peekInetSocketAddress() {
 		MsgBuffer mbuf = new MsgBuffer();
 		mbuf.len = 6;
 		peek(mbuf);
@@ -1952,11 +1977,11 @@ public class Message implements Cloneable {
 		return true;
 	}
 	
-  protected void finalize() throws Throwable {
-	  super.finalize();
-	  if(size>0)
-		  discardAll();
-  }
-
+	protected void finalize() throws Throwable {
+		super.finalize();
+		if(size>0)
+			discardAll();
+	}
+	
 } // end of class Message
 
