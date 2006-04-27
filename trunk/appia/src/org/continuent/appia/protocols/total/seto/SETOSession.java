@@ -97,7 +97,7 @@ public class SETOSession extends Session implements InitializableSession {
 	/**
 	 * Initialization method.
 	 * It accepts one parameter named <code>alfa</code> that is a value between 0 and 1.
-	 * @see org.continuent.appia.xml.interfaces.InitializableSession#init(appia.xml.utils.SessionProperties)
+	 * @see org.continuent.appia.xml.interfaces.InitializableSession#init(SessionProperties)
 	 */
 	public void init(SessionProperties params) {
 		if(params.containsKey("alfa")){
@@ -109,7 +109,7 @@ public class SETOSession extends Session implements InitializableSession {
 	
 	/** 
 	 * Main handler of events.
-	 * @see org.continuent.appia.core.Session#handle(appia.Event)
+	 * @see org.continuent.appia.core.Session#handle(Event)
 	 */
 	public void handle(Event event){
 		if(log.isDebugEnabled())
