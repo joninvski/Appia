@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE appia PUBLIC "-//DTDName//DTD//EN"
+	"http://appia.di.fc.ul.pt/xml/appiaxml.dtd">
+<appia>
+
+	<template name="Perf Udp+Fifo Template">
+	<session name="udp" sharing="private">
+		<protocol>org.continuent.appia.protocols.udpsimple.UdpSimpleLayer</protocol>
+	</session>
+	<session name="fifo" sharing="private">
+		<protocol>org.continuent.appia.protocols.fifo.FifoLayer</protocol>
+	</session>
+	<session name="frag" sharing="private">
+		<protocol>org.continuent.appia.protocols.frag.FragLayer</protocol>
+	</session>
+	<session name="gbl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.bottom.GroupBottomLayer</protocol>
+	</session>
+	<session name="gol" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.heal.GossipOutLayer</protocol>
+	</session>
+	<session name="suspectl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.suspect.SuspectLayer</protocol>
+	</session>		
+	<session name="intral" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.intra.IntraLayer</protocol>
+	</session>
+	<session name="interl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.inter.InterLayer</protocol>
+	</session>
+	<session name="hl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.heal.HealLayer</protocol>
+	</session>
+	<session name="stablel" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.stable.StableLayer</protocol>
+	</session>
+	<session name="ll" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.leave.LeaveLayer</protocol>
+	</session>
+	<session name="vsl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.sync.VSyncLayer</protocol>
+	</session>
+	<session name="perf" sharing="private">
+		<protocol>org.continuent.appia.test.perf.PerfLayer</protocol>
+	</session>
+	</template>
+
+	<template name="Perf Udp+NakFifo Template">
+	<session name="udp" sharing="private">
+		<protocol>org.continuent.appia.protocols.udpsimple.UdpSimpleLayer</protocol>
+	</session>
+	<session name="nakfifo" sharing="private">
+		<protocol>org.continuent.appia.protocols.nakfifo.NakFifoLayer</protocol>
+	</session>
+	<session name="frag" sharing="private">
+		<protocol>org.continuent.appia.protocols.frag.FragLayer</protocol>
+	</session>
+	<session name="gbl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.bottom.GroupBottomLayer</protocol>
+	</session>
+	<session name="gol" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.heal.GossipOutLayer</protocol>
+	</session>
+	<session name="suspectl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.suspect.SuspectLayer</protocol>
+	</session>		
+	<session name="intral" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.intra.IntraLayer</protocol>
+	</session>
+	<session name="interl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.inter.InterLayer</protocol>
+	</session>
+	<session name="hl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.heal.HealLayer</protocol>
+	</session>
+	<session name="stablel" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.stable.StableLayer</protocol>
+	</session>
+	<session name="ll" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.leave.LeaveLayer</protocol>
+	</session>
+	<session name="vsl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.sync.VSyncLayer</protocol>
+	</session>
+	<session name="perf" sharing="private">
+		<protocol>org.continuent.appia.test.perf.PerfLayer</protocol>
+	</session>
+	</template>
+
+	<template name="Perf Tcp Template">
+	<session name="tcp" sharing="private">
+		<protocol>org.continuent.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
+	</session>
+	<session name="gbl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.bottom.GroupBottomLayer</protocol>
+	</session>
+	<session name="gol" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.heal.GossipOutLayer</protocol>
+	</session>
+	<session name="suspectl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.suspect.SuspectLayer</protocol>
+	</session>		
+	<session name="intral" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.intra.IntraLayer</protocol>
+	</session>
+	<session name="interl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.inter.InterLayer</protocol>
+	</session>
+	<session name="hl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.heal.HealLayer</protocol>
+	</session>
+	<session name="stablel" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.stable.StableLayer</protocol>
+	</session>
+	<session name="ll" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.leave.LeaveLayer</protocol>
+	</session>
+	<session name="vsl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.sync.VSyncLayer</protocol>
+	</session>
+	<session name="perf" sharing="private">
+		<protocol>org.continuent.appia.test.perf.PerfLayer</protocol>
+	</session>
+	</template>
+
+	<template name="Perf Udp+NakFifoMulticast Template">
+	<session name="udp" sharing="private">
+		<protocol>org.continuent.appia.protocols.udpsimple.UdpSimpleLayer</protocol>
+	</session>
+	<session name="nakfifo" sharing="private">
+		<protocol>org.continuent.appia.protocols.nakfifo.multicast.NakFifoMulticastLayer</protocol>
+	</session>
+	<session name="frag" sharing="private">
+		<protocol>org.continuent.appia.protocols.frag.FragLayer</protocol>
+	</session>
+	<session name="gbl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.bottom.GroupBottomLayer</protocol>
+	</session>
+	<session name="gol" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.heal.GossipOutLayer</protocol>
+	</session>
+	<session name="suspectl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.suspect.SuspectLayer</protocol>
+	</session>		
+	<session name="intral" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.intra.IntraLayer</protocol>
+	</session>
+	<session name="interl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.inter.InterLayer</protocol>
+	</session>
+	<session name="hl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.heal.HealLayer</protocol>
+	</session>
+	<session name="stablel" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.stable.StableLayer</protocol>
+	</session>
+	<session name="ll" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.leave.LeaveLayer</protocol>
+	</session>
+	<session name="vsl" sharing="private">
+		<protocol>org.continuent.appia.protocols.group.sync.VSyncLayer</protocol>
+	</session>
+	<session name="perf" sharing="private">
+		<protocol>org.continuent.appia.test.perf.PerfLayer</protocol>
+	</session>
+	</template>
+
+	<channel name="Perf Channel" template="Perf Tcp Template" initialized="yes">
+		<chsession name="perf">
+			<!-- Example for ring test with two members and IP-Multicast address for gossip dissemination. -->
+			<parameter name="n">2</parameter>
+			<parameter name="k">100</parameter>
+			<parameter name="r">10</parameter>
+			<parameter name="m">100</parameter>
+			<parameter name="gossip">224.0.0.3:10001</parameter>
+		</chsession>
+	</channel>
+
+</appia>
