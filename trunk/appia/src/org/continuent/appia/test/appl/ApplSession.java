@@ -33,7 +33,6 @@ import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.Message;
-import org.continuent.appia.core.message.MsgBuffer;
 import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.group.*;
@@ -45,6 +44,7 @@ import org.continuent.appia.protocols.group.leave.LeaveEvent;
 import org.continuent.appia.protocols.group.sync.BlockOk;
 import org.continuent.appia.protocols.sslcomplete.SslRegisterSocketEvent;
 import org.continuent.appia.protocols.udpsimple.MulticastInitEvent;
+
 // TESTING
 //import test.PrecisionTime;
 //import test.TestOptimized;
@@ -477,27 +477,6 @@ public class ApplSession extends Session {
         }
     }
     
-    private void lengthToByte(byte[] header, int length) {
-        long factor = (long) Math.pow(2, 24);
-        
-        for (int i = 3; i >= 0; i--, factor /= 256) {
-            header[i] = (byte) (length / factor);
-            length -= header[i] * factor;
-        }
-    }
-    
-    private int byteToLength(MsgBuffer buf) {
-        int acum = 0;
-        long factor = 1;
-        int off = buf.off;
-        
-        for (int i = 0; i <= 3; i++, factor *= 256, off++) {
-            acum += buf.data[off] * factor;
-        }
-        
-        return acum;
-    }
-    
     private void receiveData(GroupSendableEvent e) {
         
         /* Echoes received messages to the user */
@@ -632,7 +611,7 @@ public class ApplSession extends Session {
     private void sendGroupInit() {
       try {
         InetWithPort myAddr=new InetWithPort(InetAddress.getLocalHost(),myPort);
-        myEndpt=new Endpt("Appl@"+myAddr.toString());
+        myEndpt=new Endpt("Appl@"+myAddr.host.getHostAddress()+":"+myAddr.port);
         
         Endpt[] view=null;
         InetWithPort[] addrs=null;
@@ -645,7 +624,7 @@ public class ApplSession extends Session {
           addrs=initAddrs;
           view=new Endpt[addrs.length];
           for (int i=0 ; i < view.length ; i++) {
-            view[i]=new Endpt("Appl@"+addrs[i].toString());
+            view[i]=new Endpt("Appl@"+addrs[i].host.getHostAddress()+":"+addrs[i].port);
           }
         }
         
