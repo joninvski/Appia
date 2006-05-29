@@ -257,6 +257,8 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       
       try {
         SendableEvent clone=(SendableEvent)event.cloneEvent();
+        // Puts peer counter
+        clone.getMessage().pushInt(0);
         
         if (event.dest instanceof AppiaMulticast) {
           Object[] dests=((AppiaMulticast)event.dest).getDestinations();
@@ -662,6 +664,9 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
   }
 
   private void storeUnconfirmed(Peer peer, SendableEvent ev) {
+    // updates peer counter
+    ev.getMessage().pushInt(ev.getMessage().popInt()+1);
+    
     peer.unconfirmed_msgs.addLast(ev);
   }
   
@@ -672,7 +677,13 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
         peer.last_msg_confirmed=((UpdateEvent)ev).to;
       else
         peer.last_msg_confirmed++;
-      ev.getMessage().discardAll();
+
+      // handles peer counter
+      int c=ev.getMessage().popInt()-1;
+      if (c <= 0)
+        ev.getMessage().discardAll();
+      else
+        ev.getMessage().pushInt(c);
     }
   }
   
@@ -707,6 +718,8 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
         if ((seq >= first) && (seq <= last)) {
           try {
             SendableEvent ev=(SendableEvent)evaux.cloneEvent();
+            // Removes peer counter
+            ev.getMessage().popInt();
             ev.setSource(this);
             ev.init();
             
