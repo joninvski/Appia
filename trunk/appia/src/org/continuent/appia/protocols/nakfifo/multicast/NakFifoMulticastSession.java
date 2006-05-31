@@ -664,8 +664,10 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
   }
 
   private void storeUnconfirmed(Peer peer, SendableEvent ev) {
-    // updates peer counter
-    ev.getMessage().pushInt(ev.getMessage().popInt()+1);
+    if (!(ev instanceof UpdateEvent)) {
+      // updates peer counter
+      ev.getMessage().pushInt(ev.getMessage().popInt()+1);
+    }
     
     peer.unconfirmed_msgs.addLast(ev);
   }
