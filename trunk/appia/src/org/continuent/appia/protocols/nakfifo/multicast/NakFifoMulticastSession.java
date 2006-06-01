@@ -677,15 +677,16 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     	SendableEvent ev = (SendableEvent) peer.unconfirmed_msgs.removeFirst();
       if (ev instanceof UpdateEvent)
         peer.last_msg_confirmed=((UpdateEvent)ev).to;
-      else
+      else {
         peer.last_msg_confirmed++;
 
-      // handles peer counter
-      int c=ev.getMessage().popInt()-1;
-      if (c <= 0)
-        ev.getMessage().discardAll();
-      else
-        ev.getMessage().pushInt(c);
+        // handles peer counter
+        int c=ev.getMessage().popInt()-1;
+        if (c <= 0)
+          ev.getMessage().discardAll();
+        else
+          ev.getMessage().pushInt(c);
+      }
     }
   }
   
