@@ -417,6 +417,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       if ((peer != null) && (peer.rounds_msg_sent > param_MAX_SENT_ROUNDS)) {
         try {
           PingEvent e=new PingEvent(peer.last_channel,this);
+          e.getMessage().pushInt(0);
           
           if (!changedSeq) {
             last_msg_sent++;
