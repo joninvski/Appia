@@ -39,6 +39,7 @@ import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.protocols.group.LocalState;
+import org.continuent.appia.protocols.group.ViewID;
 import org.continuent.appia.protocols.group.ViewState;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 import org.continuent.appia.protocols.group.intra.View;
@@ -71,7 +72,7 @@ public class SETOSession extends Session implements InitializableSession {
 	private boolean isBlocked = true;
 	
 	private LocalState ls = null;
-	private ViewState vs = null;
+	private ViewState vs, vs_old = null;
 	private Channel channel = null;
 	private TimeProvider timeProvider = null;
 	private final int seq = 0;
@@ -83,8 +84,14 @@ public class SETOSession extends Session implements InitializableSession {
 		O = new LinkedList();  // Optimistic
 	private long [] delay = null, r_delay = null;
 	
+	private long[] lastOrderList;
+	private long timeLastMsgSent;
+	private static final long UNIFORM_INFO_PERIOD = 100;
+	private boolean utSet; // Uniform timer is set?
+	private boolean newUniformInfo = false;
+	
 	/**
-	 * Constructs a new TotalFastABSession.
+	 * Constructs a new SETOSession.
 	 * 
 	 * @param layer
 	 */
@@ -119,20 +126,20 @@ public class SETOSession extends Session implements InitializableSession {
 			handleChannelInit((ChannelInit) event);
 		else if(event instanceof ChannelClose)
 			handleChannelClose((ChannelClose)event);
+		else if(event instanceof BlockOk)
+			handleBlockOk((BlockOk)event);
+		else if(event instanceof View)
+			handleNewView((View)event);
+		else if(event instanceof SETOTimer)
+			handleTimer((SETOTimer)event);
 		else if(event instanceof SeqOrderEvent)
 			handleSequencerMessage((SeqOrderEvent)event);
 		else if (event instanceof UniformInfoEvent)
 			handleUniformInfo((UniformInfoEvent) event);
-		else if(event instanceof GroupSendableEvent)
-			handleGroupSendable((GroupSendableEvent)event);
-		else if(event instanceof View)
-			handleNewView((View)event);
-		else if(event instanceof BlockOk)
-			handleBlockOk((BlockOk)event);
-		else if(event instanceof SETOTimer)
-			handleTimer((SETOTimer)event);
 		else if (event instanceof UniformTimer)
 			handleUniformTimer((UniformTimer) event);
+		else if(event instanceof GroupSendableEvent)
+			handleGroupSendable((GroupSendableEvent)event);
 		else{
 			log.warn("Got unexpected event in handle: "+event+". Forwarding it.");
 			try {
@@ -149,16 +156,6 @@ public class SETOSession extends Session implements InitializableSession {
 		try {
 			init.go();
 		} catch (AppiaEventException e) {
-			e.printStackTrace();
-		}
-		
-		UniformTimer ut;
-		try {
-			ut = new UniformTimer(UNIFORM_INFO_PERIOD,init.getChannel(),Direction.DOWN,this,EventQualifier.ON);
-			ut.go();
-		} catch (AppiaEventException e) {
-			e.printStackTrace();
-		} catch (AppiaException e) {
 			e.printStackTrace();
 		}
 	}
@@ -182,7 +179,8 @@ public class SETOSession extends Session implements InitializableSession {
 		log.debug("Impossible to send messages. Waiting for a new View");
 		isBlocked = true;
 		
-		sendUniformInfo(ok.getChannel());
+		if (vs.view.length > 1)
+			sendUniformInfo(ok.getChannel());
 		
 		try {
 			ok.go();
@@ -196,6 +194,8 @@ public class SETOSession extends Session implements InitializableSession {
 	 * @param view
 	 */
 	private void handleNewView(View view) {
+		vs_old = vs;
+		
 		isBlocked = false;
 		ls=view.ls;
 		vs=view.vs;
@@ -225,80 +225,19 @@ public class SETOSession extends Session implements InitializableSession {
 			e.printStackTrace();
 		}
 		
-	}
-	
-	private long timeLastMsgSent;
-	private static final long UNIFORM_INFO_PERIOD = 10;
-	
-	private void handleUniformTimer(UniformTimer timer) {
-		log.debug("Uniform timer expired. Now is: "+timeProvider.currentTimeMicros());
-		if (!isBlocked && timeProvider.currentTimeMicros() - timeLastMsgSent >= UNIFORM_INFO_PERIOD) {
-			log.debug("Last message sent was at time "+timeLastMsgSent+". Will send Uniform info!");
-			sendUniformInfo(timer.getChannel());
+		if (!utSet) {
+			try {
+				UniformTimer ut = new UniformTimer(UNIFORM_INFO_PERIOD,channel,Direction.DOWN,this,EventQualifier.ON);
+				ut.go();
+				utSet = true;
+			} catch (AppiaEventException e) {
+				e.printStackTrace();
+			} catch (AppiaException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
-	private void sendUniformInfo(Channel channel) {
-		UniformInfoEvent event = new UniformInfoEvent();
-		
-		Message msg = event.getMessage();
-		for (int i = 0; i < lastOrderList.length; i++)
-			msg.pushLong(lastOrderList[i]);
-		
-		event.setChannel(channel);
-		event.setDir(Direction.DOWN);
-		event.setSource(this);
-		try {
-			event.init();
-			event.go();
-		} catch (AppiaEventException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	private long[] lastOrderList;
-	
-	private void handleUniformInfo(UniformInfoEvent event) {
-		log.debug("Received UniformInfo from "+event.orig+". Uniformity information table now is: ");
-		Message msg = event.getMessage();
-		long[] uniformInfo = new long[vs.view.length];
-		for (int i = uniformInfo.length; i > 0; i--)
-			uniformInfo[i-1] = msg.popLong();
-		mergeUniformInfo(uniformInfo);
-		if (log.isDebugEnabled())
-			for (int i = 0; i < lastOrderList.length; i++)
-				log.debug("RANK :"+i+" | LAST_ORDER: "+lastOrderList[i]);
-		deliverUniform();
-	}
-	
-	private void mergeUniformInfo(long[] table) {
-		for (int i = 0; i < table.length; i++)
-			if (table[i] > lastOrderList[i])
-				lastOrderList[i] = table[i];
-	}
-	
-	/**
-	 * Received a message delayed by a timer.
-	 * @param timer
-	 */
-	private void handleTimer(SETOTimer timer) {
-		long now = timeProvider.currentTimeMicros();
-		log.debug(ls.my_rank+": received timer on "+now);
-		deliverOptimistic(timer.container);
-	}
-	
-	/**
-	 * Received Sequencer message
-	 * @param message
-	 */
-	private void handleSequencerMessage(SeqOrderEvent message) {
-		log.debug("Received SEQ message from "+message.orig+" timestamp is "+timeProvider.currentTimeMicros());
-		if(message.getDir() == Direction.DOWN)
-			log.error("Wrong direction (DOWN) in event "+message.getClass().getName());
-		else
-			reliableSEQDeliver(message);	
-	}
-
 	/**
 	 * @param event
 	 */
@@ -318,7 +257,7 @@ public class SETOSession extends Session implements InitializableSession {
 			reliableDATADeliver(event);
 		}		
 	}
-
+	
 	/**
 	 * Multicast a DATA event to the group.
 	 * 
@@ -337,7 +276,7 @@ public class SETOSession extends Session implements InitializableSession {
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		}
-		timeLastMsgSent = timeProvider.currentTimeMicros();
+		timeLastMsgSent = timeProvider.currentTimeMillis();
 	}
 	
 	/**
@@ -352,28 +291,13 @@ public class SETOSession extends Session implements InitializableSession {
 			uniformInfo[i-1] = msg.popLong();
 		mergeUniformInfo(uniformInfo);
 		DATAHeader header = DATAHeader.pop(event.getMessage());
-		log.debug("Received DATA message: "+header.id+":"+header.sn+" timestpamp is "+timeProvider.currentTimeMicros());
-		
-//		GroupSendableEvent clone = null;
-//		try {
-//			clone = (GroupSendableEvent) event.cloneEvent();
-//		} catch (CloneNotSupportedException e) {
-//			e.printStackTrace();
-//		}
-//		try {
-//			// deliver spontaneous event to application
-//			SpontaneousEvent spontaneous = new SpontaneousEvent(channel,Direction.UP,this,clone);
-//			spontaneous.go();
-//		} catch (AppiaEventException e1) {
-//			e1.printStackTrace();
-//		}
-		
-		header.setTime(delay[header.id]+timeProvider.currentTimeMicros());
+		log.debug("Received DATA message: "+header.id+":"+header.sn+" timestpamp is "+timeProvider.currentTimeMillis());
+		header.setTime(delay[header.id]+timeProvider.currentTimeMillis());
 		ListContainer container = new ListContainer(event, header);
 		// add the event to the RECEIVED list...
 		R.addLast(container);
 		// ... and set a timer to be delivered later, acording to the delay that came with the message
-		setTimer(container,delay[header.id]);
+		setTimer(container,delay[header.id],vs.id);
 		
 		// Deliver event to the upper layer (spontaneous order)
 		try {
@@ -382,7 +306,41 @@ public class SETOSession extends Session implements InitializableSession {
 			e.printStackTrace();
 		}
 	}
-
+	
+	/**
+	 * Received a message delayed by a timer.
+	 * @param timer
+	 */
+	private void handleTimer(SETOTimer timer) {
+		if (timer.vid.equals(vs.id)) {
+			long now = timeProvider.currentTimeMillis();
+			log.debug(ls.my_rank+": received timer on "+now);
+			deliverOptimistic(timer.container);
+		}
+		else
+			log.debug(ls.my_rank+": received SETOTimer from a previous view... discarding!");
+	}
+	
+	private void deliverOptimistic(ListContainer container) {
+		if (!O.contains(container)) {
+			log.debug("Delivering optimistic message.");
+			try {
+				SETOServiceEvent sse = new SETOServiceEvent(channel, Direction.UP, this, container.event.getMessage());
+				sse.go();
+			} catch (AppiaEventException e1) {
+				e1.printStackTrace();
+			} 
+			O.add(container);
+			if(coordinator() && !isBlocked) {
+				log.debug("I'm the coordinator. Sending message to order");
+				globalSN++;
+				reliableSEQMulticast(container);
+				r_delay[container.header.id] = container.header.get_delay();
+				delay[ls.my_rank] = max(r_delay);
+			}
+		}
+	}
+	
 	/**
 	 * Multicast a SEQUENCER message to the group.
 	 * 
@@ -405,6 +363,18 @@ public class SETOSession extends Session implements InitializableSession {
 	}
 	
 	/**
+	 * Received Sequencer message
+	 * @param message
+	 */
+	private void handleSequencerMessage(SeqOrderEvent message) {
+		log.debug("Received SEQ message from "+message.orig+" timestamp is "+timeProvider.currentTimeMillis());
+		if(message.getDir() == Direction.DOWN)
+			log.error("Wrong direction (DOWN) in event "+message.getClass().getName());
+		else
+			reliableSEQDeliver(message);	
+	}
+	
+	/**
 	 * Deliver a SEQUENCER message received from the network.
 	 */
 	private void reliableSEQDeliver(SeqOrderEvent event) {
@@ -414,45 +384,15 @@ public class SETOSession extends Session implements InitializableSession {
 			uniformInfo[i-1] = msg.popLong();
 		mergeUniformInfo(uniformInfo);
 		SEQHeader header = SEQHeader.pop(event.getMessage());
-		log.debug("["+ls.my_rank+"] Received SEQ message "+header.id+":"+header.sn+" timestamp is "+timeProvider.currentTimeMicros());
+		log.debug("["+ls.my_rank+"] Received SEQ message "+header.id+":"+header.sn+" timestamp is "+timeProvider.currentTimeMillis());
 		lastOrderList[ls.my_rank] = header.order;
-		
+		newUniformInfo = true;
 		// add it to the sequencer list
-		S.add(new ListSEQContainer(header,timeProvider.currentTimeMicros()));
-		log.debug("Received SEQ from "+event.orig+" at time "+timeProvider.currentTimeMicros());
+		S.add(new ListSEQContainer(header,timeProvider.currentTimeMillis()));
+		log.debug("Received SEQ from "+event.orig+" at time "+timeProvider.currentTimeMillis());
 		// and tries to deliver messages that already have the order
 		deliverRegular();
 		deliverUniform();
-	}
-
-	private void deliverOptimistic(ListContainer container){//,long time) {
-		if (!O.contains(container)) {
-			// clone event to keep a copy
-//			GroupSendableEvent clone = null;
-//			try {
-//				clone = (GroupSendableEvent) container.event.cloneEvent();
-//			} catch (CloneNotSupportedException e) {
-//				e.printStackTrace();
-//			}
-			log.debug("Delivering optimistic message.");
-			try {
-				// deliver optimistic event to application
-//				OptimisticEvent optimistic = new OptimisticEvent(channel,Direction.UP,this,clone);
-//				optimistic.go();
-				SETOServiceEvent sse = new SETOServiceEvent(channel, Direction.UP, this, container.event.getMessage());
-				sse.go();
-			} catch (AppiaEventException e1) {
-				e1.printStackTrace();
-			} 
-			O.add(container);
-			if(coordinator() && !isBlocked) {
-				log.debug("I'm the coordinator. Sending message to order");
-				globalSN++;
-				reliableSEQMulticast(container);
-				r_delay[container.header.id] = container.header.get_delay();
-				delay[ls.my_rank] = max(r_delay);
-			}
-		}
 	}
 	
 	/**
@@ -471,22 +411,13 @@ public class SETOSession extends Session implements InitializableSession {
 		
 			if (orderedMsg != null) {
 				ListContainer msgContainer = getMessage(orderedMsg.header,R);
-				// FIXME NOTE: uncomment next line to always deliver optimistic message before regular delivery.
+				// uncomment next line to always deliver optimistic message before regular delivery.
 				//deliverOptimistic(msgContainer);
 				
 				if (msgContainer != null && !hasMessage(orderedMsg,G)) {
 					O.add(msgContainer);
-//					GroupSendableEvent clone = null;
-//					try {
-//						clone = (GroupSendableEvent) msgContainer.event.cloneEvent();
-//					} catch (CloneNotSupportedException e) {
-//						e.printStackTrace();
-//					}
-					log.debug("["+ls.my_rank+"] Delivering regular "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMicros());
+					log.debug("["+ls.my_rank+"] Delivering regular "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMillis());
 					try {
-						// deliver regular event to application
-//						RegularEvent regular = new RegularEvent(channel,Direction.UP,this,clone);
-//						regular.go();
 						RegularServiceEvent rse = new RegularServiceEvent(channel, Direction.UP, this, msgContainer.event.getMessage());
 						rse.go();
 					} catch (AppiaEventException e1) {
@@ -526,6 +457,52 @@ public class SETOSession extends Session implements InitializableSession {
 		}
 	}
 	
+	private void handleUniformTimer(UniformTimer timer) {
+		log.debug("Uniform timer expired. Now is: "+timeProvider.currentTimeMillis());
+		if (!isBlocked && newUniformInfo && timeProvider.currentTimeMillis() - timeLastMsgSent >= UNIFORM_INFO_PERIOD) {
+			log.debug("Last message sent was at time "+timeLastMsgSent+". Will send Uniform info!");
+			sendUniformInfo(timer.getChannel());
+			newUniformInfo = false;
+		}
+	}
+	
+	private void sendUniformInfo(Channel channel) {
+		UniformInfoEvent event = new UniformInfoEvent();
+		
+		Message msg = event.getMessage();
+		for (int i = 0; i < lastOrderList.length; i++)
+			msg.pushLong(lastOrderList[i]);
+		
+		event.setChannel(channel);
+		event.setDir(Direction.DOWN);
+		event.setSource(this);
+		try {
+			event.init();
+			event.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void handleUniformInfo(UniformInfoEvent event) {
+		log.debug("Received UniformInfo from "+event.orig+". Uniformity information table now is: ");
+		Message msg = event.getMessage();
+		long[] uniformInfo = new long[vs.view.length];
+		for (int i = uniformInfo.length; i > 0; i--)
+			uniformInfo[i-1] = msg.popLong();
+		mergeUniformInfo(uniformInfo);
+		if (log.isDebugEnabled())
+			for (int i = 0; i < lastOrderList.length; i++)
+				log.debug("RANK :"+i+" | LAST_ORDER: "+lastOrderList[i]);
+		deliverUniform();
+	}
+	
+	private void mergeUniformInfo(long[] table) {
+		for (int i = 0; i < table.length; i++)
+			if (table[i] > lastOrderList[i])
+				lastOrderList[i] = table[i];
+	}
+	
 	/**
 	 * Tries to deliver Uniform messages.
 	 */
@@ -534,13 +511,10 @@ public class SETOSession extends Session implements InitializableSession {
 		ListIterator it = G.listIterator();
 		while (it.hasNext()) {
 			ListSEQContainer nextMsg = (ListSEQContainer)it.next();
-			
 			if (isUniform(nextMsg.header)) {
 				ListContainer msgContainer = getRemoveMessage(nextMsg.header,R);
 				log.debug("Resending message to Appl: "+msgContainer.event);
-				log.debug("["+ls.my_rank+"] Delivering final "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMicros());
-				
-//				delivery(msgContainer.event);
+				log.debug("["+ls.my_rank+"] Delivering final "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMillis());
 				try {
 					// deliver uniform notification
 					UniformServiceEvent use = new UniformServiceEvent(channel, Direction.UP, this, msgContainer.event.getMessage());
@@ -554,18 +528,6 @@ public class SETOSession extends Session implements InitializableSession {
 	}
 	
 	/**
-	 * Resets all sequence numbers and auxiliary variables
-	 */
-	private void reset(){
-		globalSN = 0;
-		localSN = 0;
-		sendingLocalSN = 0;
-		lastfinal=-1;
-		lastfast=-1;
-		lastsender=-1;
-	}
-
-	/**
 	 * Checks if the message is uniform.
 	 * 
 	 * @param header the header of the message.
@@ -576,9 +538,21 @@ public class SETOSession extends Session implements InitializableSession {
 		for (int i = 0; i < lastOrderList.length; i++)
 			if (lastOrderList[i] >= header.order)
 				seenCount++;
-		if (seenCount > lastOrderList.length/2)
+		if (seenCount >= lastOrderList.length/2 + 1)			
 			return true;
 		return false;
+	}
+	
+	/**
+	 * Resets all sequence numbers and auxiliary variables
+	 */
+	private void reset(){
+		globalSN = 0;
+		localSN = 0;
+		sendingLocalSN = 0;
+		lastfinal=-1;
+		lastfast=-1;
+		lastsender=-1;
 	}
 	
 	/**
@@ -586,7 +560,11 @@ public class SETOSession extends Session implements InitializableSession {
 	 * in a deterministic order. This can be done because VSync ensures that when a new View
 	 * arrives, all members have the same set of messages.
 	 */
-	private void dumpPendingMessages() {
+	private void dumpPendingMessages() { 
+		boolean deliverUniform = false;
+		if (hasMajority())
+			deliverUniform = true;
+	
 		boolean finnished = false;
 		while( !finnished){
 			ListContainer msgContainer = getNextDeterministic();
@@ -596,14 +574,38 @@ public class SETOSession extends Session implements InitializableSession {
 			if(msgContainer != null){
 				log.debug("Resending message to Appl: "+msgContainer.event);
 				delivery(msgContainer.event);
+				if (deliverUniform) {
+					try {
+						// deliver uniform notification
+						UniformServiceEvent use = new UniformServiceEvent(channel, Direction.UP, this, msgContainer.event.getMessage());
+						use.go();
+					} catch (AppiaEventException e) {
+						e.printStackTrace();
+					}
+				}
 				getRemoveMessage(msgContainer.header,R);
-				localSN++;
+				// This should not be necessary because the next step will be a view change
+				// and the localSN variable will be reset to 0
+				//localSN++;
 			}
 			else
 				finnished = true;
 		}
 	}
 
+	private boolean hasMajority() {
+		if (vs_old != null) {
+			int count = 0;
+			for (int i = 0; i < vs_old.view.length; i++)
+				for (int j = 0; j < vs.view.length; j++)
+					if (vs_old.view[i].equals(vs.view[j]))
+						count++;
+			if (count >= vs.view.length / 2 + 1)
+				return true;
+		}
+		return false;
+	}
+	
     /**
      * Removes and returns an event from the buffer in a deterministic way.
      * Used when there are view changes in the group
@@ -721,15 +723,15 @@ public class SETOSession extends Session implements InitializableSession {
 	/**
 	 * Sets a timer to delay a message that came from the network.
 	 */
-	private void setTimer(ListContainer container, long timeout) {
+	private void setTimer(ListContainer container, long timeout, ViewID vid) {
 		try {
 			log.debug("TIME Container: "+container.header.getTime());
 			SETOTimer timer = new SETOTimer(timeout/1000, channel, 
-					Direction.DOWN, this, EventQualifier.ON, container);
+					Direction.DOWN, this, EventQualifier.ON, container, vid);
 				timer.go();
 				if(log.isDebugEnabled())
 					log.debug("Setting new timer. NOW is "+
-							timeProvider.currentTimeMicros()+" timer to "+timer.getTimeout());
+							timeProvider.currentTimeMillis()+" timer to "+timer.getTimeout());
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		} catch (AppiaException e) {
@@ -768,7 +770,6 @@ public class SETOSession extends Session implements InitializableSession {
 			delay[j] = delay[j] - Math.round(v);
 		}
 	}
-		
 }
 
 

@@ -25,6 +25,7 @@ import org.continuent.appia.core.AppiaException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.channel.Timer;
+import org.continuent.appia.protocols.group.ViewID;
 import org.continuent.appia.protocols.total.seto.ListContainer;
 
 /**
@@ -35,16 +36,18 @@ import org.continuent.appia.protocols.total.seto.ListContainer;
 public class SETOTimer extends Timer {
 
 	ListContainer container;
+	ViewID vid;
 	
 	public SETOTimer() {
 		super();
 	}
 
 	public SETOTimer(long when, Channel channel, int dir,
-			Session source, int qualifier, ListContainer c) throws AppiaEventException,
+			Session source, int qualifier, ListContainer c, ViewID vid) throws AppiaEventException,
 			AppiaException {
-		super(when, "fastAB@", channel, dir, source, qualifier);
+		super(when, "SETO@", channel, dir, source, qualifier);
 		this.timerID += this;
 		container = c;
+		this.vid = vid;
 	}
 }

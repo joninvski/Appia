@@ -37,6 +37,6 @@ public class UniformTimer extends PeriodicTimer {
 	}
 	
 	public UniformTimer(long timer,Channel channel, int dir, Session source, int qualifier)  throws AppiaEventException, AppiaException{
-		super("UniformFastABTimer",timer,channel,dir,source,qualifier);
+		super("UniformSETOTimer",timer,channel,dir,source,qualifier);
 	}
 }
