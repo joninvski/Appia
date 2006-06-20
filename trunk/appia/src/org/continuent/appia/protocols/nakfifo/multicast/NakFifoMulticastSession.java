@@ -258,7 +258,8 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       try {
         SendableEvent clone=(SendableEvent)event.cloneEvent();
         // Puts peer counter
-        clone.getMessage().pushInt(0);
+        //FIXME: uncomment
+        //clone.getMessage().pushInt(0);
         
         if (event.dest instanceof AppiaMulticast) {
           Object[] dests=((AppiaMulticast)event.dest).getDestinations();
@@ -417,7 +418,8 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       if ((peer != null) && (peer.rounds_msg_sent > param_MAX_SENT_ROUNDS)) {
         try {
           PingEvent e=new PingEvent(peer.last_channel,this);
-          e.getMessage().pushInt(0);
+          //FIXME: uncomment
+          //e.getMessage().pushInt(0);
           
           if (!changedSeq) {
             last_msg_sent++;
@@ -667,7 +669,8 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
   private void storeUnconfirmed(Peer peer, SendableEvent ev) {
     if (!(ev instanceof UpdateEvent)) {
       // updates peer counter
-      ev.getMessage().pushInt(ev.getMessage().popInt()+1);
+    	//FIXME: uncomment
+      //ev.getMessage().pushInt(ev.getMessage().popInt()+1);
     }
     
     peer.unconfirmed_msgs.addLast(ev);
@@ -682,11 +685,12 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
         peer.last_msg_confirmed++;
 
         // handles peer counter
-        int c=ev.getMessage().popInt()-1;
-        if (c <= 0)
-          ev.getMessage().discardAll();
-        else
-          ev.getMessage().pushInt(c);
+        //FIXME: uncomment
+//        int c=ev.getMessage().popInt()-1;
+//        if (c <= 0)
+//          ev.getMessage().discardAll();
+//        else
+//          ev.getMessage().pushInt(c);
       }
     }
   }
@@ -723,7 +727,8 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
           try {
             SendableEvent ev=(SendableEvent)evaux.cloneEvent();
             // Removes peer counter
-            ev.getMessage().popInt();
+            //FIXME: uncomment
+//            ev.getMessage().popInt();
             ev.setSource(this);
             ev.init();
             
