@@ -21,7 +21,10 @@
 package org.continuent.appia.protocols.group;
 
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 import org.continuent.appia.core.message.Message;
 
@@ -35,7 +38,7 @@ import org.continuent.appia.core.message.Message;
  * @version 0.1
  * @see org.continuent.appia.protocols.group.ViewState
  */
-public class ViewID implements Serializable {
+public class ViewID implements Externalizable {
 
   // WARNING: these attributes should be READ ONLY
 
@@ -161,5 +164,17 @@ public class ViewID implements Serializable {
     message.pushLong(l);
     return view;
   }
+
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeLong(ltime);
+		coord.writeExternal(out);
+	}
+
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		ltime = in.readLong();
+		coord = new Endpt();
+		coord.readExternal(in);
+	    hashcode=coord.hashCode() ^ (int)((ltime * 0x5DEECE66DL + 0xBL) & ((1L << 48)-1));
+	}
 
 }
