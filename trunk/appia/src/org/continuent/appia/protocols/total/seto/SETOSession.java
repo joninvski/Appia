@@ -467,20 +467,22 @@ public class SETOSession extends Session implements InitializableSession {
 	}
 	
 	private void sendUniformInfo(Channel channel) {
-		UniformInfoEvent event = new UniformInfoEvent();
-		
-		Message msg = event.getMessage();
-		for (int i = 0; i < lastOrderList.length; i++)
-			msg.pushLong(lastOrderList[i]);
-		
-		event.setChannel(channel);
-		event.setDir(Direction.DOWN);
-		event.setSource(this);
-		try {
-			event.init();
-			event.go();
-		} catch (AppiaEventException e) {
-			e.printStackTrace();
+		if (!isBlocked) {
+			UniformInfoEvent event = new UniformInfoEvent();
+			
+			Message msg = event.getMessage();
+			for (int i = 0; i < lastOrderList.length; i++)
+				msg.pushLong(lastOrderList[i]);
+			
+			event.setChannel(channel);
+			event.setDir(Direction.DOWN);
+			event.setSource(this);
+			try {
+				event.init();
+				event.go();
+			} catch (AppiaEventException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
