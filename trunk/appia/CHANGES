@@ -1,3 +1,9 @@
+========================
+21/06/2006 Version 3.1.1
+========================
+
+- Several bug fixes in the SETO total order protocol and in the NakFifoMulticast protocol.
+
 ======================
 27/04/2006 Version 3.1
 ======================
