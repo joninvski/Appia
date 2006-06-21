@@ -24,6 +24,7 @@ import java.util.Hashtable;
 
 import org.continuent.appia.core.events.channel.*;
 import org.continuent.appia.core.memoryManager.*;
+import org.continuent.appia.management.jmx.ChannelManager;
 
 
 
@@ -72,6 +73,9 @@ public class Channel {
   // added on 9-Jul-2001
   private MemoryManager memoryManager=null;
   
+  private ChannelManager channelManager;
+  private boolean managed = false;
+  
   /**
    * The {@link org.continuent.appia.core.Session Sessions} stack.
    * <br>
@@ -86,15 +90,14 @@ public class Channel {
    * @param qos the {@link org.continuent.appia.core.QoS QoS} that <i>models</i> the Channel
    * @param eventScheduler the {@link org.continuent.appia.core.EventScheduler EventScheduler} used
    */
-  public Channel(String channelID, QoS qos, EventScheduler eventScheduler) {
+  public Channel(String channelID, QoS qos, EventScheduler eventScheduler, boolean managed) {
     
     this.channelID=channelID;
     this.qos=qos;
     this.eventScheduler=eventScheduler;
-    
     sessions=new Session[qos.getLayers().length];
-    
     timerManager=(eventScheduler.getAppiaInstance()).instanceGetTimerManager();
+    this.managed = managed;
   }
   
     /* new methods added */
@@ -107,17 +110,16 @@ public class Channel {
    * @param eventScheduler the {@link org.continuent.appia.core.EventScheduler EventScheduler} used
    */
   public Channel(String channelID, QoS qos, EventScheduler eventScheduler,
-  MemoryManager memoryManager) {
+  MemoryManager memoryManager, boolean managed) {
     
     this.channelID=channelID;
     this.qos=qos;
     this.eventScheduler=eventScheduler;
-    
-    sessions=new Session[qos.getLayers().length];
-    
-    timerManager=eventScheduler.getAppiaInstance().instanceGetTimerManager();
 
+    sessions=new Session[qos.getLayers().length];
+    timerManager=eventScheduler.getAppiaInstance().instanceGetTimerManager();
     this.memoryManager = memoryManager;
+    this.managed = managed;
   }
   
   /**
@@ -350,6 +352,16 @@ public class Channel {
     } catch (AppiaEventException e) {
       e.printStackTrace();
     }
+    
+    if(managed){
+    		channelManager = new ChannelManager(this);
+    		try {
+    			channelManager.registerMBean();
+    		} catch (AppiaException e) {
+    			e.printStackTrace();
+    		}
+    		System.out.println("MBean registered.");
+    	}
   }
   
   public boolean isStarted() {
@@ -364,6 +376,15 @@ public class Channel {
    */
   public void end() {
     synchronized (this) {
+    	if(managed){
+    		try {
+    			channelManager.unregisterMBean();
+    		} catch (AppiaException e) {
+    			e.printStackTrace();
+    		}
+    		channelManager = null;
+    		System.out.println("MBean unregistered.");
+    	}
       if (alive) {
         try {
           if (Thread.currentThread() == eventScheduler.getAppiaInstance().instanceGetAppiaThread())

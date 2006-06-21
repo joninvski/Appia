@@ -351,7 +351,7 @@ public class Event {
     	try {
 			mm.synchronizedAboveThreshold(this.dir);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			throw new AppiaEventException("Unable to insert event asynchronously",e);
 		}
     }
     

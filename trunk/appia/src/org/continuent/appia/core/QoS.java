@@ -117,21 +117,23 @@ public class QoS {
     return ID;
   }
   
+  //TODO: change this to support the "managed" option
+  
   public Channel createUnboundChannel(String channelID, EventScheduler eventScheduler) {
-    return new Channel(channelID, this, eventScheduler);
+    return new Channel(channelID, this, eventScheduler, false);
   }
   
   public Channel createUnboundChannel(String channelID) {
-    return new Channel(channelID, this, new EventScheduler());
+    return new Channel(channelID, this, new EventScheduler(), false);
   }
   
   // added on 9-Jul-2001
   public Channel createUnboundChannel(String channelID, EventScheduler eventScheduler, MemoryManager mm) {
-    return new Channel(channelID, this, eventScheduler,mm);
+    return new Channel(channelID, this, eventScheduler,mm, false);
   }  
   
   public Channel createUnboundChannel(String channelID, MemoryManager mm) {
-    return new Channel(channelID, this, new EventScheduler(), mm);
+    return new Channel(channelID, this, new EventScheduler(), mm, false);
   }
   
   public Layer[] getLayers() {
