@@ -55,6 +55,12 @@ public class ViewID implements Externalizable {
   public Endpt coord;
 
   /**
+   * Constructs a new empty <i>ViewID</i>. Needed for Externalizable interface.
+   *
+   */
+  public ViewID() {}
+  
+  /**
    * Constructs a new <i>ViewID</i>.
    *
    * @param coord the coordinator of the <i>view</i>
