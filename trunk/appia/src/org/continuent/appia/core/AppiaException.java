@@ -34,7 +34,7 @@ public class AppiaException extends Exception {
    * Constructs an <i>AppiaException</i> without a details message.
    */
   public AppiaException() {
-    super("appia:");
+    super();
   }
 
   /**
@@ -45,6 +45,11 @@ public class AppiaException extends Exception {
    * @param s the details message
    */
   public AppiaException(String s) {
-    super("appia:"+s);
+    super("appia: "+s);
   }
+  
+  public AppiaException(String s, Throwable cause) {
+	  super("Appia: "+s,cause);
+  }
+  
 }

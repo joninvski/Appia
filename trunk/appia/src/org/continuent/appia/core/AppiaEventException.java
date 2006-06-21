@@ -32,6 +32,11 @@ public class AppiaEventException extends AppiaException {
   private static final long serialVersionUID = -8004384508061608720L;
 
   /**
+   * Defauld error code.
+   */
+  public static final int UNKNOWN=-1;
+  
+  /**
    * Tried to send an Event not initialized.
    * @see org.continuent.appia.core.Event#init
    */
@@ -96,11 +101,11 @@ public class AppiaEventException extends AppiaException {
   /**
    * The type of the exception.
    * <br>
-   * It can take 7 values:
-   * <i>NOTINITIALIZED, ATTRIBUTEMISSING, UNKNOWNQUALIFIER, UNKNOWNSESSION,
+   * It can take 8 values:
+   * <i>UNKNOWN, NOTINITIALIZED, ATTRIBUTEMISSING, UNKNOWNQUALIFIER, UNKNOWNSESSION,
    * UNWANTEDEVENT, CLOSEDCHANNEL, INITIALIZEDASYNC, COULDNOTBLOCK, WRONGTHREAD</i>
    */
-  public int type;
+  public int type = UNKNOWN;
 
   /**
    * Constructs an <i>AppiaEventException</i> without a details message.
@@ -121,7 +126,17 @@ public class AppiaEventException extends AppiaException {
    */
   public AppiaEventException(int type, String s) {
     super("AppiaEventException:"+s);
-
     this.type=type;
   }
+  
+  /**
+   * Constructs an <i>AppiaEventException</i> with a message and a throwable cause.
+   *
+   * @param s the details message
+   * @param cause the exception that caused this one.
+   */
+  public AppiaEventException(String s, Throwable cause) {
+    super("AppiaEventException: "+s, cause);
+  }
+
 }
