@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  *
- * Initial developer(s): Alexandre Pinto and Hugo Miranda.
+ * Initial developer(s): Alexandre Pinto and Hugo Miranda and Nuno Carvalho.
  * Contributor(s): See Appia web page for a list of contributors.
  */
  
@@ -25,9 +25,15 @@ package org.continuent.appia.protocols.group.suspect;
 import java.io.PrintStream;
 import java.util.Arrays;
 
+import javax.management.AttributeChangeNotification;
+import javax.management.Notification;
+
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.events.channel.EchoEvent;
+import org.continuent.appia.management.ManagedSession;
+import org.continuent.appia.management.AbstractSensorSession;
+import org.continuent.appia.management.ManagedSessionEvent;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
 import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.group.ArrayOptimized;
@@ -46,7 +52,7 @@ import org.continuent.appia.xml.utils.SessionProperties;
  * @see org.continuent.appia.protocols.group.suspect.SuspectLayer
  * @author Alexandre Pinto
  */
-public class SuspectSession extends Session implements InitializableSession {
+public class SuspectSession extends AbstractSensorSession implements InitializableSession, ManagedSession {
     
   /** Default duration of a round.
    */
@@ -64,12 +70,31 @@ public class SuspectSession extends Session implements InitializableSession {
   }
   
   public void init(SessionProperties params) {
-    if (params.containsKey("sweep"))
+    if (params.containsKey("suspect_sweep"))
       suspect_sweep=params.getLong("suspect_sweep");
-    if (params.containsKey("timeout"))
+    if (params.containsKey("suspect_time"))
       rounds_idle=(params.getLong("suspect_time")/suspect_sweep)+2;
   }
 
+  public void setParameter(SessionProperties params, Channel channel) {
+	  Notification notif = null;
+	  if (params.containsKey("suspect_sweep")){
+		  Long old_value = new Long(suspect_sweep);
+		  suspect_sweep=params.getLong("suspect_sweep");
+		  notif = new AttributeChangeNotification(this,1,channel.getTimeProvider().currentTimeMillis(),"Suspect sweep Changed",
+				  "suspect_sweep",Long.class.getName(),old_value,new Long(suspect_sweep));
+		  System.out.println("SWEEP changed to "+suspect_sweep);
+	  }
+	  if (params.containsKey("suspect_time")){
+		  Long old_value = new Long(rounds_idle);
+		  rounds_idle=(params.getLong("suspect_time")/suspect_sweep)+2;
+		  notif = new AttributeChangeNotification(this,1,channel.getTimeProvider().currentTimeMillis(),"Rounds idle Changed",
+				  "rounds_idle",Long.class.getName(),old_value,new Long(rounds_idle));
+	  }
+	  if(notif != null)
+		  notifySensorListeners(notif);
+  }
+  
   /** Event handler.
    */  
   public void handle(Event event) {
@@ -92,6 +117,8 @@ public class SuspectSession extends Session implements InitializableSession {
     // TcpUndeliveredEvent
     } else if (event instanceof TcpUndeliveredEvent) {
       handleTcpUndeliveredEvent((TcpUndeliveredEvent)event); return;
+    } else if (event instanceof ManagedSessionEvent) {
+    		handleManagedSessionEvent((ManagedSessionEvent)event); return;
     // Debug
     } else if (event instanceof Debug) {
       Debug ev=(Debug)event;
@@ -115,7 +142,17 @@ public class SuspectSession extends Session implements InitializableSession {
     try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
   }
   
-  private ViewState vs;
+  private void handleManagedSessionEvent(ManagedSessionEvent event) {
+      setParameter(event.getProperties(), event.getChannel());
+      try {
+		event.go();
+	} catch (AppiaEventException e) {
+		e.printStackTrace();
+	}
+	
+}
+
+private ViewState vs;
   private LocalState ls;
   
   private long suspect_sweep=DEFAULT_SUSPECT_SWEEP;
@@ -210,8 +247,28 @@ public class SuspectSession extends Session implements InitializableSession {
   }
   
   private void handleSuspectTimer(SuspectTimer ev) {
-    try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
-
+	  if(ev.getPeriod() != suspect_sweep){
+		  ev.setDir(Direction.invert(ev.getDir()));
+		  ev.setQualifierMode(EventQualifier.OFF);
+		  ev.setSource(this);
+		  try {
+			  ev.init();
+			  ev.go();
+			  SuspectTimer periodic=new SuspectTimer("Suspect Timer",suspect_sweep,ev.getChannel(),this);
+			  periodic.go();
+		  } catch (AppiaEventException e) {
+			  e.printStackTrace();
+		  } catch (AppiaException ex) {
+			  ex.printStackTrace();
+			  System.err.println("appia:group:SuspectSession: impossible to set SuspectTimer, SuspectSession will be idle");
+		  }
+	  }
+	  else
+		  try { 
+			  ev.go(); 
+		  } catch (AppiaEventException ex) {
+			  ex.printStackTrace(); 
+		  }    
     int i;
     boolean[] new_failed=null;
         
@@ -260,7 +317,7 @@ public class SuspectSession extends Session implements InitializableSession {
       round=1;
       for (i=0 ; i < last_recv.length ; i++)
         last_recv[i]=0;
-    }
+    }    
   }
   
   private void handleFIFOUndeliveredEvent(FIFOUndeliveredEvent ev) {
@@ -365,4 +422,5 @@ public class SuspectSession extends Session implements InitializableSession {
     if ((debug != null) && (debugFull || debugOn))
       debug.println("appia:group:SuspectSession: "+s);
   }
+
 }

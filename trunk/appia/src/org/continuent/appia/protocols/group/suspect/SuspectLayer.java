@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  *
- * Initial developer(s): Alexandre Pinto and Hugo Miranda.
+ * Initial developer(s): Alexandre Pinto and Hugo Miranda and Nuno Carvalho.
  * Contributor(s): See Appia web page for a list of contributors.
  */
  
@@ -32,6 +32,7 @@ import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.events.channel.EchoEvent;
+import org.continuent.appia.management.ManagedSessionEvent;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 import org.continuent.appia.protocols.group.intra.View;
@@ -72,7 +73,8 @@ public class SuspectLayer extends Layer {
         SuspectTimer.class,
         FIFOUndeliveredEvent.class,
         TcpUndeliveredEvent.class,
-        Debug.class
+        Debug.class,
+        ManagedSessionEvent.class
     };
   }
   
