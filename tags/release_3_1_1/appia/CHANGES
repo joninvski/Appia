@@ -1,0 +1,106 @@
+======================
+27/04/2006 Version 3.1
+======================
+
+- Added push, pop and peek for InetSocketAddress in the Message class This is hidden in the push/pop/peekObject methods.
+- Added generic events to be used by total order protocols that need to provide information about message guarantees. 
+  These events are used to provide optimistic assumptions and guarantees about message delivery.
+- Added an optimistic sequencer based total order protocol that provides optimistic assumptions about message delivery.
+  Upon reception of a message, it forwards that message to the application and after that sends notifications about message
+  guaranties: SETO (estimated total order), when the message is considered optimistically ordered; Regular, 
+  when the message is ordered by the sequencer; Uniform, when the message is considered uniform.  
+- Refactored the total order protocols.
+- Removed several minor bug fixes.
+- Updated javadoc information.
+
+======================
+20/03/2006 Version 3.0
+======================
+
+- Changed Appia license from LGPL to Apache License version 2.0.
+- Refactored all the code to be hosted on Continuent.org GForge site.
+- Fixed several small issues.
+- Updated javadoc documentation.
+
+======================
+09/12/2005 Version 2.1
+======================
+
+- Protocols: Added new Total Order protocol, implemented using a token. 
+- Memory management: Added the funtionality of defining channels with memory management in XML.
+- Memory management: Added different thresholds for UP and DOWN events. Each directions has a different value for the threshold.
+- Event scheduling: Inserted the notion of priority on events. Timers have more priority then normal events.
+- Message: The classes ObjectsMessage, ExtendedMessage and Message were merged and there is only one message now.
+- Message: Added discardAll() method for performance tunning.
+- Bug fixes in the following functionalities:
+	- Some resources were not beeing garbage colected;
+	- Fragmentation of cloned messages.
+	- The localhost must be set using information of RegisterSocketEvent and this was not being done in several protocols.
+- Updated javadoc documentation.
+- Added serialVersionUIDs to Serializable objects.
+- Added XML support in several protocols.
+- Removed old deprecated code.
+
+======================
+20/09/2005 Version 2.0
+======================
+
+- Integrated XML capabilities.
+- New Negative-Acknoledgment FIFO (NakFifo) protocol.
+- Improved performance at protocol and kernel levels.
+- Definetly changed RegisterSocketEvent and InetWithPort classes from appia.protocols.udpsimple to appia.protocols.common packages.
+- RegisterSocketEvent now contains the local host address.
+- MulticastInitEvent replaced AppiaMulticastInitEvent.
+- Kernel support for several Appia instances running within the same process.
+- New and improved view merge protocol that supports the merge of several views in a single change.
+- Added distributed capability to GossiServer. Removed DistGossipServer.
+- Several Bugfixes.
+
+=======================
+9/10/2003 Version 1.9-2
+=======================
+
+- Deprecated the use of Direction and EventQualifier. Replaced by int. Classes remain to offer static values.
+- Optimized Message. Two new methods "popReadOnly" and "peekReadOnly" with improved performance.
+- Created ExtendedMessage with functionality previously in ObjectsMessage. ObjectsMessage remains for compatibility.
+- Rearrangement of certain classes location, namely InetWithPort and RegisterSocketEvent, to new package appia.protocols.common
+- New, more reliable, TCP layer.
+- New, more reliable, SSL layer.
+- Extended Appl demo application, to support SSL. Removed previous applications.
+- Several bug fixes.
+
+==========
+8/10/2002
+==========
+-Bug fixes and performance enhancements in group communication
+-New protocols
+-gossip and demo aplications are now in packages
+
+==========
+05/03/2002
+==========
+-Udp multcast support (udpsimple)
+-Uniform primitives to group communication (stable uniform)
+-Major re-write of the fifo protocol,better performance (fifo)
+-Ssl communication layers (sslsimple for point-to-point communication and sslcomplete for group communication), needs jdk1.4
+-Group Rpc system, supporting active and passive replication and limeted crash-recovery.
+-various bug fixes and performance enhancements in other protocols
+
+
+==========
+05/07/2001
+==========
+
+This latest release offers a revised virtual-synchrony enforcing protocol. 
+This new version removes:
+    - the "stable.Retransmit" and "sync.Sync" layers. 
+    - the "stable.Stable" and "stable.Stabilize" events.
+And adds:
+    - the "sync.VSync" layer.
+    - the "sync.Sync" event.
+    - the "stable.StableStorage" auxiliary class.
+
+Another important change is the deprecation of the "AsyncEvent" and the "Channel.makeAsync()" and "Channel.async(...)" methods. The new mechanisms to insert asynchronous events is to use the "Event.asyncGo(...)" method.
+
+Finally the "Appl" and "ApplMult" demo application changed to the directory "demo", and the "GossipServer" and "DistGossipServer" gossip applications changed to the "gossip" directory.
+ 
