@@ -20,7 +20,10 @@
  
 package org.continuent.appia.protocols.group;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -35,7 +38,7 @@ import org.continuent.appia.core.message.Message;
  * @author Alexandre Pinto
  * @version 0.1
  */
-public class Group implements Serializable{
+public class Group implements Externalizable {
 
   private static final long serialVersionUID = -379704347167008367L;
 
@@ -136,6 +139,17 @@ public class Group implements Serializable{
     return new Group(message.peekString());
   }
 
+	public void writeExternal(ObjectOutput out) throws IOException {
+		byte[] bytes = id.getBytes();
+		out.writeInt(bytes.length);
+		out.write(bytes);
+	}
 
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		int len = in.readInt();
+		byte[] bytes = new byte [len];
+		in.read(bytes);
+		id = new String(bytes);
+	}
 
 }

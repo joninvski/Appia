@@ -19,12 +19,15 @@
  */
  package org.continuent.appia.protocols.uniform;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 /**
  * Header used to identify the messages
  */
-class UniformHeader implements Serializable {
+class UniformHeader implements Externalizable {
 
 	private static final long serialVersionUID = -7628025568002091260L;
 
@@ -32,6 +35,8 @@ class UniformHeader implements Serializable {
 
 	private long sender;
 
+	public UniformHeader() {}
+	
 	/**
 	 * Basic constructor.
 	 * @param seq Sequence number
@@ -88,5 +93,15 @@ class UniformHeader implements Serializable {
 
 	public String toString(){
 		return "UniformHeader - SEQ="+seqNumber+" SENDER="+sender;
+	}
+
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeLong(seqNumber);
+		out.writeLong(sender);
+	}
+
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		seqNumber = in.readLong();
+		sender = in.readLong();
 	}
 }

@@ -21,7 +21,11 @@
 package org.continuent.appia.protocols.group;
 
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.net.InetAddress;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -41,7 +45,7 @@ import org.continuent.appia.protocols.common.InetWithPort;
  * @see org.continuent.appia.protocols.group.LocalState
  * @see org.continuent.appia.protocols.group.intra.View
  */
-public class ViewState implements Serializable {
+public class ViewState implements Externalizable {
 	
 	private static final long serialVersionUID = 8901541793832881340L;
 	
@@ -101,6 +105,8 @@ public class ViewState implements Serializable {
 		for(i=addresses.length-1 ; (i >= 0) && !address.equals(addresses[i]) ; i--);
 		return i;
 	}
+	
+	public ViewState() {}
 	
 	/**
 	 * Constructs a <i>view</i>.
@@ -425,6 +431,71 @@ public class ViewState implements Serializable {
 			return vs;
 		} catch (AppiaGroupException ex) {
 			throw new MessageException(ex);
+		}
+	}
+	
+	public void writeExternal(ObjectOutput out) throws IOException {
+//		public String version;
+		byte[] bytes = version.getBytes();
+		out.writeInt(bytes.length);
+		out.write(bytes);		
+//		public Group group;
+		group.writeExternal(out);
+//		public ViewID id;
+		id.writeExternal(out);
+//		public ViewID[] previous;
+		out.writeInt(previous.length);
+		for(int i=0; i<previous.length; i++)
+			previous[i].writeExternal(out);
+//		public Endpt[] view;
+		out.writeInt(view.length);
+		for(int i=0; i<view.length; i++)
+			view[i].writeExternal(out);
+//		public InetWithPort[] addresses;
+		out.writeInt(addresses.length);
+		for(int i=0; i<addresses.length; i++){
+			bytes = addresses[i].host.getAddress();
+			out.writeInt(bytes.length);
+			out.write(bytes);
+			out.writeInt(addresses[i].port);
+		}
+	}
+
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+//		public String version;
+		int len = in.readInt();
+		byte[] bytes = new byte[len];
+		in.read(bytes);
+		version = new String(bytes);
+//		public Group group;
+		group = new Group();
+		group.readExternal(in);
+//		public ViewID id;
+		id = new ViewID();
+		id.readExternal(in);
+//		public ViewID[] previous;
+		len = in.readInt();
+		previous = new ViewID[len];
+		for(int i=0; i<len; i++){
+			previous[i] = new ViewID();
+			previous[i].readExternal(in);
+		}
+//		public Endpt[] view;
+		len = in.readInt();
+		view = new Endpt[len];
+		for(int i=0; i<len; i++)
+			view[i].readExternal(in);
+//		public InetWithPort[] addresses;
+		len = in.readInt();
+		int addrLen = 0;
+		addresses = new InetWithPort[len];
+		for(int i=0; i<len; i++){
+			addresses[i] = new InetWithPort();
+			addrLen = in.readInt();
+			bytes = new byte[addrLen];
+			in.read(bytes);
+			addresses[i].host = InetAddress.getByAddress(bytes);
+			addresses[i].port = in.readInt();
 		}
 	}
 }

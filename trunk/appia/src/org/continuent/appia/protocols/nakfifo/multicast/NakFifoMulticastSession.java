@@ -92,6 +92,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
   public NakFifoMulticastSession(Layer layer) {
     super(layer);
     
+    // This is used just to generate an initial sequence number.
     last_msg_sent=System.currentTimeMillis() & MessageUtils.INIT_MASK;
     if (last_msg_sent == MessageUtils.INIT_MASK)
       last_msg_sent--;

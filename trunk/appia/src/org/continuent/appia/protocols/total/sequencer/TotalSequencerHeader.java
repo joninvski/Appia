@@ -24,13 +24,15 @@ import java.io.*;
 /**
  * Header added to the events to be sent in total order.
  */
-public class TotalSequencerHeader implements Serializable{
+public class TotalSequencerHeader implements Externalizable {
   private static final long serialVersionUID = 7750742443002978989L;
 
     private int ordem;
     private int emissor;
     private int nSeqInd;
 
+    public TotalSequencerHeader() {}
+    
     /**
      * Constructor.
      * @param o total order 
@@ -63,4 +65,16 @@ public class TotalSequencerHeader implements Serializable{
     public int getnSeqInd() {
         return nSeqInd;
     }
+
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeInt(ordem);
+		out.writeInt(emissor);
+		out.writeInt(nSeqInd);
+	}
+
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		ordem = in.readInt();
+		emissor = in.readInt();
+		nSeqInd = in.readInt();
+	}
  }
