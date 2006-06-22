@@ -79,7 +79,7 @@ public class PeerInfo {
 	public Object peer;
 
 	public PeerInfo(Object peer, Channel c) {
-		long now = System.currentTimeMillis();
+		long now = c.getTimeProvider().currentTimeMillis();
 		headers = new LinkedList();
 		channels = new LinkedList();
 		channels.add(c);
@@ -110,9 +110,9 @@ public class PeerInfo {
 		return (Channel) channels.getLast();
 	}
 
-	/* this peer has been used... */
-	public void usedNow() {
-		lastUsed = System.currentTimeMillis();
+	/* this peer has been used in the specified time */
+	public void usedOn(long millis) {
+		lastUsed = millis;
 	}
 
 	public boolean isOld(long now) {

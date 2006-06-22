@@ -53,6 +53,8 @@ public class Group implements Serializable{
    * {@link java.lang.Object#hashCode Object.hashCode()}.
    */
   public Group() {
+	  // FIXME: can System.currentTimeMillis be replaced by other thing?
+	  // is this important (under simulation)?
     try {
       id= "Group:" +
           InetAddress.getLocalHost().getHostAddress() +

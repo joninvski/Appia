@@ -65,7 +65,7 @@ public class TimerManager implements Runnable, TimeProvider {
     }
     
     public synchronized void sync() {
-      now=System.currentTimeMillis();
+      now=currentTimeMillis();
       last_sync=now;
     }
     
@@ -79,7 +79,7 @@ public class TimerManager implements Runnable, TimeProvider {
     
     public synchronized void conditionalSync() {
       if (now > last_sync + SYNC_TIME) {
-        now=System.currentTimeMillis();
+        now=currentTimeMillis();
         last_sync=now;
       }
     }
@@ -253,6 +253,14 @@ public class TimerManager implements Runnable, TimeProvider {
    */
   public long currentTimeMicros() {
   	return System.currentTimeMillis()*1000;
+  }
+
+  /**
+   * Current time in nanoseconds. <br>
+   * Uses {@linkplain System#currentTimeMillis()} therefore only has a millisecond precision.
+   */
+  public long nanoTime() {
+  	return System.currentTimeMillis()*1000000;
   }
 
   ////////////////////////////////////////////

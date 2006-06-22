@@ -24,6 +24,8 @@ import java.util.Iterator;
 import java.util.Collections;
 import java.util.Map;
 
+import org.continuent.appia.core.TimeProvider;
+
 /**
  * @author jmartins
  *
@@ -40,24 +42,27 @@ public class Benchmark {
 
 	private Map hash = Collections.synchronizedMap(new HashMap());
 	private Thread shHook;
+	
+	private TimeProvider timeProvider = null;
 
 	/**
 	 * Obtains the singleton instance of the benchmarking class.
 	 * @return the benchmark class.
 	 */
-	public static Benchmark getInstance() {
+	public static Benchmark getInstance(TimeProvider tp) {
           if (!ON)
             return null;
           
 		if (inst == null) {
-			inst = new Benchmark();
+			inst = new Benchmark(tp);
 		}
 		
 		return inst;
 	}
 
-	private Benchmark() {
+	private Benchmark(TimeProvider tp) {
 		shHook = new SHook(hash);
+		timeProvider = tp;
 		Runtime.getRuntime().addShutdownHook(shHook);
 	}		
 
@@ -88,10 +93,10 @@ public class Benchmark {
 			m.numRuns = 0;
 			m.totalTime = 0;
 			m.name = s;
-			m.sTime = System.currentTimeMillis();
+			m.sTime = timeProvider.currentTimeMillis();
 			hash.put(s, m);
 		} else {
-			m.sTime = System.currentTimeMillis();
+			m.sTime = timeProvider.currentTimeMillis();
 		}
 		//System.out.println("start bench end " + s);
 	}
@@ -105,7 +110,7 @@ public class Benchmark {
 	public void stopBench(String s) {
 		//System.out.println("stop benh start " +s );
 		Measure m = (Measure) hash.get(s);
-		long end = System.currentTimeMillis() - m.sTime;
+		long end = timeProvider.currentTimeMillis() - m.sTime;
 		m.totalTime += end;
 		m.numRuns++;
 		//System.out.println("stop bench end " + s+" time:: "+end);

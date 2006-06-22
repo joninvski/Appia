@@ -28,6 +28,7 @@ package org.continuent.appia.protocols.nakfifo;
 import java.util.LinkedList;
 
 import org.continuent.appia.core.Channel;
+import org.continuent.appia.core.TimeProvider;
 
 /**
  *
@@ -62,11 +63,11 @@ public class Peer {
   public Channel last_channel=null;
   
   /** Creates a new instance of Peer */
-  public Peer(Object addr) {
+  public Peer(Object addr, TimeProvider time) {
     this.addr=addr;
     
     // TODO: more random
-    last_msg_sent=System.currentTimeMillis() & MessageUtils.INIT_MASK;
+    last_msg_sent=time.currentTimeMillis() & MessageUtils.INIT_MASK;
     if (last_msg_sent == MessageUtils.INIT_MASK)
       last_msg_sent--;
     last_msg_confirmed=last_msg_sent;

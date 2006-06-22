@@ -87,7 +87,7 @@ public class TcpReader extends Thread {
 			}					
 			return;						
 		}
-		bench = Benchmark.getInstance();	
+//		bench = Benchmark.getInstance(channel.getTimeProvider());	
 		while(isRunning()){
 // if (bench != null) bench.startBench("receiving event");
 				try {

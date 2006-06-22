@@ -585,7 +585,7 @@ public class NakFifoSession extends Session implements InitializableSession {
   }
   
   private Peer createPeer(Object addr, Channel channel) {
-    Peer peer=new Peer(addr);
+    Peer peer=new Peer(addr, channel.getTimeProvider());
     peers.put(peer.addr,peer);
     ignore(peer,channel);
     return peer;

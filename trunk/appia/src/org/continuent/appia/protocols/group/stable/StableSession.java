@@ -141,7 +141,7 @@ public class StableSession extends Session {
       if (vs.view.length < 2)
         return;
 
-      long now=System.currentTimeMillis();
+      long now=ev.getChannel().getTimeProvider().currentTimeMillis();
       
       if (now-last_timer >= gossip_time) {
         if (debugFull)

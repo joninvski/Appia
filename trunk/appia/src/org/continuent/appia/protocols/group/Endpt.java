@@ -56,6 +56,8 @@ public class Endpt implements Externalizable {
    * the current time, and {@link java.lang.Object#hashCode Object.hashCode()}.
    */
   public Endpt() {
+	  // FIXME: can System.currentTimeMillis be replaced by other thing?
+	  // is this important (under simulation)?
     try {
       id= "Endpt:" +
           InetAddress.getLocalHost().getHostAddress() +

@@ -62,7 +62,7 @@ public class WaitingMessage {
     public WaitingMessage(SendableEvent e, int nResends) {
 	super();
 	init(e, nResends);
-	this.timeStamp = System.currentTimeMillis();
+	this.timeStamp = e.getChannel().getTimeProvider().currentTimeMillis();
     }
     
     public WaitingMessage(SendableEvent e, long ts, int nResends) {

@@ -37,4 +37,11 @@ public interface TimeProvider {
    * @return current time
    */
   public long currentTimeMicros();
+  
+  /**
+   * The current time in nanoseconds, ie, the number of nanoseconds since January 1st, 1970.
+   * 
+   * @return current time
+   */
+  public long nanoTime();
 }

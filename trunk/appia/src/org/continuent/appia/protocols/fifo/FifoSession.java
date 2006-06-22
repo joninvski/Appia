@@ -79,6 +79,7 @@ public class FifoSession extends Session {
 
 	private long timerPeriod;
 	private int timersToResend, currentTTR, nResends;
+	private TimeProvider timeProvider = null;
 
 	private Object myAddr = null;
 //	private Object multicastAddr = null;
@@ -159,6 +160,7 @@ public class FifoSession extends Session {
 				"FIFO: channel init from channel "
 					+ e.getChannel().getChannelID());
 
+		timeProvider = e.getChannel().getTimeProvider();
 		try {
 			e.go();
 		} catch (AppiaEventException ex) {
@@ -401,7 +403,7 @@ public class FifoSession extends Session {
 		} catch (CloneNotSupportedException ex) {
 			System.err.println("(FIFO) could not clone event!");
 		}
-		(header.peer).usedNow();
+		(header.peer).usedOn(timeProvider.currentTimeMillis());
 		/* set destination */
 		clone.dest = header.peer.peer;
 		/* push message header into the message */
@@ -436,7 +438,7 @@ public class FifoSession extends Session {
 					debugOutput.println("(FIFO) Creating a new peer");
 				peer = newPeer(dests[i], we.event.getChannel());
 			} else
-				peer.usedNow();
+				peer.usedOn(timeProvider.currentTimeMillis());
 
 			/* creates message header */
 			header = new Header(peer, we);
@@ -479,7 +481,7 @@ public class FifoSession extends Session {
 					debugOutput.println("(FIFO) Creating a new peer");
 				peer = newPeer(e.dest, e.getChannel());
 			} else
-				peer.usedNow();
+				peer.usedOn(timeProvider.currentTimeMillis());
 
 			header = new Header(peer, we);
 			peer.headers.addLast(header);
@@ -510,7 +512,7 @@ public class FifoSession extends Session {
 		if (p == null)
 			return;
 		else
-			p.usedNow();
+			p.usedOn(timeProvider.currentTimeMillis());
 
 		if (checkOrder(p, e, header))
 			dequeue(p);
@@ -524,7 +526,7 @@ public class FifoSession extends Session {
 			debugOutput.println("(FIFO:confirmedUntil) seqNumber = " + seq);
 
 		peer.confirmedUntil(seq);
-		peer.usedNow();
+		peer.usedOn(timeProvider.currentTimeMillis());
 		ListIterator it = peer.headers.listIterator();
 		boolean done = false;
 		Header h = null;
@@ -577,7 +579,7 @@ public class FifoSession extends Session {
 				"(FIFO) fifo will verify if she feels like resending messages.");
 
 		Object[] msg = getArrayOfBuffer();
-		long currentTime = System.currentTimeMillis();
+		long currentTime = timeProvider.currentTimeMillis();
 		long delta = 0;
 		boolean stop = false;
 		for (int i = 0;(i < msg.length) && (!stop); i++) {
@@ -605,7 +607,7 @@ public class FifoSession extends Session {
 				System.out.println(
 					"FifoSession: going to resend a message! Number of retries left: "
 						+ we.nResends);
-			we.timeStamp = System.currentTimeMillis();
+			we.timeStamp = timeProvider.currentTimeMillis();
 			for (int i = 0; i < headers.length; i++)
 				sendMessage(we, (Header) headers[i]);
 			addMessage(we);
@@ -662,7 +664,7 @@ public class FifoSession extends Session {
 			debugOutput.println("(FIFO:handleTimer) cleaning old peers...");
 		Iterator peers = newPeerIterator();
 		PeerInfo peer = null;
-		long now = System.currentTimeMillis();
+		long now = timeProvider.currentTimeMillis();
 		while (peers.hasNext()) {
 			peer = nextPeer(peers);
 			if (peer.isOld(now))
@@ -771,7 +773,7 @@ public class FifoSession extends Session {
 			ack.setMessage(m);
 			ack.go();
 			p.ackSentNow();
-			p.usedNow();
+			p.usedOn(timeProvider.currentTimeMillis());
 
 			if (FifoConfig.debugOn && debugOutput != null)
 				debugOutput.println("(FIFO:sendAck) ack sent");

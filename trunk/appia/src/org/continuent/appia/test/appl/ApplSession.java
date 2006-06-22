@@ -384,7 +384,7 @@ public class ApplSession extends Session {
                 e.setSource(this);
                 e.setDir(Direction.invert(e.getDir()));
                 e.setQualifierMode(EventQualifier.ON);
-                e.setTimeout(System.currentTimeMillis() + e.period);
+                e.setTimeout(e.getChannel().getTimeProvider().currentTimeMillis() + e.period);
                 e.init();
                 e.go();
             } catch (AppiaEventException ex) {
@@ -417,6 +417,7 @@ public class ApplSession extends Session {
 //            if (test.TestOptimized.mode == test.TestOptimized.TEST1) {
 //              if (test.TestOptimized.times != 0) {
 //                if (test.TestOptimized.beginTimes == 0)
+            // FIXME: If this is ever uncommented, the System.currentTimeMillis() should be fixed.
 //                  test.TestOptimized.beginTime1=System.currentTimeMillis();
 //                test.TestOptimized.beginTimes++;
 //              }
