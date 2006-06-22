@@ -35,6 +35,11 @@ public class AppiaCursorException extends AppiaException {
   private static final long serialVersionUID = -6639734929127173651L;
 
   /**
+   * Defauld error code.
+   */
+  public static final int UNKNOWN=-1;
+  
+  /**
    * The cursor hasn't been set.
    */
   public static final int CURSORNOTSET=1;
@@ -92,4 +97,10 @@ public class AppiaCursorException extends AppiaException {
 
     this.type=type;
   }
+  
+  public AppiaCursorException(String s, Throwable t) {
+	    super("appiaCursorException:"+s, t);
+	    this.type=UNKNOWN;
+  }
+
 }

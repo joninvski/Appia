@@ -52,6 +52,11 @@ public class AppiaInvalidQoSException extends AppiaException {
    * @param s the details message
    */
   public AppiaInvalidQoSException(String s) {
-    super("Invalid QoS:"+s);
+    super("Invalid QoS: "+s);
   }
+  
+  public AppiaInvalidQoSException(String s, Throwable t) {
+	    super("Invalid QoS: "+s, t);
+  }
+
 }

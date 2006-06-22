@@ -30,7 +30,7 @@ public class AppiaWrongSizeException extends org.continuent.appia.core.AppiaExce
    * Constructs an <i>AppiaWrongSizeException</i> without a details message.
    */
   public AppiaWrongSizeException() {
-    super("Memory Manager: ");
+    super("Wrong size in the memory manager");
   }
 
   /**
@@ -42,4 +42,9 @@ public class AppiaWrongSizeException extends org.continuent.appia.core.AppiaExce
   public AppiaWrongSizeException(String s) {
     super("Memory Manager: "+s);
   }
+  
+  public AppiaWrongSizeException(String s, Throwable t) {
+	    super("Memory Manager: "+s, t);
+  }
+
 }

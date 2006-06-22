@@ -38,4 +38,9 @@ public class AppiaDuplicatedSessionsException extends AppiaException {
   public AppiaDuplicatedSessionsException() {
     super("Session is 2x referenced in Channel");
   }
+  
+  public AppiaDuplicatedSessionsException(String message, Throwable t) {
+	    super(message, t);
+  }
+
 }

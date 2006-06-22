@@ -42,4 +42,9 @@ public class AppiaGroupException extends AppiaException {
   public AppiaGroupException(String s) {
     super("group:"+s);
   }
+  
+  public AppiaGroupException(String s, Throwable t) {
+	    super("group:"+s, t);
+  }
+
 }

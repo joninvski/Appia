@@ -40,4 +40,9 @@ public class AppiaError extends Error {
   public AppiaError(String s) {
     super("appia:"+s);
   }
+  
+  public AppiaError(String s, Throwable t) {
+	  super("appia:"+s, t);
+  }
+
 }
