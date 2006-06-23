@@ -35,7 +35,7 @@ import org.continuent.appia.protocols.tcpcomplete.TcpUndeliveredEvent;
  * @author pedrofrv
  *
  */
-public class TcpReader extends Thread {
+public class TcpReader implements Runnable {
 	
 	private static Logger log = Logger.getLogger(TcpReader.class);
 	

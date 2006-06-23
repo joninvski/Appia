@@ -33,6 +33,7 @@ import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.Message;
+import org.continuent.appia.protocols.common.AppiaThreadFactory;
 import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.group.*;
@@ -103,8 +104,7 @@ public class ApplSession extends Session {
     public ApplSession(ApplLayer l) {
         super(l);
         
-        reader = new ApplReader(this);
-        reader.start();
+        AppiaThreadFactory.getThreadFactory().newThread(new ApplReader(this),"Appl Reader Thread").start();
     }
     
     public void init(int port, InetWithPort multicast, InetWithPort[] gossips, Group group, InetWithPort[] viewAddrs) {

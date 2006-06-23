@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.continuent.appia.core.TimeProvider;
+import org.continuent.appia.protocols.common.AppiaThreadFactory;
 
 /**
  * @author jmartins
@@ -41,7 +42,7 @@ public class Benchmark {
 	private static Benchmark inst;
 
 	private Map hash = Collections.synchronizedMap(new HashMap());
-	private Thread shHook;
+	private Runnable shHook;
 	
 	private TimeProvider timeProvider = null;
 
@@ -63,7 +64,8 @@ public class Benchmark {
 	private Benchmark(TimeProvider tp) {
 		shHook = new SHook(hash);
 		timeProvider = tp;
-		Runtime.getRuntime().addShutdownHook(shHook);
+		Thread hook = AppiaThreadFactory.getThreadFactory().newThread(shHook,"Benchmark Shutdown Hook");
+		Runtime.getRuntime().addShutdownHook(hook);
 	}		
 
 	public void startTagged(String s, String tag) {
@@ -152,7 +154,7 @@ class Measure {
 /**
  * This shutdown hook will print the stored measures on node shutdown.
  */
-class SHook extends Thread {
+class SHook implements Runnable {
 	Map hm;
 	
 	public SHook(Map hm) {

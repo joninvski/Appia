@@ -34,7 +34,7 @@ import org.continuent.appia.protocols.common.InetWithPort;
  * @author pedrofrv
  *
  */
-public class AcceptReader extends Thread {
+public class AcceptReader implements Runnable {
   
   private ServerSocket socket;
   private TcpCompleteSession session;

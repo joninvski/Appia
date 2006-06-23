@@ -132,13 +132,9 @@ public class Appia {
     		  nEvents--;
     	  
     	  while ( running && nEvents == 0 ) {
-//    		  if(printThreadsOn)
-//    			  printThreads();
-//    		  else{
     		  try {
     			  wait();
     		  } catch (InterruptedException e) {}
-//    		  }
     	  }        
         
     	if(!running)
@@ -262,25 +258,4 @@ public class Appia {
     return appia.thread;
   }
   
-  // used to debug the state of the Appia threads.
-  
-  // TODO: uncomment when we want to be only Java 5 compliant... this code does not work with Java 1.4
-  
-//  private static final boolean printThreadsOn = false;
-//  private void printThreads(){
-//          try {
-//            this.wait(1000);
-//          } catch (InterruptedException e) {}
-//          if(nEvents == 0){
-//          	Thread[] tg = new Thread[100];
-//          	int n = Thread.enumerate(tg);
-//          	for(int k = 0; k<n; k++){
-//          		System.out.println("Thread "+tg[k].getName()+" is Daemon "+tg[k].isDaemon()+" state is "+tg[k].getState());
-//          		StackTraceElement[] ste = tg[k].getStackTrace();
-//          		for(int x = 0; x<ste.length; x++){
-//          			System.out.println("\t"+x+" "+ste[x]);
-//          		}
-//          	}
-//        }// end of while
-//  }
 }

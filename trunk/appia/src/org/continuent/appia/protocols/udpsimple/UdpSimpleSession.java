@@ -46,9 +46,11 @@ import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.core.message.MsgBuffer;
+import org.continuent.appia.protocols.common.AppiaThreadFactory;
 import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
+import org.continuent.appia.protocols.common.ThreadFactory;
 import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
 import org.continuent.appia.protocols.utils.HostUtils;
 import org.continuent.appia.xml.interfaces.InitializableSession;
@@ -94,7 +96,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   
   protected PrintStream debugOutput = System.out;
 
-  
+  private ThreadFactory threadFactory = null;
   
   /**
    * Session standard constructor.
@@ -107,6 +109,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     
     if (UdpSimpleConfig.debugOn)
       debug("UDP: New udpSimple session");
+    threadFactory = AppiaThreadFactory.getThreadFactory();
   }
   
   /**
@@ -300,7 +303,9 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         /* The socket is binded. Launch reader and return the event.*/
         UdpSimpleReader multicastReader = 
           new UdpSimpleReader(this, multicastSock, ipMulticast, e.fullDuplex ? null : myAddress);
-        multicastReader.start();
+        Thread thread = threadFactory.newThread(multicastReader,"MulticastReaderThread ["+ipMulticast+"]");
+        multicastReader.setParentThread(thread);
+        thread.start();
         
         multicastReaders.put(ipMulticast, multicastReader);
         
@@ -390,13 +395,11 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     if (channels.isEmpty()) {
       // Terminating 
       sockReader.terminate();
-      sockReader.interrupt();
       
       Iterator iter=multicastReaders.values().iterator();
       while (iter.hasNext()) {
         UdpSimpleReader reader=(UdpSimpleReader)iter.next();
         reader.terminate();
-        reader.interrupt();
       }
     }
   }
@@ -497,8 +500,11 @@ public class UdpSimpleSession extends Session implements InitializableSession {
 	}
 
     /* The socket is binded. Launch reader*/
+	//FIXME
     sockReader = new UdpSimpleReader(this, sock, myAddress);
-    sockReader.start();
+    Thread t = threadFactory.newThread(sockReader,"UdpSimpleReader ["+myAddress+"]");
+    sockReader.setParentThread(t);
+    t.start();
     
     return true;
   }
@@ -619,12 +625,13 @@ public class UdpSimpleSession extends Session implements InitializableSession {
          * an AsyncEvent.
          *
          */
-  class UdpSimpleReader extends Thread {
+  class UdpSimpleReader implements Runnable {
     
     private DatagramSocket sock = null;
     private InetWithPort dest = null;
     private InetWithPort ignoreSource = null;
     private UdpSimpleSession parentSession = null;
+    private Thread parentThread = null;
     
     private byte[] b = new byte[65536];
     private MsgBuffer mbuf = new MsgBuffer();
@@ -638,6 +645,10 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       this.parentSession = parentSession;
       this.sock = s;
       this.dest = dest;
+    }
+    
+    void setParentThread(Thread t){
+    		this.parentThread = t;
     }
     
     /**
@@ -658,6 +669,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       synchronized (this) {
         terminate=true;
       }
+      parentThread.interrupt();
     }
     
     public void run() {

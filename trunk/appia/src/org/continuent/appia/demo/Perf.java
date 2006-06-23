@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 
 import org.continuent.appia.core.*;
+import org.continuent.appia.protocols.common.AppiaThreadFactory;
+import org.continuent.appia.protocols.common.ThreadFactory;
 import org.continuent.appia.protocols.nakfifo.NakFifoLayer;
 import org.continuent.appia.test.perf.PerfLayer;
 import org.continuent.appia.test.perf.PerfSession;
@@ -182,6 +184,8 @@ public class Perf {
       System.exit(1);
     }
     
+    ThreadFactory threadFactory = AppiaThreadFactory.getThreadFactory();
+    
     for ( ; instances > 0 ; instances--) {
       final Appia appiaInstance=new Appia();
       
@@ -239,12 +243,12 @@ public class Perf {
       }
       
       if (instances > 1) {
-        new Thread() {
-          public void run() {
-            System.out.println("Instance "+appiaInstance+" running on thread "+this);
-            appiaInstance.instanceRun();
-          }
-        }.start();
+    	    threadFactory.newThread(new Runnable(){
+    		  public void run() {
+    			  System.out.println("Instance "+appiaInstance+" running on thread "+this);
+    			  appiaInstance.instanceRun();
+    		  }    		  
+    	    }, "Perf").start();
       } else {
         System.out.println("Instance "+appiaInstance+" running on thread "+Thread.currentThread());
         appiaInstance.instanceRun();

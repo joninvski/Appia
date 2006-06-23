@@ -27,7 +27,7 @@ import org.continuent.appia.core.Direction;
  *                        codigo deprecated (asynEvent)
  */
 
-class ApplReader extends Thread {
+class ApplReader implements Runnable {
 
   private ApplSession         parentSession;
   private java.io.BufferedReader keyb;

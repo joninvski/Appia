@@ -35,6 +35,7 @@ import org.continuent.appia.core.Event;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.message.Message;
+import org.continuent.appia.protocols.common.AppiaThreadFactory;
 import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.xml.interfaces.InitializableSession;
@@ -105,7 +106,7 @@ public class EccoSession extends Session implements InitializableSession {
 		}
 		
 		shell = new MyShell(channel);
-		new Thread(shell).start();
+		AppiaThreadFactory.getThreadFactory().newThread(shell,"Ecco").start();
 		
 		/*
 		 * Este evento serve para registar um socket na camada usada como

@@ -41,6 +41,7 @@ import org.continuent.appia.core.Event;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.events.AppiaMulticast;
 import org.continuent.appia.core.events.SendableEvent;
+import org.continuent.appia.protocols.common.AppiaThreadFactory;
 import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.tcpcomplete.AcceptReader;
 import org.continuent.appia.protocols.tcpcomplete.TcpCompleteSession;
@@ -250,8 +251,9 @@ public class SslCompleteSession extends TcpCompleteSession {
     
     if (e.port > 0) {
       //create accept thread int the request port.
+    	// FIXME: this is using class from tcpcomplete
       acceptThread = new AcceptReader(ss,this,e.getChannel(),socketLock);
-      acceptThread.start();
+      AppiaThreadFactory.getThreadFactory().newThread(acceptThread,"TCP SSL accept reader").start();
       
       ourPort = ss.getLocalPort();
       if(SslCompleteConfig.debugOn)

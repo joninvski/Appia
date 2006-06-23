@@ -40,8 +40,10 @@ import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.core.message.MsgBuffer;
+import org.continuent.appia.protocols.common.AppiaThreadFactory;
 import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
+import org.continuent.appia.protocols.common.ThreadFactory;
 import org.continuent.appia.protocols.utils.HostUtils;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
@@ -79,6 +81,8 @@ public class TcpCompleteSession extends Session implements InitializableSession{
   protected Object socketLock;
   protected Object channelLock;
   
+  private ThreadFactory threadFactory = null;
+  
 //  private Benchmark bench=null;
   
   private Channel timerChannel=null;
@@ -99,6 +103,8 @@ public class TcpCompleteSession extends Session implements InitializableSession{
     
     socketLock = new Object();
     channelLock = new Object();
+    
+    threadFactory = AppiaThreadFactory.getThreadFactory();
   }
   
   /**
@@ -216,7 +222,8 @@ public void init(SessionProperties params) {
       
       //create accept thread int the request port.
       acceptThread = new AcceptReader(ss,this,e.getChannel(),socketLock);
-      acceptThread.start();
+      Thread t = threadFactory.newThread(acceptThread,"TCP Accept thread from port "+ourPort);
+      t.start();
       
       e.localHost=HostUtils.getLocalAddress();
       e.port=ourPort;
@@ -399,7 +406,8 @@ public void init(SessionProperties params) {
   protected void addSocket(HashMap hr, InetWithPort iwp,Socket socket,Channel channel){
     synchronized(socketLock){
       TcpReader reader = new TcpReader(socket,this,ourPort,iwp.port,channel);
-      reader.start();
+      Thread t = threadFactory.newThread(reader, "TCP reader thread ["+iwp+"]");
+      t.start();
       
 //      hm.put(iwp,socket);
       hr.put(iwp,reader);

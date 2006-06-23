@@ -21,6 +21,7 @@
 package org.continuent.appia.core;
 
 import org.continuent.appia.core.events.channel.*;
+import org.continuent.appia.protocols.common.AppiaThreadFactory;
 
 /** <I>Appia</I> timers manager.
  * This is an independent <I>thread</I> that gathers all timers
@@ -162,9 +163,7 @@ public class TimerManager implements Runnable, TimeProvider {
   /** Creates a new TimerManager
    */  
   public TimerManager() {
-    thread=new Thread(this);
-    thread.setName("Appia TimerManager");
-    thread.setDaemon(true);
+    thread = AppiaThreadFactory.getThreadFactory().newThread(this,"Appia Timer Manager",true);
   }
   
   //////////////////////////////////////////////
