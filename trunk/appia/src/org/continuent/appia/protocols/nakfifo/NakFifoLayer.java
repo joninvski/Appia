@@ -29,6 +29,7 @@ import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.AppiaMulticastSupport;
 import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
+import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
 
 
 /** Layer for protocols that provides reliable point-to-point communication.
@@ -56,6 +57,7 @@ public class NakFifoLayer extends Layer implements AppiaMulticastSupport {
         org.continuent.appia.protocols.nakfifo.NakFifoTimer.class,
         org.continuent.appia.protocols.nakfifo.IgnoreEvent.class,
         org.continuent.appia.protocols.nakfifo.PingEvent.class,
+        SendableNotDeliveredEvent.class,
         org.continuent.appia.core.events.SendableEvent.class,
         org.continuent.appia.core.events.channel.ChannelInit.class,
         org.continuent.appia.core.events.channel.ChannelClose.class,

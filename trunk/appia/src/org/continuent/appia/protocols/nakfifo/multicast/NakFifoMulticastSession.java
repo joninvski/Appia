@@ -37,6 +37,7 @@ import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
 import org.continuent.appia.protocols.common.InetWithPort;
+import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
 import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
 import org.continuent.appia.protocols.nakfifo.*;
 import org.continuent.appia.xml.interfaces.InitializableSession;
@@ -131,6 +132,8 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     	handleConfirm((ConfirmEvent)event); return;
     } else if (event instanceof NakFifoTimer) {
       handleNakFifoTimer((NakFifoTimer)event); return;
+    } else if (event instanceof SendableNotDeliveredEvent) {
+      handleSendableNotDelivered((SendableNotDeliveredEvent)event); return;
     } else if (event instanceof SendableEvent) {
       handleSendable((SendableEvent)event); return;
     } if (event instanceof ChannelInit) {
@@ -222,6 +225,15 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     }
   }
   
+  private void handleSendableNotDelivered(SendableNotDeliveredEvent ev) {
+    try {
+      FIFOUndeliveredEvent event=new FIFOUndeliveredEvent(ev.getChannel(),this,ev.event);
+      event.go();
+    } catch (AppiaEventException ex) {
+      ex.printStackTrace();
+    }
+  }
+
   private void handleSendable(SendableEvent event) {
     if (event.getDir() == Direction.UP) {
       byte flags=event.getMessage().popByte();

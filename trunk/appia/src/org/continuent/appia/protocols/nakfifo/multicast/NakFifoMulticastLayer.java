@@ -27,6 +27,7 @@ package org.continuent.appia.protocols.nakfifo.multicast;
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
+import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
 import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
 
 
@@ -59,6 +60,7 @@ public class NakFifoMulticastLayer extends Layer {
     		org.continuent.appia.protocols.nakfifo.PingEvent.class,
     		UpdateEvent.class,
     		ConfirmEvent.class,
+            SendableNotDeliveredEvent.class,
     		org.continuent.appia.core.events.SendableEvent.class,
     		org.continuent.appia.core.events.channel.ChannelInit.class,
     		org.continuent.appia.core.events.channel.ChannelClose.class,

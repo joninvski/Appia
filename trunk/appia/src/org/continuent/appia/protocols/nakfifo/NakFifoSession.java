@@ -31,6 +31,7 @@ import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
 import org.continuent.appia.protocols.common.InetWithPort;
+import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
 import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
@@ -110,6 +111,8 @@ public class NakFifoSession extends Session implements InitializableSession {
       handleNakFifoTimer((NakFifoTimer)event); return;
     } else if (event instanceof SendableEvent) {
       handleSendable((SendableEvent)event); return;
+    } else if (event instanceof SendableNotDeliveredEvent) {
+      handleSendableNotDelivered((SendableNotDeliveredEvent)event); return;
     } else if (event instanceof ChannelInit) {
       handleChannelInit((ChannelInit)event); return;
     } else if (event instanceof ChannelClose) {
@@ -182,6 +185,15 @@ public class NakFifoSession extends Session implements InitializableSession {
       event.go();
     } catch (AppiaEventException e) {
       e.printStackTrace();
+    }
+  }
+  
+  private void handleSendableNotDelivered(SendableNotDeliveredEvent ev) {
+    try {
+      FIFOUndeliveredEvent event=new FIFOUndeliveredEvent(ev.getChannel(),this,ev.event);
+      event.go();
+    } catch (AppiaEventException ex) {
+      ex.printStackTrace();
     }
   }
   
