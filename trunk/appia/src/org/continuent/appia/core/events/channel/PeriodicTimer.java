@@ -30,6 +30,12 @@ package org.continuent.appia.core.events.channel;
 
 import org.continuent.appia.core.*;
 
+/**
+ * Defines a PeriodicTimer class.
+ * @author Nuno Carvalho
+ * @version 1.0
+ *
+ */
 public class PeriodicTimer extends ChannelEvent implements Cloneable {
 
   /**

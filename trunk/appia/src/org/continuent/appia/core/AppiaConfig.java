@@ -45,6 +45,6 @@
 
 public interface AppiaConfig {
     // to the Memory manager
-    public static final boolean quotaOn = true;
-    public static final boolean mmDebugOn = false;
+    public static final boolean QUOTA_ON = true;
+    public static final boolean MM_DEBUG_ON = false;
 }

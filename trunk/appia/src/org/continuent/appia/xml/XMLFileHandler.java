@@ -173,7 +173,7 @@ public class XMLFileHandler extends DefaultHandler {
 			currentParams = new SessionProperties();
 		}
 		else if (qName.equals("memorymanagement")) {
-			if(!AppiaConfig.quotaOn)
+			if(!AppiaConfig.QUOTA_ON)
 				throw new AppiaError("Memory management specified in XML configuration, but gobal static boolean is false.");
 			mmSize = attributes.getValue("size");
 			mmUPThreshold = attributes.getValue("up_threshold");

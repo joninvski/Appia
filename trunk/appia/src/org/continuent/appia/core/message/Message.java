@@ -141,7 +141,7 @@ public class Message implements Cloneable {
 	public Message(byte[] data, int offset, int length) {
 		
 		// added on 7-Oct-2003
-		if (AppiaConfig.quotaOn)
+		if (AppiaConfig.QUOTA_ON)
 			bind(length);
 		
 		Block b = new Block(data, offset, length, offset);
@@ -168,7 +168,7 @@ public class Message implements Cloneable {
 	public void setByteArray(byte[] data, int offset, int length) {
 		
 		// added on 7-Oct-2003
-		if (AppiaConfig.quotaOn) {
+		if (AppiaConfig.QUOTA_ON) {
 			if (size > 0)
 				unBind(size);
 			bind(length);
@@ -221,7 +221,7 @@ public class Message implements Cloneable {
 		} else {
 			pop(mbuf);
 			// this is done because pop was called.
-			if (AppiaConfig.quotaOn)
+			if (AppiaConfig.QUOTA_ON)
 				bind(mbuf.len);
 			Block b = new Block(mbuf.data, mbuf.off, mbuf.len, mbuf.off);
 			b.next = first;
@@ -237,7 +237,7 @@ public class Message implements Cloneable {
 	 */
 	public int discard(int length) {
 		// added on 7-Oct-2003
-		if (AppiaConfig.quotaOn && ((size-length)>0))
+		if (AppiaConfig.QUOTA_ON && ((size-length)>0))
 			unBind(Math.min(length,size));
 		
 		int r = length > size ? size : length;
@@ -295,7 +295,7 @@ public class Message implements Cloneable {
 	 * no longer needed.
 	 */
 	public void discardAll(){
-		if (AppiaConfig.quotaOn)
+		if (AppiaConfig.QUOTA_ON)
 			unBind(size);	  
 		size = 0;
 		while(first != null){
@@ -386,7 +386,7 @@ public class Message implements Cloneable {
 		}
 		
 		// added on 7-Oct-2003
-		if (AppiaConfig.quotaOn)
+		if (AppiaConfig.QUOTA_ON)
 			unBind(mbuf.len);
 	}
 	
@@ -397,7 +397,7 @@ public class Message implements Cloneable {
 	public void push(MsgBuffer mbuf) {
 		
 		// added on 7-Oct-2003
-		if (AppiaConfig.quotaOn && canBind)
+		if (AppiaConfig.QUOTA_ON && canBind)
 			bind(mbuf.len);
 		
 		if (ro_mode)
@@ -436,7 +436,7 @@ public class Message implements Cloneable {
 		}
 		
 		// added on 7-Oct-2003
-		if (AppiaConfig.quotaOn && (size<newLength))
+		if (AppiaConfig.QUOTA_ON && (size<newLength))
 			unBind(size-newLength);
 		
 		if (ro_mode)
@@ -481,7 +481,7 @@ public class Message implements Cloneable {
 		}
 		
 		// added on 7-Oct-2003
-		if (AppiaConfig.quotaOn) {
+		if (AppiaConfig.QUOTA_ON) {
 			int auxSize = Math.max(size-length,0);
 			m.bind(auxSize);
 			unBind(auxSize);
@@ -550,7 +550,7 @@ public class Message implements Cloneable {
 	public void join(Message m) {
 		
 		// added on 7-Oct-2003
-		if (AppiaConfig.quotaOn)
+		if (AppiaConfig.QUOTA_ON)
 			bind(m.length());
 		
 		if (first == null) {
@@ -583,7 +583,7 @@ public class Message implements Cloneable {
 		size += m.size;
 		
 		//clear message m
-		if(AppiaConfig.quotaOn)
+		if(AppiaConfig.QUOTA_ON)
 			m.unBind(m.size);
 		m.first = null;
 		m.size = 0;
@@ -634,7 +634,7 @@ public class Message implements Cloneable {
 	 */
 	public Object clone() throws CloneNotSupportedException {
 		// added on 7-Oct-2003
-		if (AppiaConfig.quotaOn)
+		if (AppiaConfig.QUOTA_ON)
 			bind(length());
 		
 		Message msg = (Message) super.clone();
@@ -716,7 +716,7 @@ public class Message implements Cloneable {
 			ro_len = 0;
 		}
 		
-		if (AppiaConfig.quotaOn)
+		if (AppiaConfig.QUOTA_ON)
 			unBind(mbuf.len);
 	}
 	
@@ -837,7 +837,7 @@ public class Message implements Cloneable {
 	 */
 	public void setMemoryManager(MemoryManager newMM) {
 		// just for debugging
-		if (AppiaConfig.mmDebugOn && debug != null)
+		if (AppiaConfig.MM_DEBUG_ON && debug != null)
 			debug.println(
 					"Message: set memory manager From "
 					+ ((memoryManager == null) ? "NULL" : memoryManager.getMemoryManagerID())
@@ -863,7 +863,7 @@ public class Message implements Cloneable {
 			memoryManager = newMM;			
 		}
 		// just for debugging
-		if (AppiaConfig.mmDebugOn && debug != null)
+		if (AppiaConfig.MM_DEBUG_ON && debug != null)
 			debug.println(
 					"Message: set memory manager DONE!!! changed to "
 					+ ((memoryManager == null) ? "NULL" : memoryManager.getMemoryManagerID()));

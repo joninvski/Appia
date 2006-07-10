@@ -69,7 +69,7 @@ public class MemoryManager {
 		currentSize = 0;
 		setThreshold(upth, Direction.UP);
 		setThreshold(downth,Direction.DOWN);
-		if (AppiaConfig.mmDebugOn && debugOutput!=null)
+		if (AppiaConfig.MM_DEBUG_ON && debugOutput!=null)
 			debugOutput.println("MemoryManager: new memory manager created! (size = "+maxSize+") "+
 					"ID = "+mmID);
 	} // end of constructor
@@ -198,14 +198,14 @@ public class MemoryManager {
 		if (nBytes <= 0)
 			return true;
 		if ((currentSize + nBytes) > maxSize) {
-			if (AppiaConfig.mmDebugOn && debugOutput!=null)
+			if (AppiaConfig.MM_DEBUG_ON && debugOutput!=null)
 				debugOutput.println("MemoryManager: "+mmID+": malloc of "+nBytes+
 						" bytes FAILED! current size = "+currentSize);
 			return false;
 		}
 		currentSize += nBytes;
 		
-		if (AppiaConfig.mmDebugOn && debugOutput!=null)
+		if (AppiaConfig.MM_DEBUG_ON && debugOutput!=null)
 			debugOutput.println("MemoryManager: "+mmID+": malloc of "+nBytes+
 					" bytes done! current size = "+currentSize);
 		return true;
@@ -220,7 +220,7 @@ public class MemoryManager {
 			return;
 		
 		if (nBytes < 0 || currentSize == 0) { 
-			if(AppiaConfig.mmDebugOn && debugOutput!=null)
+			if(AppiaConfig.MM_DEBUG_ON && debugOutput!=null)
 				debugOutput.println("MemoryManager: "+mmID+": free error: state is nBytes="+nBytes+" and "+
 						"currentSize="+currentSize);
 			return;
@@ -233,7 +233,7 @@ public class MemoryManager {
 		if(currentSize <= (upthreshold*0.9))
 			synchronized (upMutex) { upMutex.notifyAll(); }
 		
-		if(AppiaConfig.mmDebugOn && debugOutput!=null)
+		if(AppiaConfig.MM_DEBUG_ON && debugOutput!=null)
 			debugOutput.println("MemoryManager: "+mmID+
 					": free done (nBytes = "+nBytes+"). current size = "+currentSize);
 	} // end of method free

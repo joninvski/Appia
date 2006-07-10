@@ -36,7 +36,7 @@ public class ChannelInit extends ChannelEvent {
    * Creates a not <b>initialized</b> <i>ChannelInit</i> event
    */
   public ChannelInit() {
-	  this.setPriority(255);
+	  this.setPriority(MAX_PRIORITY);
   }
 
   /**
@@ -48,7 +48,7 @@ public class ChannelInit extends ChannelEvent {
    */
   public ChannelInit(Channel channel) throws AppiaEventException {
     super(channel,Direction.UP,null,EventQualifier.NOTIFY);
-    this.setPriority(255);
+    this.setPriority(MAX_PRIORITY);
   }
 
 //  public ChannelInit(Channel channel, Session src) throws AppiaEventException {

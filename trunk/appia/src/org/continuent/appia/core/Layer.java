@@ -28,6 +28,11 @@
  */
 package org.continuent.appia.core;
 
+/**
+ * This class defines a Layer.
+ * @author Alexandre Pinto
+ * @version 1.0
+ */
 public abstract class Layer {
   
   protected Class[] evAccept;

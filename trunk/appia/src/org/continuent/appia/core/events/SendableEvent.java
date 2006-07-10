@@ -101,7 +101,7 @@ public class SendableEvent extends Event implements Cloneable {
 	private void attachToMemory(){
 		if (detached)
 			return;
-		if (AppiaConfig.quotaOn && (this.message!=null) && (this.getChannel()!=null)){
+		if (AppiaConfig.QUOTA_ON && (this.message!=null) && (this.getChannel()!=null)){
 			this.message.setMemoryManager(this.getChannel().getMemoryManager());
 			detached = false;
 		}
@@ -122,7 +122,7 @@ public class SendableEvent extends Event implements Cloneable {
 	 * @see org.continuent.appia.core.memoryManager.MemoryManager
 	 */
 	public void detachFromMemory(){
-		if(AppiaConfig.quotaOn && !detached && (this.message.getMemoryManager() != null)){
+		if(AppiaConfig.QUOTA_ON && !detached && (this.message.getMemoryManager() != null)){
 			this.message.setMemoryManager(null);
 			detached = true;
 		}

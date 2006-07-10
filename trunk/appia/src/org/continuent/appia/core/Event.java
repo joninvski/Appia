@@ -347,7 +347,7 @@ public class Event {
     // blocks if there are too many events in the channel from the application
     // This is used only if there is a memory manager in the channel
     MemoryManager mm = channel.getMemoryManager();
-    if (AppiaConfig.quotaOn && mm != null) {
+    if (AppiaConfig.QUOTA_ON && mm != null) {
     	try {
 			mm.synchronizedAboveThreshold(this.dir);
 		} catch (InterruptedException e) {

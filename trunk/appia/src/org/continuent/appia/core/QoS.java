@@ -39,6 +39,12 @@ import java.util.Iterator;
 
 import org.continuent.appia.core.memoryManager.*;
 
+/**
+ * This class defines a QoS.
+ * 
+ * @author Alexandre Pinto
+ * @version 1.0
+ */
 public class QoS {
   
   private String ID;
