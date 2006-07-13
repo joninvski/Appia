@@ -160,6 +160,10 @@ public class ChannelInfo {
 		this.eventScheduler = eventScheduler;
 	}
 	
+    /**
+     * Gets the memory manager instance.
+     * @return the memory manager instance.
+     */
 	public MemoryManager getMemoryManager(){
 		return memoryManager;
 	}
@@ -170,17 +174,26 @@ public class ChannelInfo {
 	public LinkedList getDependencies() {
 		return dependencies;
 	}
+    
+    /**
+     * 
+     * @param channel
+     */
 	public void addDependency(ChannelInfo channel) {
 		if (!dependencies.contains(channel))
 			dependencies.add(channel);
 	}
 	
+    /**
+     * @param channel
+     * @return
+     */
 	public boolean depends(ChannelInfo channel) {
 		if (dependencies.contains(channel))
 			return true;
 		else {
 			for (int i = 0; i < dependencies.size(); i++) {
-				ChannelInfo cinfo = (ChannelInfo) dependencies.get(i);
+				final ChannelInfo cinfo = (ChannelInfo) dependencies.get(i);
 				if (cinfo.depends(channel))
 					return true;
 			}
@@ -188,8 +201,16 @@ public class ChannelInfo {
 		return false;
 	}
 	
+    /**
+     * 
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
 	public boolean equals(Object arg) {
-		ChannelInfo cinfo = (ChannelInfo)arg;
-		return name.equals(cinfo.name);			
+	    if(arg instanceof ChannelInfo){
+	        final ChannelInfo cinfo = (ChannelInfo)arg;
+	        return name.equals(cinfo.name);
+	    }
+        else
+            return false;
 	}
 }
