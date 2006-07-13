@@ -46,7 +46,7 @@ import org.xml.sax.SAXException;
  * definitions in a File or String.
  * <p>
  * To better understand how this class works please refer
- * to <i>AppiaXML: A Brief Tutorial</i> found in Appia's website.
+ * to <i>AppiaXML: A Brief Tutorial</i> found in the Appia website.
  * 
  * @author Jose Mocito
  *
@@ -78,7 +78,7 @@ public class AppiaXML {
 		//channels = new LinkedList();
 		
 		try {
-			SAXParserFactory factory = SAXParserFactory.newInstance();
+			final SAXParserFactory factory = SAXParserFactory.newInstance();
 			factory.setValidating(true);
 			parser = factory.newSAXParser();
 		// None of the above exceptions should ever happen if the parser
@@ -102,26 +102,23 @@ public class AppiaXML {
 	 * Builds an empty configuration.
 	 *
 	 */
-	private AppiaXML(Appia appia) {
+	private AppiaXML(Appia appia) throws AppiaXMLException{
 		//templateGroups = new LinkedList();
 		//channelTemplates = new LinkedList();
 		//channels = new LinkedList();
 		
 		try {
-			SAXParserFactory factory = SAXParserFactory.newInstance();
+			final SAXParserFactory factory = SAXParserFactory.newInstance();
 			factory.setValidating(true);
 			parser = factory.newSAXParser();
 		// None of the above exceptions should ever happen if the parser
 		// used is the one supplied with Java2
 		} catch (ParserConfigurationException e) {
-			e.printStackTrace();
-			System.exit(-1);
+            throw new AppiaXMLException("Unable to get SAX parser.",e);
 		} catch (FactoryConfigurationError e) {
-			e.printStackTrace();
-			System.exit(-1);
+            throw new AppiaXMLException("Unable to get SAX parser.",e);
 		} catch (SAXException e) {
-			e.printStackTrace();
-			System.exit(-1);
+            throw new AppiaXMLException("Unable to get SAX parser.",e);
 		}
 		
 		config = new Configuration(appia);
@@ -135,8 +132,9 @@ public class AppiaXML {
 	 * 
 	 * @param appia the <tt>Appia</tt> instance where channels will be created.
 	 * @return a new <tt>AppiaXML</tt> instance.
+	 * @throws AppiaXMLException 
 	 */
-	public static AppiaXML getInstance(Appia appia) {
+	public static AppiaXML getInstance(Appia appia) throws AppiaXMLException {
 		return new AppiaXML(appia);
 	}
 	
@@ -208,15 +206,14 @@ public class AppiaXML {
 	}
 	
 	/**
-	 * Loads the configuration in the <i>xmlstr</i> string.
+	 * Loads the configuration in the XML that is represented by a String.
 	 * 
 	 * @param	xmlstr			the String containing the XML description.
 	 * @throws 	IOException		if there is an error accessing the string.
-	 * @throws 	SAXException	if there is an error during the parsing of the string.
+	 * @throws 	SAXException	 if there is an error during the parsing of the string.
 	 * 							In that case, the thrown exception is wrapped inside
 	 * 							the SAXException.
 	 * 
-	 * TODO UPDATE COMMENTS!!
 	 */
 	public static void load(String xmlstr, Appia appia) throws SAXException, IOException {
 		appiaxml.instanceLoad(xmlstr,appia);

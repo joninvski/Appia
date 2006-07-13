@@ -33,6 +33,8 @@ package org.continuent.appia.xml.utils;
  */
 public class SharingState {
 	
+    private SharingState(){}
+    
 	/**
 	 * Represents the <i>private</i> sharing scope.
 	 */

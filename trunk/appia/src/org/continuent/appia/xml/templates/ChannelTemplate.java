@@ -26,7 +26,8 @@ package org.continuent.appia.xml.templates;
 import java.util.Hashtable;
 import java.util.LinkedList;
 
-import org.continuent.appia.core.AppiaException;
+import org.continuent.appia.core.AppiaCursorException;
+import org.continuent.appia.core.AppiaInvalidQoSException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.ChannelCursor;
 import org.continuent.appia.core.EventScheduler;
@@ -34,6 +35,7 @@ import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.QoS;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.memoryManager.MemoryManager;
+import org.continuent.appia.xml.AppiaXMLException;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.ChannelProperties;
 import org.continuent.appia.xml.utils.SessionProperties;
@@ -140,9 +142,7 @@ public class ChannelTemplate {
 		 * 	shared "label sessions".
 		 * @param eventScheduler the EventScheduler associated with the channel.
 		 * @return the channel created.
-		 * @throws AppiaException
-		 * 
-		 * TODO: criar mmm
+		 * @throws AppiaXMLException
 		 */
 		public Channel createChannel(
 				String name,
@@ -151,19 +151,23 @@ public class ChannelTemplate {
 				Hashtable globalSessions,
 				Hashtable labelSessions,
 				EventScheduler eventScheduler, MemoryManager memoryManager) 
-		throws AppiaException {
+		throws AppiaXMLException {
 			// Complete name is equal to the given name plus the template name
 			//String completeName = name + " " + this.name;
-			int numberOfSessions = sessionTemplates.size();
-			Layer[] qos_list = new Layer[numberOfSessions];
+			final int numberOfSessions = sessionTemplates.size();
+			final Layer[] qosList = new Layer[numberOfSessions];
 			SessionTemplate currSession = null;
 			// Generates the QoS
 			for (int i = 0; i < numberOfSessions; i++) {
 				currSession = (SessionTemplate) sessionTemplates.get(i);
-				qos_list[i] = currSession.layerInstance();
+				qosList[i] = currSession.layerInstance();
 			}
 			QoS qos = null;
-			qos = new QoS(name+" QoS",qos_list);
+			try {
+                qos = new QoS(name+" QoS",qosList);
+            } catch (AppiaInvalidQoSException e) {
+                throw new AppiaXMLException("Unable to create QoS: "+name+" QoS",e);
+            }
 			// Creates the channel based on the QoS
 			Channel channel;
 			if (eventScheduler == null && memoryManager == null)
@@ -174,7 +178,7 @@ public class ChannelTemplate {
 				channel = qos.createUnboundChannel(name,eventScheduler);
 			else
 				channel = qos.createUnboundChannel(name,eventScheduler,memoryManager);
-			ChannelCursor cc = channel.getCursor();
+			final ChannelCursor cc = channel.getCursor();
 			cc.bottom();
 			// Associates the sessions to their corresponding layers
 			for (int i = 0; i < numberOfSessions; i++) {
@@ -192,12 +196,16 @@ public class ChannelTemplate {
 				if (sessionInstance instanceof InitializableSession &&
 						params != null &&
 						params.containsKey(currSession.getName())) {
-					SessionProperties parameters =
+					final SessionProperties parameters =
 						params.getParams(currSession.getName());
 					((InitializableSession)sessionInstance).init(parameters);
 				}
-				cc.setSession(sessionInstance);
-				cc.up();
+				try {
+                    cc.setSession(sessionInstance);
+                    cc.up();
+                } catch (AppiaCursorException e) {
+                    throw new AppiaXMLException("Unable to the session.",e);
+                }
 			}
 			return channel;
 		}
@@ -206,8 +214,8 @@ public class ChannelTemplate {
 		 * <b>FOR TESTING PURPOSES ONLY!</b>
 		 */
 		public void printChannelTemplate() {
-			Object [] staux = sessionTemplates.toArray();
-			SessionTemplate[] st = new SessionTemplate[staux.length];
+			final Object [] staux = sessionTemplates.toArray();
+			final SessionTemplate[] st = new SessionTemplate[staux.length];
 			for (int i = 0; i < staux.length; i++)
 				st[i] = (SessionTemplate) staux[i];
 			

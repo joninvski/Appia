@@ -27,7 +27,6 @@ import java.lang.reflect.InvocationTargetException;
 
 import org.continuent.appia.core.AppiaConfig;
 import org.continuent.appia.core.AppiaError;
-import org.continuent.appia.core.AppiaException;
 import org.continuent.appia.core.memoryManager.MemoryManager;
 import org.continuent.appia.xml.utils.ChannelProperties;
 import org.continuent.appia.xml.utils.SessionProperties;
@@ -36,7 +35,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
-
 
 /**
  * This is the handler to be passed to the parser in order to parse
@@ -209,7 +207,7 @@ public class XMLFileHandler extends DefaultHandler {
 			if (config.usesGlobalScheduler())
 				try {
 					config.createChannel(channelName,channelTemplateName,channelLabel,params,init,memoryManager);
-				} catch (AppiaException e) {
+				} catch (AppiaXMLException e) {
 					throw new SAXException(e);
 				}
 			else
@@ -232,7 +230,7 @@ public class XMLFileHandler extends DefaultHandler {
 			try {
 				if (!config.usesGlobalScheduler())
 					config.createChannels();
-			} catch (AppiaException e) {
+			} catch (AppiaXMLException e) {
 				throw new SAXException(e);
 			}
 		}
@@ -242,20 +240,17 @@ public class XMLFileHandler extends DefaultHandler {
     // SAX ErrorHandler methods
     //===========================================================
 
-    // treat validation errors as fatal
-    public void error(SAXParseException e) 
-    		throws SAXParseException {
-    	throw e;
+    public void error(SAXParseException e) throws SAXParseException {
+    	    throw e;
     }
 
     // treat warnings as fatal
-    public void warning(SAXParseException e)
-    		throws SAXParseException {
+    public void warning(SAXParseException e) throws SAXParseException {
 //        System.out.println("** Warning"
 //            + ", line " + err.getLineNumber()
 //            + ", uri " + err.getSystemId());
 //        System.out.println("   " + err.getMessage());
-    	throw e;
+        throw e;
     }
     
 	/**

@@ -103,7 +103,7 @@ public class SessionTemplate {
 		else if (sharedSessions.containsKey(name+label))
 			return (Session) sharedSessions.get(name+label);
 		else {
-			Session ns = layerInstance.createSession();
+			final Session ns = layerInstance.createSession();
 			sharedSessions.put(name+label,ns);
 			return ns;
 		}

@@ -30,7 +30,7 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 
 import org.continuent.appia.core.Appia;
-import org.continuent.appia.core.AppiaException;
+import org.continuent.appia.core.AppiaDuplicatedSessionsException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.EventScheduler;
 import org.continuent.appia.core.Layer;
@@ -97,7 +97,7 @@ public class Configuration {
 		//globalEventScheduler = getEventScheduler();
 	}
 	
-	/**
+	/*
 	 * Builds an empty configuration.
 	 *
 	 *//*
@@ -176,6 +176,17 @@ public class Configuration {
 		return !multiSchedulers;
 	}
 	
+    /**
+     * TODO: remove some exceptions!!!
+     * @param className
+     * @throws ClassNotFoundException
+     * @throws SecurityException
+     * @throws NoSuchMethodException
+     * @throws IllegalArgumentException
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     * @throws InvocationTargetException
+     */
 	public void setEventScheduler(String className) 
 	throws ClassNotFoundException, SecurityException, NoSuchMethodException, IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
 		eventSchedulerClass = Class.forName(className);
@@ -189,7 +200,7 @@ public class Configuration {
 		schedulerClassIsSet = true;
 	}
 	
-	private EventScheduler getEventScheduler() {
+	private EventScheduler getEventScheduler() throws AppiaXMLException {
 		if (globalEventScheduler != null)
 			return globalEventScheduler;
 		else if (appia == null)
@@ -197,11 +208,9 @@ public class Configuration {
 				try {
 					return (EventScheduler) eventSchedulerClass.newInstance();
 				} catch (InstantiationException e) {
-					// Should never happen
-					e.printStackTrace();
+                    throw new AppiaXMLException("Unable to create event scheduler instance of type:"+eventSchedulerClass.getName(),e);
 				} catch (IllegalAccessException e) {
-					// Should never happen
-					e.printStackTrace();
+                    throw new AppiaXMLException("Unable to create event scheduler instance of type:"+eventSchedulerClass.getName(),e);
 				}
 			}
 			else
@@ -211,23 +220,18 @@ public class Configuration {
 				try {
 					return (EventScheduler) esWithAppiaConstructor.newInstance(new Object[] {appia});
 				} catch (IllegalArgumentException e1) {
-					// Should never happen, unless EventScheduler doesn't have the proper constructor
-					e1.printStackTrace();
+                    throw new AppiaXMLException("Unable to create event scheduler instance of type:"+esWithAppiaConstructor.getName(),e1);
 				} catch (InstantiationException e1) {
-					// Should never happen
-					e1.printStackTrace();
+                    throw new AppiaXMLException("Unable to create event scheduler instance of type:"+esWithAppiaConstructor.getName(),e1);
 				} catch (IllegalAccessException e1) {
-					// Should never happen
-					e1.printStackTrace();
+                    throw new AppiaXMLException("Unable to create event scheduler instance of type:"+esWithAppiaConstructor.getName(),e1);
 				} catch (InvocationTargetException e1) {
-					// Should never happen
-					e1.printStackTrace();
+                    throw new AppiaXMLException("Unable to create event scheduler instance of type:"+esWithAppiaConstructor.getName(),e1);
 				}
 			}
 			else
 				return new EventScheduler(appia);
 		}
-		return null;
 	}
 	
 	/**
@@ -303,31 +307,31 @@ public class Configuration {
 		else
 			cinfo = new ChannelInfo(name,templateName,label,params,initialized,mm);
 		channelList.add(cinfo);
-		ChannelTemplate ctempl = (ChannelTemplate) templates.get(templateName);
-		LinkedList stls = ctempl.getSessionTemplates();
+		final ChannelTemplate ctempl = (ChannelTemplate) templates.get(templateName);
+		final LinkedList stls = ctempl.getSessionTemplates();
 		// For every session in the template
 		for (int i = 0; i < stls.size(); i++) {
-			SessionTemplate stempl = (SessionTemplate) stls.get(i);
-			String sname = stempl.getName();
-			int sharing = stempl.getSharingState();
+			final SessionTemplate stempl = (SessionTemplate) stls.get(i);
+			final String sname = stempl.getName();
+			final int sharing = stempl.getSharingState();
 			// Check if the session is sharable (global or label)
 			if (sharing == SharingState.GLOBAL || sharing == SharingState.LABEL) {
 				// Build a unique identifier associated with the session instance
-				String storeName = sharing == SharingState.LABEL ? sname+label : sname;
+				final String storeName = sharing == SharingState.LABEL ? sname+label : sname;
 				if (!sessionChannels.containsKey(storeName))
 					// Session is not referenced yet. Create an entry!
 					sessionChannels.put(storeName,new LinkedList());
 				else {
 					// Session is already referenced. Build dependencies!
-					LinkedList clist = (LinkedList)sessionChannels.get(storeName);
+					final LinkedList clist = (LinkedList)sessionChannels.get(storeName);
 					for (int j = 0; j < clist.size(); j++) {
-						ChannelInfo aux = (ChannelInfo) clist.get(j);
+						final ChannelInfo aux = (ChannelInfo) clist.get(j);
 						aux.addDependency(cinfo);
 						cinfo.addDependency(aux);
 					}
 				}
 				// Add channel info to the entry associated with the session
-				LinkedList clist = (LinkedList)sessionChannels.get(storeName);
+				final LinkedList clist = (LinkedList)sessionChannels.get(storeName);
 				clist.add(cinfo);
 			}
 		}
@@ -339,12 +343,13 @@ public class Configuration {
 	/**
 	 * Proccesses dependencies between channels, associating with each 
 	 * channel the respective EventScheduler.
+	 * @throws AppiaXMLException 
 	 *
 	 */
-	private void proccessDependencies() {
+	private void proccessDependencies() throws AppiaXMLException {
 		// Proccess each channel in the list
 		while (!channelList.isEmpty()) {
-			ChannelInfo cinfo = (ChannelInfo) channelList.removeFirst();
+			final ChannelInfo cinfo = (ChannelInfo) channelList.removeFirst();
 			if (newChannelList.isEmpty())
 				// No channels proccessed yet. No dependencies can be checked.
 				// Create new EventScheduler for this channel
@@ -356,7 +361,7 @@ public class Configuration {
 			else {
 				// Check dependencias with already proccessed channels
 				for (int i = 0; i < newChannelList.size(); i++) {
-					ChannelInfo aux = (ChannelInfo) newChannelList.get(i);
+					final ChannelInfo aux = (ChannelInfo) newChannelList.get(i);
 					if (cinfo.depends(aux)) {
 						// Current channel depends from aux.
 						if (aux.getEventScheduler() != null)
@@ -388,9 +393,9 @@ public class Configuration {
 	/**
 	 * Creates the channels stored in memory by the storeChannel() method.
 	 * 
-	 * @throws AppiaException
+	 * @throws AppiaXMLException
 	 */
-	public void createChannels() throws AppiaException {
+	public void createChannels() throws AppiaXMLException {
 		proccessDependencies();
 		ChannelInfo ci;
 		while (!newChannelList.isEmpty()) {
@@ -420,13 +425,18 @@ public class Configuration {
 			ChannelProperties params,
 			boolean initialized, 
 			MemoryManager mm) 
-	throws AppiaException {
-		ChannelTemplate chnt = ((ChannelTemplate) templates.get(templateName));
-		Channel chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,globalEventScheduler,mm);
+	throws AppiaXMLException {
+		final ChannelTemplate chnt = ((ChannelTemplate) templates.get(templateName));
+		final Channel chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,globalEventScheduler,mm);
 		channels.put(name,chn);
 		// Should the channel be returned already "started"?
-		if (initialized)
-			chn.start();
+		if (initialized){
+            try {
+                chn.start();
+            } catch (AppiaDuplicatedSessionsException e) {
+                throw new AppiaXMLException("Unable to start the channel: "+chn.getChannelID(),e);
+            }            
+        }
 		return chn;
 	}
 
@@ -453,13 +463,19 @@ public class Configuration {
 			boolean initialized,
 			EventScheduler eventScheduler,
 			MemoryManager mm)
-	throws AppiaException {
-		ChannelTemplate chnt = ((ChannelTemplate) templates.get(templateName));
-		Channel chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,eventScheduler,mm);
+	throws AppiaXMLException {
+		final ChannelTemplate chnt = ((ChannelTemplate) templates.get(templateName));
+		Channel chn = null;
+            chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,eventScheduler,mm);
 		channels.put(name,chn);
 		// Should the channel be returned already "started"?
-		if (initialized)
-			chn.start();
+		if (initialized){
+            try {
+                chn.start();
+            } catch (AppiaDuplicatedSessionsException e) {
+                throw new AppiaXMLException("Unable to start the channel: "+chn.getChannelID(),e);
+            }
+        }
 		return chn;
 	}
 
@@ -479,8 +495,8 @@ public class Configuration {
 	 * @return 			array containing all the channels created.
 	 */
 	public Channel[] getChannelList() {
-		Object[] aux = channels.values().toArray();
-		Channel[] chl = new Channel[aux.length];
+		final Object[] aux = channels.values().toArray();
+		final Channel[] chl = new Channel[aux.length];
 		for (int i = 0; i < aux.length; i++)
 			chl[i] = (Channel) aux[i];
 		return chl;
@@ -491,7 +507,7 @@ public class Configuration {
 	 */
 	public void printConfig() {
 		// show templates
-		for (Enumeration e = templates.elements(); e.hasMoreElements();)
+		for (final Enumeration e = templates.elements(); e.hasMoreElements();)
 			((ChannelTemplate)e.nextElement()).printChannelTemplate();
 		// TODO show channels
 	}
