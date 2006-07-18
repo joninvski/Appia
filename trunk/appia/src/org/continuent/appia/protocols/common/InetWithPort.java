@@ -106,7 +106,8 @@ public class InetWithPort extends InetSocketAddress implements java.io.Serializa
 	}
 
 	public static InetWithPort pop(Message message) {
-		InetWithPort inetp = new InetWithPort();
+        InetAddress host = null;
+        int port = 0;
 		MsgBuffer mbuf = new MsgBuffer();
 		mbuf.len = 6;
 		message.pop(mbuf);
@@ -116,15 +117,16 @@ public class InetWithPort extends InetSocketAddress implements java.io.Serializa
 		}
 		ip += (int) mbuf.data[mbuf.off + 3 + 2] & 0xff;
 		try {
-			inetp.host = InetAddress.getByName(ip);
+			host = InetAddress.getByName(ip);
 		} catch (UnknownHostException ex) {}
-		inetp.port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
-		inetp.port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
-		return inetp;
+		port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
+		port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
+		return new InetWithPort(host,port);
 	}
 
 	public static InetWithPort peek(Message message) {
-		InetWithPort inetp = new InetWithPort();
+        InetAddress host = null;
+        int port = 0;
 		MsgBuffer mbuf = new MsgBuffer();
 		mbuf.len = 6;
 		message.peek(mbuf);
@@ -134,11 +136,11 @@ public class InetWithPort extends InetSocketAddress implements java.io.Serializa
 		}
 		ip += (int) mbuf.data[mbuf.off + 3 + 2] & 0xff;
 		try {
-			inetp.host = InetAddress.getByName(ip);
+			host = InetAddress.getByName(ip);
 		} catch (UnknownHostException ex) {}
-		inetp.port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
-		inetp.port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
-		return inetp;
+		port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
+		port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
+		return new InetWithPort(host,port);
 	}
 
 }
