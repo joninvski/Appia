@@ -23,17 +23,27 @@ package org.continuent.appia.demo;
 
 
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.LineNumberReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
-import java.io.*;
 
-import org.continuent.appia.core.*;
-import org.continuent.appia.protocols.common.*;
-import org.continuent.appia.protocols.group.*;
+import org.continuent.appia.core.Appia;
+import org.continuent.appia.core.AppiaCursorException;
+import org.continuent.appia.core.AppiaDuplicatedSessionsException;
+import org.continuent.appia.core.AppiaInvalidQoSException;
+import org.continuent.appia.core.Channel;
+import org.continuent.appia.core.ChannelCursor;
+import org.continuent.appia.core.Layer;
+import org.continuent.appia.core.QoS;
+import org.continuent.appia.protocols.group.Group;
 import org.continuent.appia.protocols.utils.ParseUtils;
-import org.continuent.appia.test.appl.*;
+import org.continuent.appia.test.appl.ApplLayer;
+import org.continuent.appia.test.appl.ApplSession;
 
 /**
  * Test application for the group communication protocols.
