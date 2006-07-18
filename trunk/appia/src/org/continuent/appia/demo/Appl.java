@@ -24,6 +24,7 @@ package org.continuent.appia.demo;
 
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.io.*;
@@ -60,15 +61,15 @@ public class Appl {
     new org.continuent.appia.protocols.group.stable.StableLayer(),
     new org.continuent.appia.protocols.group.leave.LeaveLayer(),
     new org.continuent.appia.protocols.group.sync.VSyncLayer(),
-    new ApplLayer()
+    new ApplLayer(),
   };
   
   public static void main(String args[]) {
     int i;
     int port=-1;
-    InetWithPort multicast=null;
-    InetWithPort[] gossips=null;
-    InetWithPort[] viewAddrs=null;
+    InetSocketAddress multicast=null;
+    InetSocketAddress[] gossips=null;
+    InetSocketAddress[] viewAddrs=null;
     Group group=null;
     LineNumberReader file=null;
     
@@ -118,7 +119,7 @@ public class Appl {
         } catch (ParseException e) {
           argInvalid("invalid format in multicast: \""+args[i]+"\"");
         }
-        if (!multicast.host.isMulticastAddress())
+        if (!multicast.getAddress().isMulticastAddress())
           argInvalid("not multicast address: \""+args[i]+"\"");
         
         // VIEW

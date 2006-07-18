@@ -20,6 +20,7 @@
  package org.continuent.appia.protocols.tcpcomplete;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -41,7 +42,6 @@ import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.core.message.MsgBuffer;
 import org.continuent.appia.protocols.common.AppiaThreadFactory;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.common.ThreadFactory;
 import org.continuent.appia.protocols.utils.HostUtils;
@@ -158,13 +158,13 @@ public void init(SessionProperties params) {
     if (e.dest instanceof AppiaMulticast) {
       Object[] dests=((AppiaMulticast)e.dest).getDestinations();
       for (int i=0 ; i < dests.length ; i++) {
-        if (dests[i] instanceof InetWithPort)
-          send(data, (InetWithPort)dests[i], e.getChannel());
+        if (dests[i] instanceof InetSocketAddress)
+          send(data, (InetSocketAddress)dests[i], e.getChannel());
         else
           sendUndelivered(e.getChannel(),dests[i]);
       }
-    } else if (e.dest instanceof InetWithPort) {
-      send(data, (InetWithPort)e.dest, e.getChannel());
+    } else if (e.dest instanceof InetSocketAddress) {
+      send(data, (InetSocketAddress)e.dest, e.getChannel());
     } else {
       sendUndelivered(e.getChannel(),e.dest);
     }
@@ -322,7 +322,7 @@ public void init(SessionProperties params) {
 	}
   }
   
-  protected void send(byte[] data, InetWithPort dest, Channel channel) {
+  protected void send(byte[] data, InetSocketAddress dest, Channel channel) {
     Socket s = null;
     
     try {
@@ -356,14 +356,14 @@ public void init(SessionProperties params) {
     } catch (IOException ex) {
       if(TcpCompleteConfig.debugOn) {
         ex.printStackTrace();
-        debug("o no "+dest.host+" no porto "+dest.port +" falhou");
+        debug("Node "+dest+" failed.");
       }
       sendUndelivered(channel,dest);
       removeSocket(dest);
     }
   }
   
-  protected boolean existsSocket(HashMap hr, InetWithPort iwp){
+  protected boolean existsSocket(HashMap hr, InetSocketAddress iwp){
     synchronized(socketLock){
       if(hr.containsKey(iwp))
         return true;
@@ -372,7 +372,7 @@ public void init(SessionProperties params) {
     }
   }
   
-  protected Socket getSocket(HashMap hm, InetWithPort iwp){
+  protected Socket getSocket(HashMap hm, InetSocketAddress iwp){
     synchronized(socketLock){
     	TcpReader reader = (TcpReader) hm.get(iwp); 
     	reader.clearInactiveCounter();
@@ -381,13 +381,13 @@ public void init(SessionProperties params) {
   }
   
   //create socket, put in hashmap and create thread
-  protected Socket createSocket(HashMap hr, InetWithPort iwp,Channel channel) throws IOException{
+  protected Socket createSocket(HashMap hr, InetSocketAddress iwp,Channel channel) throws IOException{
     synchronized(socketLock){
       Socket newSocket = null;
       
       //create socket
       
-      newSocket = new Socket(iwp.host,iwp.port);
+      newSocket = new Socket(iwp.getAddress(),iwp.getPort());
       newSocket.setTcpNoDelay(true);
       
       byte bPort[]= intToByteArray(ourPort);
@@ -403,9 +403,9 @@ public void init(SessionProperties params) {
     }
   }
   
-  protected void addSocket(HashMap hr, InetWithPort iwp,Socket socket,Channel channel){
+  protected void addSocket(HashMap hr, InetSocketAddress iwp,Socket socket,Channel channel){
     synchronized(socketLock){
-      TcpReader reader = new TcpReader(socket,this,ourPort,iwp.port,channel);
+      TcpReader reader = new TcpReader(socket,this,ourPort,iwp.getPort(),channel);
       Thread t = threadFactory.newThread(reader, "TCP reader thread ["+iwp+"]");
       t.start();
       
@@ -414,7 +414,7 @@ public void init(SessionProperties params) {
     }
   }
   
-  protected void removeSocket(InetWithPort iwp){
+  protected void removeSocket(InetSocketAddress iwp){
     synchronized(socketLock){
       if(existsSocket(ourReaders,iwp))
         ((TcpReader)(ourReaders.remove(iwp))).setRunning(false);
@@ -451,6 +451,7 @@ public void init(SessionProperties params) {
     
     byte[] eventType = e.getClass().getName().getBytes();
     byte[] channelID = e.getChannel().getChannelID().getBytes();
+    
     
     mbuf.len = channelID.length;
     msg.push(mbuf);

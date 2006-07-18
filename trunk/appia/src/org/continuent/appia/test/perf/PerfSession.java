@@ -31,13 +31,13 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.message.MsgBuffer;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.group.Endpt;
 import org.continuent.appia.protocols.group.Group;
@@ -179,7 +179,7 @@ public class PerfSession extends Session implements InitializableSession {
         System.err.println(ex.getMessage());
         System.exit(1);
       }
-      if (!multicast.host.isMulticastAddress()) {
+      if (!multicast.getAddress().isMulticastAddress()) {
         System.err.println("Multicast address given is not IP-Multicast addres.");
         System.exit(1);
       }
@@ -249,12 +249,12 @@ public class PerfSession extends Session implements InitializableSession {
   private boolean receiveOwn=false;
   /* Appia */
   private int myPort=RegisterSocketEvent.FIRST_AVAILABLE;
-  private InetWithPort multicast=null;
+  private InetSocketAddress multicast=null;
   private TimeProvider clock;
   
   /* Group */
   private Group group=null;
-  private InetWithPort[] gossips = null;
+  private InetSocketAddress[] gossips = null;
   private ViewState vs=null;
   private LocalState ls=null;
   private boolean isBlocked = true;
@@ -324,8 +324,8 @@ public class PerfSession extends Session implements InitializableSession {
     }
     
     try {
-      InetWithPort[] addrs=new InetWithPort[1];
-      addrs[0]=new InetWithPort(ev.localHost,ev.port);
+      InetSocketAddress[] addrs=new InetSocketAddress[1];
+      addrs[0]=new InetSocketAddress(ev.localHost,ev.port);
       Endpt[] view=new Endpt[1];
       view[0]=new Endpt("Perf@"+addrs[0].toString());
       

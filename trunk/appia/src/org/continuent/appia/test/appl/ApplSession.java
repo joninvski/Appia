@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 import java.net.UnknownHostException;
 import java.util.StringTokenizer;
@@ -34,7 +35,6 @@ import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.protocols.common.AppiaThreadFactory;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.group.*;
 import org.continuent.appia.protocols.group.events.GroupInit;
@@ -79,15 +79,15 @@ public class ApplSession extends Session {
     /* Appia */
     public Channel channel = null;
     private int myPort=-1;
-    private InetWithPort multicast=null;
-    private InetWithPort[] initAddrs=null;
+    private InetSocketAddress multicast=null;
+    private InetSocketAddress[] initAddrs=null;
     private ApplReader reader;
 
     
     /* Group */
     private Group myGroup=new Group("Appl Group");
     private Endpt myEndpt=null;
-    private InetWithPort[] gossips = null;
+    private InetSocketAddress[] gossips = null;
     private ViewState vs=null;
     private LocalState ls=null;
     private boolean isBlocked = true;
@@ -107,7 +107,7 @@ public class ApplSession extends Session {
         AppiaThreadFactory.getThreadFactory().newThread(new ApplReader(this),"Appl Reader Thread").start();
     }
     
-    public void init(int port, InetWithPort multicast, InetWithPort[] gossips, Group group, InetWithPort[] viewAddrs) {
+    public void init(int port, InetSocketAddress multicast, InetSocketAddress[] gossips, Group group, InetSocketAddress[] viewAddrs) {
       this.myPort=port;
       this.multicast=multicast;
       this.gossips=gossips;
@@ -116,7 +116,7 @@ public class ApplSession extends Session {
         myGroup=group;
     }
     
-    public void initWithSSL(int port, InetWithPort multicast, InetWithPort[] gossips, Group group, InetWithPort[] viewAddrs, String keystoreFile, String keystorePass) {
+    public void initWithSSL(int port, InetSocketAddress multicast, InetSocketAddress[] gossips, Group group, InetSocketAddress[] viewAddrs, String keystoreFile, String keystorePass) {
       init(port,multicast,gossips,group,viewAddrs);
       this.ssl=true;
       this.keystoreFile=keystoreFile;
@@ -348,12 +348,7 @@ public class ApplSession extends Session {
         out.println("New view delivered:");
         out.println("View members (IP:port):");
         for (int i = 0; i < vs.addresses.length; i++)
-            out.println(
-            "{"
-            + vs.addresses[i].host.getHostAddress()
-            + ":"
-            + vs.addresses[i].port
-            + "} ");
+            out.println("{" + vs.addresses[i] + "} ");
         out.println(
         (e.ls.am_coord ? "I am" : "I am not") + " the group coordinator");
                 /*
@@ -611,13 +606,13 @@ public class ApplSession extends Session {
       
     private void sendGroupInit() {
       try {
-        InetWithPort myAddr=new InetWithPort(InetAddress.getLocalHost(),myPort);
-        myEndpt=new Endpt("Appl@"+myAddr.host.getHostAddress()+":"+myAddr.port);
+        InetSocketAddress myAddr=new InetSocketAddress(InetAddress.getLocalHost(),myPort);
+        myEndpt=new Endpt("Appl@"+myAddr.getAddress().getHostAddress()+":"+myAddr.getPort());
         
         Endpt[] view=null;
-        InetWithPort[] addrs=null;
+        InetSocketAddress[] addrs=null;
         if (initAddrs == null) {
-          addrs=new InetWithPort[1];
+          addrs=new InetSocketAddress[1];
           addrs[0]=myAddr;
           view=new Endpt[1];
           view[0]=myEndpt;
@@ -625,7 +620,7 @@ public class ApplSession extends Session {
           addrs=initAddrs;
           view=new Endpt[addrs.length];
           for (int i=0 ; i < view.length ; i++) {
-            view[i]=new Endpt("Appl@"+addrs[i].host.getHostAddress()+":"+addrs[i].port);
+            view[i]=new Endpt("Appl@"+addrs[i].getAddress().getHostAddress()+":"+addrs[i].getPort());
           }
         }
         

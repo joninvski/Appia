@@ -32,6 +32,7 @@ package org.continuent.appia.protocols.gossipServer;
 import java.util.Vector;
 
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.SendableEvent;
@@ -39,7 +40,6 @@ import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.group.AppiaGroupException;
 import org.continuent.appia.protocols.group.Endpt;
@@ -145,7 +145,7 @@ public class GossipServerSession extends Session implements InitializableSession
   }
 
   private int my_port=DEFAULT_PORT;
-  private InetWithPort[] gossips=null;
+  private InetSocketAddress[] gossips=null;
   private long remove_time=DEFAULT_REMOVE_TIME;
   private long timer=DEFAULT_TIMER;
   private int max_idle_count=-1;
@@ -249,16 +249,16 @@ public class GossipServerSession extends Session implements InitializableSession
 
     try {
       if (gossips == null) {
-        gossips=new InetWithPort[] { new InetWithPort(ev.localHost,my_port) };
+        gossips=new InetSocketAddress[] { new InetSocketAddress(ev.localHost,my_port) };
       } else {
         int i;
         for (i=0 ; i < gossips.length ; i++)
-          if (gossips[i].host.equals(ev.localHost) && (gossips[i].port == my_port))
+          if (gossips[i].getAddress().equals(ev.localHost) && (gossips[i].getPort() == my_port))
             break;
         if (i >= gossips.length) {
-          InetWithPort[] aux=new InetWithPort[gossips.length+1];
+          InetSocketAddress[] aux=new InetSocketAddress[gossips.length+1];
           System.arraycopy(gossips,0,aux,0,gossips.length);
-          aux[gossips.length]=new InetWithPort(ev.localHost,my_port);
+          aux[gossips.length]=new InetSocketAddress(ev.localHost,my_port);
           gossips=aux;
         }
       }
@@ -269,7 +269,7 @@ public class GossipServerSession extends Session implements InitializableSession
       } 
       
       Endpt[] view=new Endpt[] { new Endpt() };
-      InetWithPort[] addrs=new InetWithPort[] { new InetWithPort(ev.localHost, ev.port) };
+      InetSocketAddress[] addrs=new InetSocketAddress[] { new InetSocketAddress(ev.localHost, ev.port) };
       ViewState vs=new ViewState("1",new Group(GROUP_NAME),new ViewID(0,view[0]),new ViewID[0], view, addrs);
     
       GroupInit ginit=new GroupInit(vs,view[0],null,gossips,ev.getChannel(), Direction.DOWN, this);
@@ -286,7 +286,7 @@ public class GossipServerSession extends Session implements InitializableSession
     int naddrs=((Message)ev.getMessage()).popInt();
     
     while (naddrs > 0) {
-      aux.addr=InetWithPort.pop(ev.getMessage());
+      aux.addr=ev.getMessage().popObject();
       int i;
       if ((i=clients.indexOf(aux)) >= 0) {
         Client c=(Client)clients.get(i);
@@ -316,7 +316,7 @@ public class GossipServerSession extends Session implements InitializableSession
         
         int i;
         for (i=0 ; i < clients.size() ; i++) {
-          InetWithPort.push((InetWithPort)((Client)clients.get(i)).addr, emsg);
+            emsg.pushObject((InetSocketAddress)((Client)clients.get(i)).addr);
         }
         emsg.pushInt(clients.size());
         
@@ -343,8 +343,8 @@ public class GossipServerSession extends Session implements InitializableSession
           ev.init();
           ev.dest=c.addr;
           ev.go();
-          debug("sending to "+((InetWithPort)ev.dest).host.toString()+":"+((InetWithPort)ev.dest).port);
-          debug("\t from "+((InetWithPort)ev.source).host.toString()+":"+((InetWithPort)ev.source).port);
+          debug("sending to "+((InetSocketAddress)ev.dest).toString());
+          debug("\t from "+((InetSocketAddress)ev.source).toString());
 
         } catch (AppiaEventException ex) {
           ex.printStackTrace();
@@ -365,7 +365,7 @@ public class GossipServerSession extends Session implements InitializableSession
     
     try {
       GossipGroupEvent ev=new GossipGroupEvent(groupChannel, Direction.DOWN, this, vs.group, vs.id);
-      InetWithPort.push((InetWithPort)sender.addr, ev.getMessage());
+      ev.getMessage().pushObject(sender.addr);
       (ev.getMessage()).pushInt(1);
       ev.go();
     } catch (AppiaEventException ex) {
@@ -388,8 +388,7 @@ public class GossipServerSession extends Session implements InitializableSession
       int i;
       for (i=0 ; i < clients.size() ; i++) {
         Client c=(Client)clients.get(i);
-        debug.print("[("+((InetWithPort)c.addr).host.toString());
-        debug.print(":"+((InetWithPort)c.addr).port);
+        debug.print("[("+((InetSocketAddress)c.addr).toString());
         debug.print("),"+c.idle_count);
         debug.print("] , ");
       }
@@ -397,6 +396,12 @@ public class GossipServerSession extends Session implements InitializableSession
     }
   }
 
+  /**
+   * 
+   * This class defines a Client
+   * 
+   * @version 1.0
+   */
   private class Client {
     public Object addr;
     public int idle_count;

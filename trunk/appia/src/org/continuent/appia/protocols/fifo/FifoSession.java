@@ -40,13 +40,13 @@
 
 import java.util.*;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.*;
 import org.continuent.appia.core.events.channel.*;
 import org.continuent.appia.core.message.*;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
 import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
@@ -61,6 +61,8 @@ import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
  */
 public class FifoSession extends Session {
 
+    private static final int INT_SIZE = 4;
+    
 	/*
 	 * Keeps all addresses. hitch address is a PeerInfo
 	 * that has a reference to all sequence numbers
@@ -292,18 +294,10 @@ public class FifoSession extends Session {
 				"Host "
 					+ count
 					+ ": "
-					+ (p.peer instanceof org.continuent.appia.protocols.common.InetWithPort
-						? ((org.continuent.appia.protocols.common.InetWithPort) p.peer)
-							.host
-							.getHostAddress()
+					+ (p.peer instanceof InetSocketAddress ? ((InetSocketAddress) p.peer).getAddress().getHostAddress()
 						: "")
 					+ " Port:"
-					+ (p.peer instanceof org.continuent.appia.protocols.common.InetWithPort
-						? ""
-							+ (
-								(org.continuent.appia.protocols.common.InetWithPort) p
-										.peer)
-										.port
+					+ (p.peer instanceof InetSocketAddress	? "" + ((InetSocketAddress) p.peer).getPort()
 						: ""));
 			out.println("  Next sequence number to be sent: " + p.nextOutgoing);
 			out.println("  Next sequence number expected: " + p.nextIncoming);
@@ -326,9 +320,7 @@ public class FifoSession extends Session {
 	/* gets local address */
 	private void handleRegisterSocket(RegisterSocketEvent rse) {
 		if (rse.getDir() == Direction.UP || !rse.error) {
-			myAddr = new InetWithPort();
-			((InetWithPort) myAddr).port = rse.port;
-			((InetWithPort) myAddr).host = rse.localHost;
+            myAddr = new InetSocketAddress(rse.localHost,rse.port);
 		}
 
 		try {
@@ -355,7 +347,7 @@ public class FifoSession extends Session {
 		if (p == null)
 			return;
 		MsgBuffer msgBuf = new MsgBuffer();
-		msgBuf.len = 4;
+		msgBuf.len = INT_SIZE;
 		e.getMessage().pop(msgBuf);
 		/* false is not expected */
 		if (hasSynActive(msgBuf)) {
@@ -504,7 +496,7 @@ public class FifoSession extends Session {
 
 		/* get header message */
 		header = new MsgBuffer();
-		header.len = 8;
+		header.len = INT_SIZE * 2;
 		e.getMessage().pop(header);
 
 		PeerInfo p = checkConnection(e, header);
@@ -749,9 +741,9 @@ public class FifoSession extends Session {
 		if (FifoConfig.debugOn && debugOutput != null)
 			debugOutput.println(
 				"(FIFO:sendAck) Fifo will send a Ack event to:"
-					+ (p.peer instanceof org.continuent.appia.protocols.common.InetWithPort
-						? (((org.continuent.appia.protocols.common.InetWithPort) p.peer).host.getHostAddress()
-							+ ":"+ ((org.continuent.appia.protocols.common.InetWithPort) p.peer).port)
+					+ (p.peer instanceof InetSocketAddress
+						? (((InetSocketAddress) p.peer).getAddress().getHostAddress()
+							+ ":"+ ((InetSocketAddress) p.peer).getPort())
 						: "N/A")
 					+ " to channel "
 					+ p.getChannel().getChannelID());

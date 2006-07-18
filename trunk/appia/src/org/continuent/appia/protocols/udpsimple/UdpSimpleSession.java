@@ -24,6 +24,7 @@ import java.io.PrintStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -47,7 +48,6 @@ import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.core.message.MsgBuffer;
 import org.continuent.appia.protocols.common.AppiaThreadFactory;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
 import org.continuent.appia.protocols.common.ThreadFactory;
@@ -91,8 +91,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   public static final int DEFAULT_SOTIMEOUT=5000;
   private int param_SOTIMEOUT=DEFAULT_SOTIMEOUT;
   
-  private InetWithPort myAddress = null;
-  private InetWithPort ipMulticast = null;
+  private InetSocketAddress myAddress = null;
+  private InetSocketAddress ipMulticast = null;
   
   protected PrintStream debugOutput = System.out;
 
@@ -216,7 +216,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       out.println("Local UDP port: " + sock.getLocalPort());
     Iterator iter=multicastReaders.keySet().iterator();
     while (iter.hasNext())
-      out.println("Local Multicast address: " + ((InetWithPort)iter.next()));
+      out.println("Local Multicast address: " + ((InetSocketAddress)iter.next()));
     
     int nChannels = channels.size();
     out.println("Currently connected channels: " + nChannels);
@@ -247,7 +247,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
                  * wrong. Keep existing information.
                  */
     if (sock != null) {
-      reverseRegister(e, myAddress.port, myAddress.host, true);
+      reverseRegister(e, myAddress.getPort(), myAddress.getAddress(), true);
       return;
     }
     
@@ -258,7 +258,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     }
     	
     if (newSock(e.port,e.localHost)) {
-      reverseRegister(e, myAddress.port, myAddress.host, false);
+      reverseRegister(e, myAddress.getPort(), myAddress.getAddress(), false);
     } else {
       reverseRegister(e, e.port, null, true);
     }
@@ -278,17 +278,16 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     if (!multicastReaders.containsKey(e.ipMulticast)) {
       /*creates a multicast socket and binds it to a specific port on the local host machine*/
       try {
-        MulticastSocket multicastSock = new MulticastSocket(e.ipMulticast.port);
+        MulticastSocket multicastSock = new MulticastSocket(e.ipMulticast);
         
         if (UdpSimpleConfig.debugOn)
-          debug(":handleAppiaMulticastInit: Socket Multicast created. Address: "
-              + e.ipMulticast.host.getHostAddress());
+          debug(":handleAppiaMulticastInit: Socket Multicast created. Address: "  + e.ipMulticast);
         
         /*joins a multicast group*/
-        multicastSock.joinGroup(e.ipMulticast.host);
+        multicastSock.joinGroup(((InetSocketAddress)e.ipMulticast).getAddress());
         
         //keeping the multicast address...
-        ipMulticast = new InetWithPort(e.ipMulticast.host, e.ipMulticast.port);
+        ipMulticast = new InetSocketAddress(((InetSocketAddress)e.ipMulticast).getAddress(),((InetSocketAddress)e.ipMulticast).getPort());
         
         if (UdpSimpleConfig.debugOn)
           debug(":handleAppiaMulticastInit: Socket Multicast joined.");
@@ -489,8 +488,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     }
     
     // Determine local address
-    //myAddress = new InetWithPort(HostUtils.getLocalAddress(),sock.getLocalPort());
-    myAddress = new InetWithPort(sock.getLocalAddress(),sock.getLocalPort());
+    myAddress = new InetSocketAddress(sock.getLocalAddress(),sock.getLocalPort());
     
     try {
 		sock.setSoTimeout(param_SOTIMEOUT);
@@ -560,10 +558,10 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         DatagramPacket dp = new DatagramPacket(bytes, bytes.length);
         
         for (int i = 0; i < dests.length; i++) {
-          if (dests[i] instanceof InetWithPort) {
+          if (dests[i] instanceof InetSocketAddress) {
             
-            dp.setAddress(((InetWithPort) dests[i]).host);
-            dp.setPort(((InetWithPort) dests[i]).port);
+            dp.setAddress(((InetSocketAddress) dests[i]).getAddress());
+            dp.setPort(((InetSocketAddress) dests[i]).getPort());
             sock.send(dp);
             
             if (UdpSimpleConfig.debugOn)
@@ -574,14 +572,14 @@ public class UdpSimpleSession extends Session implements InitializableSession {
             System.err.println("UdpSimpleSession: Wrong destination address type in event " + e);
         }
       } else {
-        InetWithPort dest = null;
-        if (e.dest instanceof InetWithPort) {
-          dest = (InetWithPort) e.dest;
+        InetSocketAddress dest = null;
+        if (e.dest instanceof InetSocketAddress) {
+          dest = (InetSocketAddress) e.dest;
         } else if (e.dest instanceof AppiaMulticast) {
           Object aux=((AppiaMulticast) e.dest).getMulticastAddress();
-          if (aux instanceof InetWithPort) {
-            dest = (InetWithPort)aux;
-            if (!dest.host.isMulticastAddress()) {
+          if (aux instanceof InetSocketAddress) {
+            dest = (InetSocketAddress)aux;
+            if (!dest.getAddress().isMulticastAddress()) {
               System.err.println("UdpSimpleSession: Not a multicast address in AppiaMulticast of event " + e);
               return;
             }
@@ -594,7 +592,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
           return;
         }
         
-        DatagramPacket dp = new DatagramPacket(bytes, bytes.length, dest.host, dest.port);
+        DatagramPacket dp = new DatagramPacket(bytes, bytes.length, dest.getAddress(), dest.getPort());
         
         sock.send(dp);
         
@@ -627,13 +625,15 @@ public class UdpSimpleSession extends Session implements InitializableSession {
          */
   class UdpSimpleReader implements Runnable {
     
+      private static final int MAX_BUFFER_SIZE =65536; 
+      
     private DatagramSocket sock = null;
-    private InetWithPort dest = null;
-    private InetWithPort ignoreSource = null;
+    private InetSocketAddress dest = null;
+    private InetSocketAddress ignoreSource = null;
     private UdpSimpleSession parentSession = null;
     private Thread parentThread = null;
     
-    private byte[] b = new byte[65536];
+    private byte[] b = new byte[MAX_BUFFER_SIZE];
     private MsgBuffer mbuf = new MsgBuffer();
     
     private boolean terminate=false;
@@ -641,7 +641,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     /**
      * Waits on a DatagramSocket - point-to-point communication
      */
-    public UdpSimpleReader(UdpSimpleSession parentSession, DatagramSocket s, InetWithPort dest) {
+    public UdpSimpleReader(UdpSimpleSession parentSession, DatagramSocket s, InetSocketAddress dest) {
       this.parentSession = parentSession;
       this.sock = s;
       this.dest = dest;
@@ -654,14 +654,14 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     /**
      * Waits on a MulticastSocket - multicast communication
      */
-    public UdpSimpleReader(UdpSimpleSession parentSession, DatagramSocket s, InetWithPort dest, InetWithPort ignore) {
+    public UdpSimpleReader(UdpSimpleSession parentSession, DatagramSocket s, InetSocketAddress dest, InetSocketAddress ignore) {
       this.parentSession = parentSession;
       this.sock = s;
       this.dest = dest;
       this.ignoreSource = ignore;
     }
     
-    public InetWithPort getDest() {
+    public InetSocketAddress getDest() {
       return dest;
     }
     
@@ -688,8 +688,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
             debug(":run: PtP datagram received. Size = " + msg.getLength());
           
           if ((ignoreSource != null)
-          && (ignoreSource.port == msg.getPort())
-          && (ignoreSource.host.equals(msg.getAddress()))) {
+          && (ignoreSource.getPort() == msg.getPort())
+          && (ignoreSource.getAddress().equals(msg.getAddress()))) {
             if (UdpSimpleConfig.debugReaderOn)
               debug(":run: Ignored Last received message");
           } else
@@ -759,7 +759,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         /* Extract the addresses and put them on the event */
         
         //msg's source, futurely change udpsimple to common
-        InetWithPort addr = new InetWithPort(p.getAddress(),p.getPort());
+        InetSocketAddress addr = new InetSocketAddress(p.getAddress(),p.getPort());
         e.source = addr;
         
         //msg's destination

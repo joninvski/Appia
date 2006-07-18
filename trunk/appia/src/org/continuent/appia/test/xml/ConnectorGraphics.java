@@ -27,6 +27,7 @@ import java.awt.Label;
 import java.awt.Panel;
 import java.awt.TextField;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 import org.continuent.appia.core.AppiaCursorException;
@@ -34,7 +35,6 @@ import org.continuent.appia.core.AppiaDuplicatedSessionsException;
 import org.continuent.appia.core.AppiaException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.ChannelCursor;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.xml.AppiaXML;
 
 
@@ -157,9 +157,9 @@ public class ConnectorGraphics extends javax.swing.JFrame {
 				
 		currMsgSession.init(username,group.getText(),gossip_host,gossip_port);
 		
-		InetWithPort[] gossips = new InetWithPort[1];
+		InetSocketAddress[] gossips = new InetSocketAddress[1];
 		try {
-			gossips[0] = new InetWithPort(InetAddress.getByName(gossip_host),gossip_port);
+			gossips[0] = new InetSocketAddress(InetAddress.getByName(gossip_host),gossip_port);
 		} catch (UnknownHostException e3) {
 			e3.printStackTrace();
 		}
@@ -169,7 +169,7 @@ public class ConnectorGraphics extends javax.swing.JFrame {
 		 */
 		if(secret != null)
 			intSession.init(secret);
-		
+
 		System.out.println("Initialized sessions!");
 		
 		try {

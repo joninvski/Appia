@@ -22,6 +22,7 @@
  */
 package org.continuent.appia.test.perf.vsyncvalid;
 
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 
@@ -30,7 +31,6 @@ import org.continuent.appia.core.Direction;
 import org.continuent.appia.core.Event;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.utils.ParseUtils;
 import org.continuent.appia.test.perf.PerfCastEvent;
 import org.continuent.appia.xml.interfaces.InitializableSession;
@@ -63,7 +63,7 @@ public class DropFailSession extends Session implements InitializableSession {
   private int msgs_to_fail=DEFAULT_MSGS_TO_FAIL;
   private int msgs_to_exit=DEFAULT_MSGS_TO_EXIT;
   private int countMsgs=0;
-  private InetWithPort destination=null;
+  private InetSocketAddress destination=null;
 
   public void init(SessionProperties params) {
     if (params.containsKey("fail"))

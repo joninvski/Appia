@@ -22,13 +22,13 @@ package org.continuent.appia.protocols.group.heal;
 
 
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.SendableEvent;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.events.channel.PeriodicTimer;
 import org.continuent.appia.core.message.Message;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.group.Group;
 import org.continuent.appia.protocols.group.LocalState;
 import org.continuent.appia.protocols.group.ViewID;
@@ -164,13 +164,13 @@ public class HealSession extends Session implements InitializableSession {
       }
     }
 
-    if (vs.getRankByAddress((InetWithPort)ev.source) >= 0) {
+    if (vs.getRankByAddress((InetSocketAddress)ev.source) >= 0) {
       debug("Received gossip of other alive member of my group (possibly an old one). Ignoring it.");
       return;
     }
     
     if (debugFull)
-      debug("Detected valid concurrent view (id="+remote_id.toString()+" source="+((InetWithPort)ev.source).toString()+"). Sending warning.");
+      debug("Detected valid concurrent view (id="+remote_id.toString()+" source="+((InetSocketAddress)ev.source).toString()+"). Sending warning.");
     
     try {
       ConcurrentViewEvent cve=new ConcurrentViewEvent(remote_id,ev.source,

@@ -21,6 +21,7 @@
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -28,7 +29,6 @@ import java.net.SocketTimeoutException;
 import org.apache.log4j.Logger;
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.SendableEvent;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.tcpcomplete.TcpUndeliveredEvent;
 
 /**
@@ -73,10 +73,10 @@ public class TcpReader implements Runnable {
 		try {
 			is = s.getInputStream();
 		} catch (IOException ex) {
-			InetWithPort iwp = new InetWithPort(s.getInetAddress(),remotePort);
+			InetSocketAddress iwp = new InetSocketAddress(s.getInetAddress(),remotePort);
 
 			if(TcpCompleteConfig.debugOn)	
-				debug("ia receber dados e o no "+iwp.host+" no porto "+iwp.port +" falhou");
+				debug("message reception from "+iwp+" failed. Sending Undelivered event back.");
 	
 			try {
 				TcpUndeliveredEvent undelivered = new TcpUndeliveredEvent(iwp);    
@@ -107,10 +107,10 @@ public class TcpReader implements Runnable {
 				} catch (IOException ex) {
 					//send_undelivered :(
 					try {
-						InetWithPort iwp = new InetWithPort(s.getInetAddress(),remotePort);
+						InetSocketAddress iwp = new InetSocketAddress(s.getInetAddress(),remotePort);
 		
 						if(TcpCompleteConfig.debugOn)	
-							debug("ia receber dados e o no "+iwp.host+" no porto "+iwp.port +" falhou");
+							debug("Message reception from "+iwp+" failed. Send undelivered event up.");
 							
 						TcpUndeliveredEvent undelivered = new TcpUndeliveredEvent(iwp);    
 						undelivered.asyncGo(channel,Direction.UP);						
@@ -193,13 +193,9 @@ public class TcpReader implements Runnable {
 		        /* Extract the addresses and put them on the event */
 
 		        //msg's source
-		        e.source=new InetWithPort();
-			((InetWithPort)e.source).host= s.getInetAddress();
-			((InetWithPort)e.source).port= remotePort;
+		        e.source=new InetSocketAddress(s.getInetAddress(),remotePort);
 			
-			e.dest=new InetWithPort();
-			((InetWithPort)e.dest).host=s.getLocalAddress();
-			((InetWithPort)e.dest).port= originalPort;
+			e.dest=new InetSocketAddress(s.getLocalAddress(),originalPort);
 			
 			e.getMessage().setByteArray(data,curPos,total-curPos);
 

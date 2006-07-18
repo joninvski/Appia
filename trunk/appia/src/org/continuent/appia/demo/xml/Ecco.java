@@ -28,6 +28,7 @@ package org.continuent.appia.demo.xml;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 import org.continuent.appia.core.Appia;
@@ -38,7 +39,6 @@ import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.ChannelCursor;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.QoS;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.test.xml.ecco.EccoLayer;
 import org.continuent.appia.test.xml.ecco.EccoSession;
 import org.continuent.appia.xml.AppiaXML;
@@ -96,7 +96,7 @@ public class Ecco {
 		    try {
 				es.init(
 						localport,
-						new InetWithPort(InetAddress.getByName(remotehost),remoteport));
+						new InetSocketAddress(InetAddress.getByName(remotehost),remoteport));
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

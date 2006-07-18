@@ -20,6 +20,8 @@
  
 package org.continuent.appia.protocols.group.events;
 
+import java.net.InetSocketAddress;
+
 import org.continuent.appia.core.*;
 import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.group.AppiaGroupException;
@@ -56,13 +58,13 @@ public class GroupInit extends Event {
    * <br>
    * If <i>IP multicast</i> is not supported then it is <b>null</b>.
    */
-  public InetWithPort ip_multicast;
+  public Object ip_multicast;
   /**
    * The IP addresses of a set of <i>Gossip Servers</i>.
    * <br>
    * If there isn't a <i>Gossip Server</i> it is <b>null</b>.
    */
-  public InetWithPort[] ip_gossip;
+  public Object[] ip_gossip;
 
     /**
    * Creates an initialized <i>GroupInit</i>.
@@ -76,6 +78,7 @@ public class GroupInit extends Event {
    * @throws AppiaEventException as the result of calling
    * {@link org.continuent.appia.core.Event#Event(Channel,int,Session)
    * Event(Channel,Direction,Session)}
+   * @deprecated
    */
   public GroupInit(
           ViewState vs,
@@ -93,7 +96,42 @@ public class GroupInit extends Event {
     this.vs=vs;
     if ((rank=vs.getRank(endpt)) < 0)
        throw new AppiaGroupException("GroupInit: endpoint given doesn't belong to view");
-    this.ip_multicast=ip_multicast;
-    this.ip_gossip=ip_gossip;
+    this.ip_multicast=new InetSocketAddress(ip_multicast.host, ip_multicast.port);
+    this.ip_gossip = new InetSocketAddress[ip_gossip.length];
+    for(int i=0; i<ip_gossip.length; i++)
+        this.ip_gossip[i] = new InetSocketAddress(ip_gossip[i].host, ip_gossip[i].port);
+  }
+  
+  /**
+   * Creates an initialized <i>GroupInit</i>.
+   *
+   * @param vs the initial <i>view</i>
+   * @param endpt the {@link org.continuent.appia.protocols.group.Endpt Endpt} of the member
+   * @param ip_multicast the <i>IP multicast</i> address, or <b>null</b>
+   * @param channel the {@link org.continuent.appia.core.Channel Channel} of the Event
+   * @param dir the {@link org.continuent.appia.core.Direction Direction} of the Event
+   * @param source the {@link org.continuent.appia.core.Session Session} that is generating the Event
+   * @throws AppiaEventException as the result of calling
+   * {@link org.continuent.appia.core.Event#Event(Channel,int,Session)
+   * Event(Channel,Direction,Session)}
+   */
+  public GroupInit(
+          ViewState vs,
+          Endpt endpt,
+          InetSocketAddress ipMulticast,
+          InetSocketAddress[] ipGossip,
+          Channel channel, int dir, Session source)
+    throws AppiaEventException,NullPointerException,AppiaGroupException {
+
+    super(channel,dir,source);
+
+    if ((vs == null) || (endpt == null))
+       throw new NullPointerException("appia:group:GroupInit: view state or endpoint not given");
+
+    this.vs=vs;
+    if ((rank=vs.getRank(endpt)) < 0)
+       throw new AppiaGroupException("GroupInit: endpoint given doesn't belong to view");
+    this.ip_multicast=ipMulticast;
+    this.ip_gossip=ipGossip;
   }
 }

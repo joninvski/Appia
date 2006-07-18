@@ -23,10 +23,9 @@
 package org.continuent.appia.protocols.utils;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
-
-import org.continuent.appia.protocols.common.InetWithPort;
 
 /**
  * Class containing some methods usefull for parsing strings.
@@ -40,20 +39,20 @@ public final class ParseUtils {
   }
   
   /** 
-   * Generate a InetWithPort[] from a string of the form "[host][:port][,[host][:port] ...]".
+   * Generate a InetSocketAddress[] from a string of the form "[host][:port][,[host][:port] ...]".
    * 
    * @param s
    * @param default_host
    * @param default_port
    * @return an array with addresses
-   * @see InetWithPort
    * @throws ParseException
    * @throws UnknownHostException
    */
-  public static InetWithPort[] parseInetWithPortArray(String s, InetAddress default_host, int default_port) throws ParseException, UnknownHostException {
+  public static InetSocketAddress[] parseInetWithPortArray(String s, InetAddress default_host, int default_port) 
+  throws ParseException, UnknownHostException {
     //System.err.println("##### Parse string: "+s);
     
-    char SEP=',';
+    final char SEP=',';
     int isep=-1;
     int previsep;
     int j;
@@ -65,7 +64,7 @@ public final class ParseUtils {
         break;
       count++;
     }
-    InetWithPort[] result=new InetWithPort[count];
+    InetSocketAddress[] result=new InetSocketAddress[count];
  
     //System.err.println("##### Parsed array("+result.length+"):{");
 
@@ -94,33 +93,29 @@ public final class ParseUtils {
   }
 
   /**
-   * Generate a InetWithPort from a string of the form "[host][:port]".
+   * Generate a InetSocketAddress from a string of the form "[host][:port]".
    *  
-   * @param s
+   * @param s the string containing the addresses.
    * @param default_host Host to use if the string doesn't contain a host part. If <b>null</b> string must contain a host part.
    * @param default_port Port to use if the string doesn't contain a port part. If <b>-1</b> string must contain a host part.
    * @return a parsed address
-   * @see InetWithPort
    * @throws ParseException
    * @throws UnknownHostException
    */
-  public static InetWithPort parseInetWithPort(String s, InetAddress default_host, int default_port) throws ParseException, UnknownHostException {
-    InetWithPort addr=new InetWithPort();
-    
+  public static InetSocketAddress parseInetWithPort(String s, InetAddress default_host, int default_port) 
+  throws ParseException, UnknownHostException {
+      InetSocketAddress addr = null;
     int iport=s.indexOf(':');
     if (iport < 0) {
       if (default_port < 0)
         throw new ParseException("Missing port in \""+s+"\"",0);
-      addr.host=InetAddress.getByName(s);
-      addr.port=default_port;
+      addr=new InetSocketAddress(InetAddress.getByName(s),default_port);
     } else if (iport == 0) {
       if (default_host == null)
         throw new ParseException("Missing host in \""+s+"\"",iport);
-      addr.host=default_host;
-      addr.port=Integer.parseInt(s.substring(1));
+      addr=new InetSocketAddress(default_host,Integer.parseInt(s.substring(1)));
     } else if (iport < s.length()-1) {
-      addr.host=InetAddress.getByName(s.substring(0,iport));
-      addr.port=Integer.parseInt(s.substring(iport+1));
+        addr=new InetSocketAddress(InetAddress.getByName(s.substring(0,iport)),Integer.parseInt(s.substring(iport+1)));
     } else {
       throw new ParseException("Missing port in \""+s+"\"",iport);
     }

@@ -37,6 +37,7 @@ package org.continuent.appia.protocols.fifounreliable;
 //////////////////////////////////////////////////////////////////////
 
 
+import java.net.InetSocketAddress;
 import java.util.Hashtable;
 import java.util.Set;
 
@@ -48,7 +49,6 @@ import org.continuent.appia.core.Session;
 import org.continuent.appia.core.TimeProvider;
 import org.continuent.appia.core.events.SendableEvent;
 import org.continuent.appia.core.events.channel.ChannelInit;
-import org.continuent.appia.protocols.common.InetWithPort;
 
 /**
  * Class FifoUnreliableSession  
@@ -61,6 +61,8 @@ import org.continuent.appia.protocols.common.InetWithPort;
 
 public class FifoUnreliableSession extends Session {
 	
+    private static final int CLEAN_TIME = 20000;
+    
 	private Hashtable peers;
 	private int seqnumber; /*just one sequence number*/
 	private long refresh;
@@ -79,7 +81,7 @@ public class FifoUnreliableSession extends Session {
 	
 	/*checks if the peer exists if not the peer is created*/
 	/*treats the events with direction UP, returns true if this is a new message*/
-	private boolean checkPeerUP(InetWithPort id, int seq){
+	private boolean checkPeerUP(InetSocketAddress id, int seq){
 		
 		PeerInfo peer=(PeerInfo)(peers.get(id));
 		
@@ -94,7 +96,7 @@ public class FifoUnreliableSession extends Session {
 	
 	/*checks if the peer exists if not the peer is created*/
 	/*treats the events with direction DOWN, returns the next sequence number*/
-	private void checkPeerDOWN(InetWithPort id){
+	private void checkPeerDOWN(InetSocketAddress id){
 		
 		PeerInfo peer=(PeerInfo)(peers.get(id));
 		
@@ -111,7 +113,7 @@ public class FifoUnreliableSession extends Session {
 	 */    
 	private void processOutgoing(SendableEvent e) {
 		
-		checkPeerDOWN((InetWithPort)(e.dest));
+		checkPeerDOWN((InetSocketAddress)(e.dest));
 		
 		e.getMessage().pushInt(seqnumber);
 		try {
@@ -127,7 +129,7 @@ public class FifoUnreliableSession extends Session {
 		
 		boolean bool;
 		int seq=e.getMessage().popInt();
-		bool=checkPeerUP((InetWithPort)(e.source),seq);
+		bool=checkPeerUP((InetSocketAddress)(e.source),seq);
 		
 		if (bool==true){
 			try {
@@ -149,7 +151,7 @@ public class FifoUnreliableSession extends Session {
 		
 		long aux = timeProvider.currentTimeMillis();
 		
-		if ((aux-refresh) < 20000)
+		if ((aux-refresh) < CLEAN_TIME)
 			return ;
 		
 		int size = peers.size();
@@ -159,11 +161,11 @@ public class FifoUnreliableSession extends Session {
 		Object[] obj = set.toArray();
 		
 		while(counter<size){
-			if(((PeerInfo)(peers.get((InetWithPort)obj[counter]))).getcontrol()==0){
-				peers.remove((InetWithPort)obj[counter]);
+			if(((PeerInfo)(peers.get((InetSocketAddress)obj[counter]))).getcontrol()==0){
+				peers.remove((InetSocketAddress)obj[counter]);
 			}
 			else
-				((PeerInfo)(peers.get((InetWithPort)obj[counter]))).setcontrol(0);
+				((PeerInfo)(peers.get((InetSocketAddress)obj[counter]))).setcontrol(0);
 			
 			counter++;
 		}

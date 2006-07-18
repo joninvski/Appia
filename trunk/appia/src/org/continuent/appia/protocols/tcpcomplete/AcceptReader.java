@@ -21,13 +21,13 @@
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 import org.continuent.appia.core.Channel;
-import org.continuent.appia.protocols.common.InetWithPort;
 
 
 /**
@@ -88,7 +88,7 @@ public class AcceptReader implements Runnable {
         try {
           remotePort = initProto(newSocket);
           
-          InetWithPort iwp = new InetWithPort(newSocket.getInetAddress(),remotePort);
+          InetSocketAddress iwp = new InetSocketAddress(newSocket.getInetAddress(),remotePort);
           
           synchronized(lock){
             if(session.existsSocket(session.ourReaders,iwp))

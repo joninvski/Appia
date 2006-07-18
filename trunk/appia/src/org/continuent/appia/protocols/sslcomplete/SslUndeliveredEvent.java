@@ -19,8 +19,9 @@
  */
  package org.continuent.appia.protocols.sslcomplete;
 
+import java.net.InetSocketAddress;
+
 import org.continuent.appia.core.*;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.tcpcomplete.TcpUndeliveredEvent;
 
 
@@ -30,7 +31,7 @@ import org.continuent.appia.protocols.tcpcomplete.TcpUndeliveredEvent;
  */
 public class SslUndeliveredEvent extends TcpUndeliveredEvent {
 
-	public SslUndeliveredEvent(Channel channel, int dir, Session session, InetWithPort iwp) throws AppiaEventException {
+	public SslUndeliveredEvent(Channel channel, int dir, Session session, InetSocketAddress iwp) throws AppiaEventException {
 		super(channel, dir, session,iwp);
 	}
 }

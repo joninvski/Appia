@@ -22,6 +22,7 @@ package org.continuent.appia.protocols.group.heal;
 
 
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 
 import org.continuent.appia.core.*;
@@ -29,7 +30,6 @@ import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.fifo.FIFOConfigEvent;
 import org.continuent.appia.protocols.fifo.FifoLayer;
@@ -182,8 +182,8 @@ public class GossipOutSession extends Session implements InitializableSession {
   private Channel out;
   
   private boolean requiresRSE;
-  private InetWithPort outAddr;
-  private InetWithPort[] gossipAddrs;
+  private InetSocketAddress outAddr;
+  private InetSocketAddress[] gossipAddrs;
   private int server=-1;
   private boolean outCreated=false;
   
@@ -239,7 +239,7 @@ public class GossipOutSession extends Session implements InitializableSession {
   }
   
   private void handleGroupInit(GroupInit ev) {
-    gossipAddrs=ev.ip_gossip;
+    gossipAddrs=(InetSocketAddress[]) ev.ip_gossip;
     if ((gossipAddrs != null) && (gossipAddrs.length > 0))
       server=0;
     try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
@@ -270,7 +270,7 @@ public class GossipOutSession extends Session implements InitializableSession {
         debug("placing my address "+outAddr.toString()+" on message to "+ev.dest);
 
       ev.getMessage().pushString(ev.getChannel().getChannelID());
-      InetWithPort.push(outAddr,ev.getMessage());
+      ev.getMessage().pushObject(outAddr);
 
       try {
         ev.setChannel(out);
@@ -287,7 +287,7 @@ public class GossipOutSession extends Session implements InitializableSession {
     }
     
     if ((ev.getChannel() == out) && (in != null)) {
-      ev.source=InetWithPort.pop(ev.getMessage());
+        ev.source = ev.getMessage().popObject();
       String channelName=ev.getMessage().popString();
 
       if (debugFull)
@@ -409,7 +409,7 @@ public class GossipOutSession extends Session implements InitializableSession {
     
     if (gossipAddrs != null) {
       for (int i=0 ; i < gossipAddrs.length ; i++) {
-        if (gossipAddrs[i].host.isMulticastAddress()) {
+        if (gossipAddrs[i].getAddress().isMulticastAddress()) {
           try {
             MulticastInitEvent e=new MulticastInitEvent(gossipAddrs[i],false,out,Direction.DOWN,this);
             e.go();
@@ -434,9 +434,9 @@ public class GossipOutSession extends Session implements InitializableSession {
 
   /**
    * Gets the outgoing address.
-   * @return InetWithPort
+   * @return the outgoing address
    */
-  public InetWithPort getOutAddress() {
+  public InetSocketAddress getOutAddress() {
 	  return outAddr;
   }
 

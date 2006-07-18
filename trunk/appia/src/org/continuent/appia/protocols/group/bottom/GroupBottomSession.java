@@ -21,13 +21,13 @@
 
 
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.AppiaMulticast;
 import org.continuent.appia.core.events.AppiaMulticastSupport;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.*;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.group.*;
 import org.continuent.appia.protocols.group.events.*;
 import org.continuent.appia.protocols.group.intra.View;
@@ -74,7 +74,7 @@ public class GroupBottomSession extends Session {
     
     // GroupInit
     if (event instanceof GroupInit) {
-      ip_multicast=((GroupInit)event).ip_multicast;
+      ip_multicast=(InetSocketAddress) ((GroupInit)event).ip_multicast;
       try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
       return;
     }
@@ -104,7 +104,7 @@ public class GroupBottomSession extends Session {
   
   private ViewState vs;
   private LocalState ls;
-  private InetWithPort ip_multicast;
+  private InetSocketAddress ip_multicast;
   private EventBuffer buffer=new EventBuffer(BUFFER_SIZE);
   private int viewHashCode;
   private int groupHashCode;
@@ -306,7 +306,7 @@ public class GroupBottomSession extends Session {
     
     if (supportsAppiaMulticast) {
       //create addresses array to be used with AppiaMulticast
-      InetWithPort[] addrs = new InetWithPort[vs.view.length-1];
+      InetSocketAddress[] addrs = new InetSocketAddress[vs.view.length-1];
       for (i=0 ; i < addrs.length ; i++) {
         addrs[i]=vs.addresses[(i < ls.my_rank) ? i : i+1];
       }

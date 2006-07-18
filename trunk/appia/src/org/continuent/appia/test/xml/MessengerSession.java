@@ -22,6 +22,7 @@
 import java.awt.Point;
 import java.io.PrintStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.util.StringTokenizer;
@@ -32,7 +33,6 @@ import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.message.Message;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.group.AppiaGroupException;
 import org.continuent.appia.protocols.group.Endpt;
@@ -60,7 +60,7 @@ public class MessengerSession extends Session {
 	public Channel draw = null;
 	
 	// Local ports
-	private InetWithPort myPort;
+	private InetSocketAddress myPort;
 	private int currPort = 6666;
 	
 	/* Messenger INTERFACE */
@@ -71,7 +71,7 @@ public class MessengerSession extends Session {
 	/* Group */
     private Group myGroup;
     private Endpt myEndpt=null;
-    private InetWithPort[] gossips = null;
+    private InetSocketAddress[] gossips = null;
     private ViewState vs=null, vs_old = null;
     private LocalState ls=null, ls_old = null;
     private boolean isBlocked;
@@ -98,8 +98,8 @@ public class MessengerSession extends Session {
 		System.out.println("Group name: " + groupName +".");
 		
 		try {
-			gossips = new InetWithPort[1];
-			gossips[0] = new InetWithPort(InetAddress.getByName(gossipHost),gossipPort);
+			gossips = new InetSocketAddress[1];
+			gossips[0] = new InetSocketAddress(InetAddress.getByName(gossipHost),gossipPort);
 			System.out.println("Gossip: "+gossips[0]);
 		} catch (UnknownHostException e1) {
 			e1.printStackTrace();
@@ -192,12 +192,12 @@ public class MessengerSession extends Session {
 		if (ev.error) {
     		try {
     			currPort++;
-    			myPort = new InetWithPort(InetAddress.getLocalHost(),currPort);
+    			myPort = new InetSocketAddress(InetAddress.getLocalHost(),currPort);
     		} catch (UnknownHostException e) {
     			e.printStackTrace();
     		}
     	    try {
-				RegisterSocketEvent rse = new RegisterSocketEvent(ev.getChannel(),Direction.DOWN,this,myPort.port);
+				RegisterSocketEvent rse = new RegisterSocketEvent(ev.getChannel(),Direction.DOWN,this,myPort.getPort());
 				rse.go();
 			} catch (AppiaEventException e1) {
 				e1.printStackTrace();
@@ -205,7 +205,7 @@ public class MessengerSession extends Session {
     	}
     	else {
     		try {
-				myPort = new InetWithPort(InetAddress.getLocalHost(),ev.port);
+				myPort = new InetSocketAddress(InetAddress.getLocalHost(),ev.port);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 			}
@@ -218,13 +218,13 @@ public class MessengerSession extends Session {
 	private void sendGroupInit() {
 		try {
 			System.out.println("SendGroupInit");
-		    InetWithPort myAddr=new InetWithPort(InetAddress.getLocalHost(),myPort.port);
+		    InetSocketAddress myAddr=new InetSocketAddress(InetAddress.getLocalHost(),myPort.getPort());
 		    myEndpt=new Endpt(username+"@"+myAddr.toString());
 	        
 		    Endpt[] view=null;
-		    InetWithPort[] addrs=null;
+		    InetSocketAddress[] addrs=null;
 		    
-		    addrs=new InetWithPort[1];
+		    addrs=new InetSocketAddress[1];
 		    addrs[0]=myAddr;
 		    view=new Endpt[1];
 		    view[0]=myEndpt;
@@ -270,9 +270,9 @@ public class MessengerSession extends Session {
         for (int i = 0; i < vs.addresses.length; i++)
             out.println(
 			"{"
-			+ vs.addresses[i].host.getHostAddress()
+			+ vs.addresses[i].getAddress().getHostAddress()
 			+ ":"
-			+ vs.addresses[i].port
+			+ vs.addresses[i].getPort()
 			+ "} ");
                 
         try {
@@ -353,7 +353,7 @@ public class MessengerSession extends Session {
 			
 			event.source =  myPort;
 						
-			System.out.println(myPort.port);
+			System.out.println(myPort.getPort());
 						
 			try {
 				sendEvent((GroupSendableEvent)event, text);

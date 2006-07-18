@@ -19,9 +19,10 @@
  */
  package org.continuent.appia.protocols.group;
 
+import java.net.InetSocketAddress;
+
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.core.message.MsgBuffer;
-import org.continuent.appia.protocols.common.InetWithPort;
 
 
 
@@ -131,29 +132,28 @@ public class ArrayOptimized {
         return viewids;
     }
 
-    public static void pushArrayInetWithPort(InetWithPort[] inetp, Message message)
+    public static void pushArrayInetWithPort(InetSocketAddress[] inetp, Message message)
     {
-        for(int i=inetp.length-1; i>-1; i--)
-        {
-            InetWithPort.push(inetp[i],message);
+        for(int i=inetp.length-1; i>-1; i--){
+            message.pushObject(inetp[i]);
         }
         message.pushInt(inetp.length);
     }
 
-    public static InetWithPort[] popArrayInetWithPort(Message message)
+    public static InetSocketAddress[] popArrayInetWithPort(Message message)
     {
         int size=message.popInt();
-        InetWithPort[] inetps=new InetWithPort[size];
+        InetSocketAddress[] inetps=new InetSocketAddress[size];
         for(int i=0;i<inetps.length; i++)
         {
-            inetps[i]=InetWithPort.pop(message);
+            inetps[i]=(InetSocketAddress) message.popObject();
         }
         return inetps;
     }
 
-    public static InetWithPort[] peekArrayInetWithPort(Message message)
+    public static InetSocketAddress[] peekArrayInetWithPort(Message message)
     {
-        InetWithPort[] inetps=ArrayOptimized.popArrayInetWithPort(message);
+        InetSocketAddress[] inetps=ArrayOptimized.popArrayInetWithPort(message);
         ArrayOptimized.pushArrayInetWithPort(inetps,message);
         return inetps;
     }

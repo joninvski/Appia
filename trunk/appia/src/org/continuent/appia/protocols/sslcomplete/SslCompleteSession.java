@@ -21,6 +21,7 @@
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.KeyStore;
 import java.util.HashMap;
@@ -42,7 +43,6 @@ import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.events.AppiaMulticast;
 import org.continuent.appia.core.events.SendableEvent;
 import org.continuent.appia.protocols.common.AppiaThreadFactory;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.tcpcomplete.AcceptReader;
 import org.continuent.appia.protocols.tcpcomplete.TcpCompleteSession;
 import org.continuent.appia.protocols.utils.HostUtils;
@@ -83,8 +83,8 @@ public class SslCompleteSession extends TcpCompleteSession {
     if (e.dest instanceof AppiaMulticast) {
       Object[] dests=((AppiaMulticast)e.dest).getDestinations();
       for (int i=0 ; i < dests.length ; i++) {
-        if (dests[i] instanceof InetWithPort) {
-          if (!validate((InetWithPort)dests[i], e.getChannel())) {
+        if (dests[i] instanceof InetSocketAddress) {
+          if (!validate((InetSocketAddress)dests[i], e.getChannel())) {
             if (valids == null) {
               valids=new Object[dests.length];
               System.arraycopy(dests, 0, valids, 0, i);
@@ -98,8 +98,8 @@ public class SslCompleteSession extends TcpCompleteSession {
         } else
           sendUndelivered(e.getChannel(),dests[i]);
       }
-    } else if (e.dest instanceof InetWithPort) {
-      if (!validate((InetWithPort)e.dest, e.getChannel()))
+    } else if (e.dest instanceof InetSocketAddress) {
+      if (!validate((InetSocketAddress)e.dest, e.getChannel()))
         sendUndelivered(e.getChannel(), e.dest);
     } else {
       sendUndelivered(e.getChannel(),e.dest);
@@ -124,7 +124,7 @@ public class SslCompleteSession extends TcpCompleteSession {
     super.handle(e);
   }
   
-  private boolean validate(InetWithPort dest, Channel channel) {
+  private boolean validate(InetSocketAddress dest, Channel channel) {
     
     try {
       //check if the socket exist int the opensockets created by us
@@ -277,7 +277,7 @@ public class SslCompleteSession extends TcpCompleteSession {
   }
   
   //create socket, put in hashmap and create thread
-  public Socket createSSLSocket(HashMap hm,InetWithPort iwp,Channel channel) throws IOException{
+  public Socket createSSLSocket(HashMap hm,InetSocketAddress iwp,Channel channel) throws IOException{
     synchronized(socketLock){
       Socket newSocket = null;
       
@@ -285,7 +285,7 @@ public class SslCompleteSession extends TcpCompleteSession {
         return null;
       
       //Create SslSocket.
-      newSocket  = (SSLSocket)sf.createSocket(iwp.host, iwp.port);
+      newSocket  = (SSLSocket)sf.createSocket(iwp.getAddress(),iwp.getPort());
       
       newSocket.setTcpNoDelay(true);
       

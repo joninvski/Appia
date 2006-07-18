@@ -37,8 +37,9 @@
 //////////////////////////////////////////////////////////////////////
 
 
+import java.net.SocketAddress;
+
 import org.continuent.appia.core.*;
-import org.continuent.appia.protocols.common.InetWithPort;
 
 
 /**
@@ -58,7 +59,7 @@ public class MulticastInitEvent extends Event {
    * The IP multicast address of the group.
    *
    */
-  public InetWithPort ipMulticast;
+  public SocketAddress ipMulticast;
   
   /**
    * Indicates whether local multicast messages are supposed to be forwarded.
@@ -83,7 +84,8 @@ public class MulticastInitEvent extends Event {
    * @param source the {@link org.continuent.appia.core.Session Session} that is generating the Event
    * @throws AppiaEventException as the result of calling
    */
-  public MulticastInitEvent(InetWithPort ipMulticast, boolean fullDuplex, Channel channel, int dir, Session source) throws AppiaEventException,NullPointerException {
+  public MulticastInitEvent(SocketAddress ipMulticast, boolean fullDuplex, Channel channel, int dir, Session source) 
+  throws AppiaEventException,NullPointerException {
     
     super(channel,dir,source);
     

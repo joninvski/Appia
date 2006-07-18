@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -76,10 +77,8 @@ public class ViewState implements Externalizable {
 	public Endpt[] view;
 	/**
 	 * The addresses of the members.
-	 *
-	 * @see org.continuent.appia.protocols.common.InetWithPort
 	 */
-	public InetWithPort[] addresses;
+	public InetSocketAddress[] addresses;
 	
 	/**
 	 * Calculates the rank of the given member
@@ -96,11 +95,10 @@ public class ViewState implements Externalizable {
 	/**
 	 * Calculates the rank of the member with the given address.
 	 *
-	 * @param address the {@link org.continuent.appia.protocols.common.InetWithPort address}
-	 * of the member
+	 * @param address the address of the member
 	 * @return the rank of the member
 	 */
-	public int getRankByAddress(InetWithPort address) {
+	public int getRankByAddress(InetSocketAddress address) {
 		int i;
 		for(i=addresses.length-1 ; (i >= 0) && !address.equals(addresses[i]) ; i--);
 		return i;
@@ -118,12 +116,11 @@ public class ViewState implements Externalizable {
 	 * <i>views</i>
 	 * @param view the {@link org.continuent.appia.protocols.group.Endpt Endpts} of the members
 	 * of the <i>view</i>
-	 * @param addresses the
-	 * {@link org.continuent.appia.protocols.common.InetWithPort addresses} of the members of
-	 * the <i>view</i>
+	 * @param addresses the addresses of the members of the <i>view</i>
 	 * @throws NullPointerException if group or id or view or addresses are
 	 * <b>null</b>
 	 * @throws AppiaGroupException if the sizes of view and addresses are different
+     * @deprecated
 	 */
 	public ViewState(
 			String version,
@@ -131,7 +128,7 @@ public class ViewState implements Externalizable {
 			ViewID id,
 			ViewID[] previous,
 			Endpt[] view,
-			InetWithPort[] addresses) throws NullPointerException,AppiaGroupException {
+			InetWithPort[] addrs) throws NullPointerException,AppiaGroupException {
 		
 		if ( (group==null) || (id==null) || (view==null) || (addresses==null) )
 			throw new NullPointerException("appia:group:ViewState: group or view_id or view or addresses");
@@ -144,9 +141,48 @@ public class ViewState implements Externalizable {
 		this.id=id;
 		this.previous=previous;
 		this.view=view;
-		this.addresses=addresses;
+		this.addresses=new InetSocketAddress[addrs.length];
+        for (int i = 0; i<addrs.length; i++)
+            addresses[i] = new InetSocketAddress(addrs[i].host, addrs[i].port);
 	}
-	
+
+    /**
+     * Constructs a <i>view</i>.
+     *
+     * @param version the version of the <i>view</i>
+     * @param group the {@link org.continuent.appia.protocols.group.Group Group} of the <i>view</i>
+     * @param id the {@link org.continuent.appia.protocols.group.ViewID ViewID} of the <i>view</i>
+     * @param previous the {@link org.continuent.appia.protocols.group.ViewID ViewIDs} of the previous
+     * <i>views</i>
+     * @param view the {@link org.continuent.appia.protocols.group.Endpt Endpts} of the members
+     * of the <i>view</i>
+     * @param addresses the addresses of the members of the <i>view</i>
+     * @throws NullPointerException if group or id or view or addresses are
+     * <b>null</b>
+     * @throws AppiaGroupException if the sizes of view and addresses are different
+     */
+    public ViewState(
+            String version,
+            Group group,
+            ViewID id,
+            ViewID[] previous,
+            Endpt[] view,
+            InetSocketAddress[] addresses) throws NullPointerException,AppiaGroupException {
+        
+        if ( (group==null) || (id==null) || (view==null) || (addresses==null) )
+            throw new NullPointerException("appia:group:ViewState: group or view_id or view or addresses");
+        
+        if ( view.length != addresses.length )
+            throw new AppiaGroupException("ViewState: view.length != addresses.length");
+        
+        this.version=version;
+        this.group=group;
+        this.id=id;
+        this.previous=previous;
+        this.view=view;
+        this.addresses=addresses;
+    }
+
 	/**
 	 * Creates a {@link java.lang.String String} representation of the <i>view</i>.
 	 *
@@ -212,7 +248,7 @@ public class ViewState implements Externalizable {
 		}
 		
 		Endpt[] new_view=new Endpt[size];
-		InetWithPort[] new_addrs=new InetWithPort[size];
+		InetSocketAddress[] new_addrs=new InetSocketAddress[size];
 		
 		j=0;
 		for(i=0 ; i < remove.length ; i++) {
@@ -255,7 +291,7 @@ public class ViewState implements Externalizable {
 		ViewID vid=null;
 		ViewID[] prevs=new ViewID[prevsize];
 		Endpt[] endpts=new Endpt[viewsize];
-		InetWithPort[] addrs=new InetWithPort[viewsize];
+		InetSocketAddress[] addrs=new InetSocketAddress[viewsize];
 		int iprevs=0,iendpts=0,iaddrs=0;
 		
 		while (iter.hasNext()) {
@@ -289,7 +325,7 @@ public class ViewState implements Externalizable {
 		int size=view.length+vs.view.length;
 		
 		Endpt[] new_view=new Endpt[size];
-		InetWithPort[] new_addrs=new InetWithPort[size];
+		InetSocketAddress[] new_addrs=new InetSocketAddress[size];
 		
 		System.arraycopy(view,0,new_view,0,view.length);
 		System.arraycopy(addresses,0,new_addrs,0,addresses.length);
@@ -454,10 +490,10 @@ public class ViewState implements Externalizable {
 //		public InetWithPort[] addresses;
 		out.writeInt(addresses.length);
 		for(int i=0; i<addresses.length; i++){
-			bytes = addresses[i].host.getAddress();
+			bytes = addresses[i].getAddress().getAddress();
 			out.writeInt(bytes.length);
 			out.write(bytes);
-			out.writeInt(addresses[i].port);
+			out.writeInt(addresses[i].getPort());
 		}
 	}
 
@@ -488,14 +524,12 @@ public class ViewState implements Externalizable {
 //		public InetWithPort[] addresses;
 		len = in.readInt();
 		int addrLen = 0;
-		addresses = new InetWithPort[len];
+		addresses = new InetSocketAddress[len];
 		for(int i=0; i<len; i++){
-			addresses[i] = new InetWithPort();
 			addrLen = in.readInt();
 			bytes = new byte[addrLen];
 			in.read(bytes);
-			addresses[i].host = InetAddress.getByAddress(bytes);
-			addresses[i].port = in.readInt();
+            addresses[i] = new InetSocketAddress(InetAddress.getByAddress(bytes),in.readInt());
 		}
 	}
 }

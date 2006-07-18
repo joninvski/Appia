@@ -29,6 +29,7 @@
 package org.continuent.appia.protocols.group.inter;
 
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
@@ -43,7 +44,6 @@ import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.AppiaMulticast;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.Message;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.group.AppiaGroupException;
 import org.continuent.appia.protocols.group.LocalState;
 import org.continuent.appia.protocols.group.ViewID;
@@ -198,7 +198,7 @@ public class InterSession extends Session implements InitializableSession {
       sendTimers(ev.getChannel(),true);
     }
     
-    addSorted(new ViewInfo(ev.id,(InetWithPort)ev.addr));
+    addSorted(new ViewInfo(ev.id,(InetSocketAddress)ev.addr));
     if (debugFull)
       debugViews("created new proposal");
 
@@ -231,7 +231,7 @@ public class InterSession extends Session implements InitializableSession {
   private void handleMergeEvent(MergeEvent ev) {
     int r,n,sender;
     ViewID[] vids;
-    InetWithPort[] addrs;
+    InetSocketAddress[] addrs;
     boolean same;
     
     int type=ev.getMessage().popInt();
@@ -240,7 +240,7 @@ public class InterSession extends Session implements InitializableSession {
         r=ev.getMessage().popInt();
         n=ev.getMessage().popInt();
         vids=new ViewID[n];
-        addrs=new InetWithPort[n];
+        addrs=new InetSocketAddress[n];
         same=readProposal(ev.getMessage(),n,vids,addrs);
         sender=ev.getMessage().popInt();
         if (same && (r == round)) {
@@ -257,7 +257,7 @@ public class InterSession extends Session implements InitializableSession {
         r=ev.getMessage().popInt();
         n=ev.getMessage().popInt();
         vids=new ViewID[n];
-        addrs=new InetWithPort[n];
+        addrs=new InetSocketAddress[n];
         same=readProposal(ev.getMessage(),n,vids,addrs);
         sender=ev.getMessage().popInt();
         ViewState sender_vs=ViewState.pop(ev.getMessage());
@@ -292,7 +292,7 @@ public class InterSession extends Session implements InitializableSession {
       sendViewChange(channel);
   }
   
-  private boolean receiveNewProposal(int sender, int r, ViewID[] vids, InetWithPort[] addrs, Channel channel) {
+  private boolean receiveNewProposal(int sender, int r, ViewID[] vids, InetSocketAddress[] addrs, Channel channel) {
     if (sent_preview) {
       debug("Received new proposal but already sent PreView");
       sendAbort(channel,addrs[sender]);
@@ -387,7 +387,7 @@ public class InterSession extends Session implements InitializableSession {
     conclude();
   }
   
-  private void receiveNewDecide(int sender, int r, ViewID[] vids, InetWithPort[] addrs, ViewState sender_vs, Channel channel) {
+  private void receiveNewDecide(int sender, int r, ViewID[] vids, InetSocketAddress[] addrs, ViewState sender_vs, Channel channel) {
     if (receiveNewProposal(sender, r, vids, addrs, channel))
       receiveIdenticalDecide(sender, sender_vs);
   }
@@ -578,12 +578,12 @@ public class InterSession extends Session implements InitializableSession {
     for (j=0 ; j < n ; j++) {
       ViewInfo dest=(ViewInfo)views.get(j);
       if (!dest.id.equals(vs.id)) {
-        sendAbort(channel,(InetWithPort)dest.addr);
+        sendAbort(channel,(InetSocketAddress)dest.addr);
       }
     }    
   }
   
-  private void sendAbort(Channel channel, InetWithPort dest) {
+  private void sendAbort(Channel channel, InetSocketAddress dest) {
     try {
       MergeEvent ev=new MergeEvent(channel,Direction.DOWN,this);
       ev.dest=dest;
@@ -603,17 +603,17 @@ public class InterSession extends Session implements InitializableSession {
 
     for (i=n-1 ; i >= 0 ; i--) {
       ViewInfo info=(ViewInfo)views.get(i);
-      InetWithPort.push(info.addr,msg);
+      msg.pushObject(info.addr);
       ViewID.push(info.id, msg);
     }
   }
   
-  private boolean readProposal(Message msg, int n, ViewID[] vids, InetWithPort[] addrs) {
+  private boolean readProposal(Message msg, int n, ViewID[] vids, InetSocketAddress[] addrs) {
     boolean equal=(n == views.size());
     
     for (int i=0 ; i < n ; i++) {
       vids[i]=ViewID.pop(msg);
-      addrs[i]=InetWithPort.pop(msg);
+      addrs[i]=(InetSocketAddress) msg.popObject();
       
       if (equal) {
         ViewInfo info=(ViewInfo)views.get(i);
@@ -630,9 +630,9 @@ public class InterSession extends Session implements InitializableSession {
     public ViewState vs;
     public boolean proposed;
     public boolean decided;
-    public InetWithPort addr;
+    public InetSocketAddress addr;
     
-    public ViewInfo(ViewID id, InetWithPort addr) {
+    public ViewInfo(ViewID id, InetSocketAddress addr) {
       this.id=id;
       vs=null;
       proposed=false;
@@ -718,7 +718,7 @@ public class InterSession extends Session implements InitializableSession {
     }
   }
   
-  private void debugProposal(String s, int r, int n, ViewID[] vids, InetWithPort[] addrs) {
+  private void debugProposal(String s, int r, int n, ViewID[] vids, InetSocketAddress[] addrs) {
     if ((debug != null) && (debugFull || debugOn)) {
       s+=" round="+r+"("+round+") size="+n+"("+views.size()+") vids={";
       for (int x=0 ; x < vids.length ; x++)

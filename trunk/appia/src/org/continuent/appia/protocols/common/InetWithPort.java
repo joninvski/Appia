@@ -41,6 +41,7 @@ import java.net.*;
 import org.continuent.appia.core.message.*;
 
 /**
+ * This class is deprecated. Appia uses InetSocketAddress instead if this one.
  * InetWithPort enriches Java InetAddress class with an integer port number. It
  * intends to be a possible instance for the source and dest attributes
  * of SendableEvents.
@@ -48,27 +49,32 @@ import org.continuent.appia.core.message.*;
  * @see org.continuent.appia.protocols.udpsimple.UdpSimpleSession
  * @see org.continuent.appia.core.events.SendableEvent
  * @author Hugo Miranda
+ * @deprecated
  */
 
-public class InetWithPort implements java.io.Serializable {
+public class InetWithPort extends InetSocketAddress implements java.io.Serializable {
 
   private static final long serialVersionUID = 3343979654378608232L;
 
   /**
 	 * The IP address.
 	 * @see InetAddress
+     * @deprecated
 	 */
 	public InetAddress host;
 
 	/**
 	 * The port number.
+     * @deprecated
 	 */
 	public int port;
 
 	/**
 	 * Empty constructor of this class.
 	 */
-	public InetWithPort() {}
+	public InetWithPort() {
+	    super(0);
+    }
 
 	/**
 	 * Constructor of this class.
@@ -76,32 +82,11 @@ public class InetWithPort implements java.io.Serializable {
 	 * @param port
 	 */
 	public InetWithPort(InetAddress host, int port) {
+        super(host,port);
 		this.host = host;
 		this.port = port;
 	}
 
-	/**
-	 * Equality comparison. Returns true if the testing object is a
-	 * InetWithPort instance and InetAddress and port are equal
-	 * on both instances. InetAddress comparison is made using its equal method
-	 *
-	 * @param test The Object to be compared.
-	 * @see InetAddress
-	 */
-	public boolean equals(Object test) {
-		return (test instanceof InetWithPort)
-			&& (this.port == ((InetWithPort) test).port)
-			&& this.host.equals(((InetWithPort) test).host);
-	}
-
-	/**
-	 * Method needed for HashTables.
-	 * The hashCode of this Class instance is the XOR between
-	 * port field and hashCode of InetAddress
-	 */
-	public int hashCode() {
-		return (port ^ host.hashCode());
-	}
 
 	/**
 	 * Method that returns a text representation of the InetWithPort class.

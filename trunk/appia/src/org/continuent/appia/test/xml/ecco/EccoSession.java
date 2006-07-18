@@ -26,6 +26,7 @@
 package org.continuent.appia.test.xml.ecco;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 import org.continuent.appia.core.AppiaEventException;
@@ -36,7 +37,6 @@ import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.protocols.common.AppiaThreadFactory;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
@@ -51,8 +51,8 @@ import org.continuent.appia.xml.utils.SessionProperties;
 public class EccoSession extends Session implements InitializableSession {
 	
 	Channel channel;
-	InetWithPort local;
-	InetWithPort remote;
+	InetSocketAddress local;
+	InetSocketAddress remote;
 	
 	MyShell shell;
 	
@@ -66,18 +66,18 @@ public class EccoSession extends Session implements InitializableSession {
 		String remoteHost = params.getProperty("remotehost");
 		int remotePort = Integer.parseInt(params.getProperty("remoteport"));
 		try {
-			local = new InetWithPort(InetAddress.getLocalHost(),localPort);
+			local = new InetSocketAddress(InetAddress.getLocalHost(),localPort);
 			this.remote = 
-				new InetWithPort(InetAddress.getByName(remoteHost),remotePort);
+				new InetSocketAddress(InetAddress.getByName(remoteHost),remotePort);
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
-	public void init(int localPort, InetWithPort remote){
+	public void init(int localPort, InetSocketAddress remote){
 		try {
-			local = new InetWithPort(InetAddress.getLocalHost(),localPort);
+			local = new InetSocketAddress(InetAddress.getLocalHost(),localPort);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
@@ -113,7 +113,7 @@ public class EccoSession extends Session implements InitializableSession {
 		 * interface entre o Appia e os sockets.
 		 */
 		try {
-			RegisterSocketEvent rse = new RegisterSocketEvent(channel,Direction.DOWN,this,local.port);
+			RegisterSocketEvent rse = new RegisterSocketEvent(channel,Direction.DOWN,this,local.getPort());
 			rse.go();
 		} catch (AppiaEventException e1) {
 			e1.printStackTrace();

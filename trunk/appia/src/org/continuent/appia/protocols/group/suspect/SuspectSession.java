@@ -23,6 +23,7 @@ package org.continuent.appia.protocols.group.suspect;
 
 
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 
 import javax.management.AttributeChangeNotification;
@@ -35,7 +36,6 @@ import org.continuent.appia.management.ManagedSession;
 import org.continuent.appia.management.AbstractSensorSession;
 import org.continuent.appia.management.ManagedSessionEvent;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.group.ArrayOptimized;
 import org.continuent.appia.protocols.group.LocalState;
 import org.continuent.appia.protocols.group.ViewState;
@@ -341,7 +341,7 @@ private ViewState vs;
       return;
     }
     
-    undelivered((InetWithPort)event.dest,ev.getChannel());
+    undelivered((InetSocketAddress)event.dest,ev.getChannel());
   }
   
   private void handleTcpUndeliveredEvent(TcpUndeliveredEvent ev) {
@@ -350,10 +350,10 @@ private ViewState vs;
     if (vs == null)
       return;
     
-    undelivered((InetWithPort)ev.who,ev.getChannel());
+    undelivered((InetSocketAddress)ev.who,ev.getChannel());
   }
   
-  private void undelivered(InetWithPort addr, Channel channel) {
+  private void undelivered(InetSocketAddress addr, Channel channel) {
     int rank,i;
     
     if ((rank=vs.getRankByAddress(addr)) >= 0) {

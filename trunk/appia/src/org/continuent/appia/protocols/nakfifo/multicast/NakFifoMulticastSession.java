@@ -25,6 +25,7 @@
 
 package org.continuent.appia.protocols.nakfifo.multicast;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ListIterator;
@@ -36,7 +37,6 @@ import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
-import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
 import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
 import org.continuent.appia.protocols.nakfifo.*;
@@ -259,7 +259,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     
     if (event.getDir() == Direction.DOWN) {
       
-      if ((event.dest instanceof InetWithPort) && (((InetWithPort)event.dest).host.isMulticastAddress())) {
+      if ((event.dest instanceof InetSocketAddress) && (((InetSocketAddress)event.dest).getAddress().isMulticastAddress())) {
         debug("Destination is a IP Multicast address. Ignored.");
         event.getMessage().pushByte(MessageUtils.IGNORE_FLAG);
         try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
