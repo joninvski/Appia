@@ -152,7 +152,7 @@ public class PerfSession extends Session implements InitializableSession {
     }
     if (params.containsKey("gossip")) {
       try {
-        gossips=ParseUtils.parseInetWithPortArray(params.getString("gossip"),InetAddress.getLocalHost(),DEFAULT_GOSSIP_PORT);
+        gossips=ParseUtils.parseSocketAddressArray(params.getString("gossip"),InetAddress.getLocalHost(),DEFAULT_GOSSIP_PORT);
       } catch (UnknownHostException ex) {
         System.err.println("Unknown host \""+ex.getMessage()+"\"");
         System.exit(1);
@@ -167,7 +167,7 @@ public class PerfSession extends Session implements InitializableSession {
     }
     if (params.containsKey("multicast")) {
       try {
-        multicast=ParseUtils.parseInetWithPort(params.getString("multicast"),null,DEFAULT_MULTICAST_PORT);
+        multicast=ParseUtils.parseSocketAddress(params.getString("multicast"),null,DEFAULT_MULTICAST_PORT);
       } catch (UnknownHostException ex) {
         System.err.println("Unknown host \""+ex.getMessage()+"\"");
         System.exit(1);

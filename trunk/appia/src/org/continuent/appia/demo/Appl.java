@@ -94,7 +94,7 @@ public class Appl {
         if (++i >= args.length)
           argInvalid("missing gossip server list");
         try {
-          gossips=ParseUtils.parseInetWithPortArray(args[i],InetAddress.getLocalHost(),DEFAULT_GOSSIP_PORT);
+          gossips=ParseUtils.parseSocketAddressArray(args[i],InetAddress.getLocalHost(),DEFAULT_GOSSIP_PORT);
         } catch (UnknownHostException e) {
           System.err.println("Host unknown: "+e.getMessage());
           System.exit(1);
@@ -111,7 +111,7 @@ public class Appl {
         if (++i >= args.length)
           argInvalid("missing multicast address");
         try {
-          multicast=ParseUtils.parseInetWithPort(args[i],null,DEFAULT_MULTICAST_PORT);
+          multicast=ParseUtils.parseSocketAddress(args[i],null,DEFAULT_MULTICAST_PORT);
         } catch (NumberFormatException ex) {
           argInvalid("invalid port in multicast: \""+args[i]+"\"");
         } catch (java.net.UnknownHostException ex) {

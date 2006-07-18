@@ -93,7 +93,7 @@ public class GossipServerSession extends Session implements InitializableSession
       timer=params.getLong("timer");
     if (params.containsKey("gossip")) {
       try {
-        gossips=ParseUtils.parseInetWithPortArray(params.getString("gossip"),null,DEFAULT_PORT);
+        gossips=ParseUtils.parseSocketAddressArray(params.getString("gossip"),null,DEFAULT_PORT);
       } catch (Exception ex) {
         ex.printStackTrace();
         System.exit(1);

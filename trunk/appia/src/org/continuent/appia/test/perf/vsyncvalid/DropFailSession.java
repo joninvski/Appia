@@ -72,7 +72,7 @@ public class DropFailSession extends Session implements InitializableSession {
       msgs_to_exit=params.getInt("exit");
     if (params.containsKey("destination")) {
       try {
-        destination=ParseUtils.parseInetWithPort(params.getString("destination"), null, -1);
+        destination=ParseUtils.parseSocketAddress(params.getString("destination"), null, -1);
       } catch (UnknownHostException e) {
         e.printStackTrace();
         System.exit(1);
