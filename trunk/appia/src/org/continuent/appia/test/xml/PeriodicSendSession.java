@@ -37,15 +37,15 @@ import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
 
-
-/**
- * XML parameters:
- * 					timeout : int 
- * 
+ /**
+  * This class defines a PeriodicSendSession
+  * 
  * @author Nuno Almeida
- */
+  * @version 1.0
+  */
 public class PeriodicSendSession extends Session implements InitializableSession {
 	
+    private static final int DEFAULT_TIMEOUT = 10;
 	private Timer timer;
 	private LinkedList events;
 	private int timeout;
@@ -53,7 +53,7 @@ public class PeriodicSendSession extends Session implements InitializableSession
 	public PeriodicSendSession(Layer layer) {
 		super(layer);
 		events = new LinkedList();
-		timeout = 10;
+		timeout = DEFAULT_TIMEOUT;
 		
 		timer = new Timer(timeout, new ActionListener() {
 			public void actionPerformed(ActionEvent evt) {
@@ -76,12 +76,18 @@ public class PeriodicSendSession extends Session implements InitializableSession
 		timer.start();	
 	}
 	
-	/* (non-Javadoc)
-	 * @see appia.xml.interfaces.InitializableSession#init(appia.xml.utils.SessionProperties)
-	 */
+      /**
+       * Initializes the session using the parameters given in the XML configuration.
+       * Possible parameters:
+       * <ul>
+       * <li><b>timeout</b> the timeout used. Default is 10 ms.
+       * </ul>
+       * 
+       * @param params The parameters given in the XML configuration.
+       */
 	public void init(SessionProperties params) {
-		// TODO Auto-generated method stub
-		timeout = params.getInt("timeout");
+        if(params.containsKey("timeout"))
+            timeout = params.getInt("timeout");
 	}
 	
 	public void handle(Event ev) {

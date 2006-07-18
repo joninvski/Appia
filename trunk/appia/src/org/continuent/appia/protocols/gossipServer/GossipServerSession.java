@@ -75,7 +75,8 @@ public class GossipServerSession extends Session implements InitializableSession
   }
 
   /**
-   * Supported parameters:
+   * Initializes the session using the parameters given in the XML configuration.
+   * Possible parameters:
    * <ul>
    * <li><b>port</b> the port listening for clients.
    * <li><b>remove_time</b> time of inactivity of a client before it is removed.
@@ -83,6 +84,8 @@ public class GossipServerSession extends Session implements InitializableSession
    * <li><b>gossip</b> other known gossip servers in the format "[host][:port][,[host][:port]]...".
    * <li><b>debug</b> boolean indicating whether debug messages should be printed to stderr.
    * </ul>
+   * 
+   * @param params The parameters given in the XML configuration.
    */
   public void init(SessionProperties params) {
     if (params.containsKey("port"))

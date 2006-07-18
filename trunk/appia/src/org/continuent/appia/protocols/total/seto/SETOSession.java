@@ -101,11 +101,16 @@ public class SETOSession extends Session implements InitializableSession {
 		reset();
 	}
 
-	/**
-	 * Initialization method.
-	 * It accepts one parameter named <code>alfa</code> that is a value between 0 and 1.
-	 * @see org.continuent.appia.xml.interfaces.InitializableSession#init(SessionProperties)
-	 */
+      /**
+       * Initializes the session using the parameters given in the XML configuration.
+       * Possible parameters:
+       * <ul>
+       * <li><b>alfa</b> is used to tune the protocol and is a value between 0 and 1.
+       * </ul>
+       * 
+       * @param params The parameters given in the XML configuration.
+       * @see org.continuent.appia.xml.interfaces.InitializableSession#init(SessionProperties)
+       */
 	public void init(SessionProperties params) {
 		if(params.containsKey("alfa")){
 			alfa = params.getDouble("alfa");			

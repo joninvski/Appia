@@ -132,10 +132,13 @@ public class FragSession extends Session implements InitializableSession {
   }
 
   /**
+   * Initializes the session using the parameters given in the XML configuration.
    * Possible parameters:
    * <ul>
-   * <li><b>frag_size</b> the maximum payload per fragment
-   * <ul>
+   * <li><b>frag_size</b> the maximum payload per fragment.
+   * </ul>
+   * 
+   * @param params The parameters given in the XML configuration.
    */
   public void init(SessionProperties params) {
     if (params.containsKey("frag_size"))

@@ -108,6 +108,7 @@ public class TcpCompleteSession extends Session implements InitializableSession{
   }
   
   /**
+   * Initializes the session using the parameters given in the XML configuration.
    * Possible parameters:
    * <ul>
    * <li><b>dest_timeout</b> timeout to verify of there are unused open connections.
@@ -115,7 +116,8 @@ public class TcpCompleteSession extends Session implements InitializableSession{
    * <li><b>reader_sotimeout</b> the timeout of the threads that listen UDP sockets. Default is 5 seconds.
    * </ul>
    * 
-   * @param params The parameters.
+   * @param params The parameters given in the XML configuration.
+   * @see org.continuent.appia.xml.interfaces.InitializableSession#init(SessionProperties)
    */
 public void init(SessionProperties params) {
     if (params.containsKey("reader_sotimeout"))

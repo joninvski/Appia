@@ -75,6 +75,17 @@ public class TotalTokenSession extends Session implements InitializableSession {
 		isBlocked = true;
 	}
 
+      /**
+       * Initializes the session using the parameters given in the XML configuration.
+       * Possible parameters:
+       * <ul>
+       * <li><b>num_messages_per_token</b> number of messages (maximum) sent before releasing the token.
+       * Default is 10.
+       * </ul>
+       * 
+       * @param params The parameters given in the XML configuration.
+       * @see org.continuent.appia.xml.interfaces.InitializableSession#init(SessionProperties)
+       */
 	public void init(SessionProperties params) {
 		if(params.containsKey("num_messages_per_token"))
 			numMessagesPerToken = params.getInt("num_messages_per_token");

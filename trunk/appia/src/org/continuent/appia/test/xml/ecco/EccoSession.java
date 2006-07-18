@@ -60,7 +60,17 @@ public class EccoSession extends Session implements InitializableSession {
 		super(l);
 	}
 	
-	// TODO Throw exception in case of invalid parameters
+      /**
+       * Initializes the session using the parameters given in the XML configuration.
+       * Possible parameters:
+       * <ul>
+       * <li><b>localport</b> the local port to bind.
+       * <li><b>remotehost</b> the remote host (IP address).
+       * <li><b>remoteport</b> the remote port.
+       * </ul>
+       * 
+       * @param params The parameters given in the XML configuration.
+       */
 	public void init(SessionProperties params) {
 		int localPort = Integer.parseInt(params.getProperty("localport"));
 		String remoteHost = params.getProperty("remotehost");
@@ -75,6 +85,7 @@ public class EccoSession extends Session implements InitializableSession {
 		}
 	}
 	
+    
 	public void init(int localPort, InetSocketAddress remote){
 		try {
 			local = new InetSocketAddress(InetAddress.getLocalHost(),localPort);

@@ -101,7 +101,16 @@ public class GossipOutSession extends Session implements InitializableSession {
   }
   
   /**
-   * @see org.continuent.appia.xml.interfaces.InitializableSession#init(org.continuent.appia.xml.utils.SessionProperties)
+   * Initializes the session using the parameters given in the XML configuration.
+   * Possible parameters:
+   * <ul>
+   * <li><b>CHANNEL_NAME</b> the name of the channel.
+   * <li><b>FIFO_RETRIES</b> number of Fifo retries.
+   * <li><b>UDP_LAYER</b> String representation of the class that should be used as UDP layer.
+   * <li><b>SHARE_UDP</b> true is UDP session should be shared, false otherwise.
+   * </ul>
+   * 
+   * @param params The parameters given in the XML configuration.
    */
   public void init(SessionProperties params) {
     if (params.containsKey("CHANNEL_NAME"))

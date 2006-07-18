@@ -170,7 +170,7 @@ public class IntegritySession extends Session implements InitializableSession {
 	 * In the xml file, on the tag <i>channel</i> Integrity Session must have one 
 	 * parameter called <i>secret</i>
 	 * 
-	 * @param params
+	 * @param params the params with the secret!
 	 */
 	public void init(SessionProperties params) {
 		secret = params.getString("secret").getBytes();

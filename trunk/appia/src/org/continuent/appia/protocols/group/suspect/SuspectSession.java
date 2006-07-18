@@ -69,6 +69,18 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
     super(layer);
   }
   
+  /**
+   * Initializes the session using the parameters given in the XML configuration.
+   * Possible parameters:
+   * <ul>
+   * <li><b>suspect_sweep</b> duration of a round in milliseconds.
+   * <li><b>suspect_time</b> time to suspect a member, in milliseconds. 
+   * This value is converted in number of rounds and added 2 for transmission safety.
+   * </ul>
+   * 
+   * @param params The parameters given in the XML configuration.
+   * @see org.continuent.appia.xml.interfaces.InitializableSession#init(SessionProperties)
+   */
   public void init(SessionProperties params) {
     if (params.containsKey("suspect_sweep"))
       suspect_sweep=params.getLong("suspect_sweep");

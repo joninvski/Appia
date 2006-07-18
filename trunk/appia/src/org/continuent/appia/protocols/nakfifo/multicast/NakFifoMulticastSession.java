@@ -100,6 +100,21 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     first_msg_sent=last_msg_sent+1;
   }
   
+  /**
+   * Initializes the session using the parameters given in the XML configuration.
+   * Possible parameters:
+   * <ul>
+   * <li><b>timer_period</b> the period of the timer.
+   * <li><b>resend_nack_time</b> the time to resend a negative ack.
+   * <li><b>max_appl_time</b> maximum application time.
+   * <li><b>max_recv_time</b> maximum time for message reception.
+   * <li><b>max_sent_time</b> max sent time.
+   * <li><b>confirm_rounds</b> number of rounds to confirm.
+   * <li><b>debug</b> bebug mode (boolean).
+   * </ul>
+   * 
+   * @param params The parameters given in the XML configuration.
+   */
   public void init(SessionProperties params) {
     if (params.containsKey("timer_period"))
       param_TIMER_PERIOD=params.getLong("timer_period");
@@ -117,7 +132,9 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       debugOn=params.getBoolean("debug");
   }
 
-  /** Main Event handler. */  
+  /** 
+   * Main Event handler. 
+   */  
   public void handle(Event event) {
     
     if (event instanceof NackEvent) {

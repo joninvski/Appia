@@ -80,6 +80,7 @@ public class UniformSession extends Session implements InitializableSession {
 			return;
 		}
 		else
+            // FIXME: add a proper exception here.
 			throw new AppiaError("parameter " + MAX_NODES + " or " + MAJ_NODES
 					+ " must be set in the xml config file (Session: "
 					+ this.getClass().getName() + ").");

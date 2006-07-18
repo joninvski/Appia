@@ -55,6 +55,17 @@ public class HealSession extends Session implements InitializableSession {
     this.hello_min_time=hello_min_time;
   }
    
+  /**
+   * Initializes the session using the parameters given in the XML configuration.
+   * Possible parameters:
+   * <ul>
+   * <li><b>GOSSIP_TIME</b> the gossip time.
+   * <li><b>HELLO_MIN_TIME</b> minimum hello time.
+   * <li><b>DEBUGON</b> boolean indicating whether debug messages should be printed or not.
+   * </ul>
+   * 
+   * @param params The parameters given in the XML configuration.
+   */
   public void init(SessionProperties params) {
     if (params.containsKey("GOSSIP_TIME"))
       gossip_time=params.getLong("GOSSIP_TIME");

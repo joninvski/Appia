@@ -49,7 +49,7 @@ public class DropFailSession extends Session implements InitializableSession {
   public static final int DEFAULT_MSGS_TO_FAIL=50;
   
   /**
-   * Deafult number of messages after failing after wich it exits.
+   * Default number of messages after failing after wich it exit.
    */
   public static final int DEFAULT_MSGS_TO_EXIT=5;
     
@@ -65,6 +65,17 @@ public class DropFailSession extends Session implements InitializableSession {
   private int countMsgs=0;
   private InetSocketAddress destination=null;
 
+  /**
+   * Initializes the session using the parameters given in the XML configuration.
+   * Possible parameters:
+   * <ul>
+   * <li><b>fail</b> number of messages before failing.
+   * <li><b>exit</b> number of messages after failing after wich it exit.
+   * <li><b>destination</b> The destination address in the form [IP:port].
+   * </ul>
+   * 
+   * @param params The parameters given in the XML configuration.
+   */
   public void init(SessionProperties params) {
     if (params.containsKey("fail"))
       msgs_to_fail=params.getInt("fail");

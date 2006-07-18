@@ -137,6 +137,31 @@ public class PerfSession extends Session implements InitializableSession {
     }
   }
   
+  /**
+   * Initializes the session using the parameters given in the XML configuration.
+   * Possible parameters:
+   * <ul>
+   * <li><b>test</b> the type of test to run. Could be 'ring' or 'vsyncvalid'.
+   * <li><b>gossip</b> an array of gossip addresses, like IP1:por1,IP2:port2, etc.
+   * <li><b>multicast</b> the multicast address to use (optional).
+   * <li><b>group</b> the name of the group.
+   * <li><b>warmup</b> warmup time, before starting to make measurements.
+   * <li><b>shutdown</b> shutdown time, after stopping the measurements.
+   * <li><b>lo</b> boolean that defines if the test should count with self messages.
+   * <li><b>port</b> the local port.
+   * <li><b>n</b> number of members of the group.
+   * <li><b>r</b> number of rounds of messages.
+   * <li><b>k</b> number of messages for each round.
+   * <li><b>m</b> message size.
+   * <li><b>i</b> message (size) increment.
+   * <li><b>fails</b> number of failures.
+   * <li><b>inpayload</b> name of the file that contains the messages payload.
+   * <li><b>outpayload</b> name of the file to dump the message payloads.
+   * <li><b>debug</b> boolean to define if the debug mode should be turned on.
+   * </ul>
+   * 
+   * @param params The parameters given in the XML configuration.
+   */
   public void init(SessionProperties params) {
     
     if (params.containsKey("test")) {
@@ -180,7 +205,7 @@ public class PerfSession extends Session implements InitializableSession {
         System.exit(1);
       }
       if (!multicast.getAddress().isMulticastAddress()) {
-        System.err.println("Multicast address given is not IP-Multicast addres.");
+        System.err.println("Multicast address given is not IP-Multicast address.");
         System.exit(1);
       }
     }

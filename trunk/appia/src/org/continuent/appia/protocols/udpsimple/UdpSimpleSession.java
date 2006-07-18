@@ -70,7 +70,6 @@ import org.continuent.appia.xml.utils.SessionProperties;
  * @see org.continuent.appia.core.Session
  * @see org.continuent.appia.core.events.SendableEvent
  * @see UdpSimpleLayer
- * @see org.continuent.appia.protocols.common.InetWithPort
  * @see org.continuent.appia.protocols.common.RegisterSocketEvent
  * @see SendableNotDeliveredEvent
  * @see MulticastInitEvent
@@ -113,6 +112,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   }
   
   /**
+   * Initializes the session using the parameters given in the XML configuration.
    * Possible parameters:
    * <ul>
    * <li><b>local_address</b> the address to which the UDP socket is bound.
@@ -120,7 +120,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
    * <li><b>reader_sotimeout</b> the timeout of the threads that listen UDP sockets. Default is 5 seconds.
    * </ul>
    * 
-   * @param params The parameters.
+   * @param params The parameters given in the XML configuration.
    */
   public void init(SessionProperties params) {
     if (params.containsKey("local_address")) {

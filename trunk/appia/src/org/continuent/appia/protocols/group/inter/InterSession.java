@@ -67,6 +67,16 @@ public class InterSession extends Session implements InitializableSession {
     super(layer);
   }
 
+  /**
+   * Initializes the session using the parameters given in the XML configuration.
+   * Possible parameters:
+   * <ul>
+   * <li><b>termination</b> the termination time.
+   * <li><b>waiting</b> the waiting time.
+   * </ul>
+   * 
+   * @param params The parameters given in the XML configuration.
+   */
   public void init(SessionProperties params) {
     if (params.containsKey("termination"))
       termination_time=params.getLong("termination");

@@ -83,6 +83,20 @@ public class NakFifoSession extends Session implements InitializableSession {
     super(layer);
   }
   
+  /**
+   * Initializes the session using the parameters given in the XML configuration.
+   * Possible parameters:
+   * <ul>
+   * <li><b>timer_period</b> the period of the timer.
+   * <li><b>resend_nack_time</b> the time to resend a negative ack.
+   * <li><b>max_appl_time</b> maximum application time.
+   * <li><b>max_recv_time</b> maximum time for message reception.
+   * <li><b>max_sent_time</b> max sent time.
+   * <li><b>debug</b> bebug mode (boolean).
+   * </ul>
+   * 
+   * @param params The parameters given in the XML configuration.
+   */
   public void init(SessionProperties params) {
     if (params.containsKey("timer_period"))
       param_TIMER_PERIOD=params.getLong("timer_period");
