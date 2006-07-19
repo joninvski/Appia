@@ -79,8 +79,8 @@ public class GossipServerSession extends Session implements InitializableSession
    * Possible parameters:
    * <ul>
    * <li><b>port</b> the port listening for clients.
-   * <li><b>remove_time</b> time of inactivity of a client before it is removed.
-   * <li><b>timer</b> the internal timer duration, ie, the heartbeat of the server.
+   * <li><b>remove_time</b> time of inactivity of a client before it is removed. (in milliseconds)
+   * <li><b>timer</b> the internal timer duration, ie, the heartbeat of the server. (in milliseconds)
    * <li><b>gossip</b> other known gossip servers in the format "[host][:port][,[host][:port]]...".
    * <li><b>debug</b> boolean indicating whether debug messages should be printed to stderr.
    * </ul>

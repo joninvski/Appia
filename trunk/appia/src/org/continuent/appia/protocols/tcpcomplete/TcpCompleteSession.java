@@ -111,9 +111,9 @@ public class TcpCompleteSession extends Session implements InitializableSession{
    * Initializes the session using the parameters given in the XML configuration.
    * Possible parameters:
    * <ul>
-   * <li><b>dest_timeout</b> timeout to verify of there are unused open connections.
+   * <li><b>dest_timeout</b> time between unused open connections verification. (in milliseconds)
    * <li><b>max_inactivity</b> number of times that the dest_timeout expires without closing the connection..
-   * <li><b>reader_sotimeout</b> the timeout of the threads that listen UDP sockets. Default is 5 seconds.
+   * <li><b>reader_sotimeout</b> the timeout of the threads that listen on TCP sockets. (in milliseconds)
    * </ul>
    * 
    * @param params The parameters given in the XML configuration.

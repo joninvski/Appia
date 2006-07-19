@@ -71,8 +71,8 @@ public class InterSession extends Session implements InitializableSession {
    * Initializes the session using the parameters given in the XML configuration.
    * Possible parameters:
    * <ul>
-   * <li><b>termination</b> the termination time.
-   * <li><b>waiting</b> the waiting time.
+   * <li><b>termination</b> maximum time duration of a view merge. (in milliseconds)
+   * <li><b>waiting</b> time to wait for additional concurrent views, to allow the merging of several views in a single step. (in milliseconds) 
    * </ul>
    * 
    * @param params The parameters given in the XML configuration.

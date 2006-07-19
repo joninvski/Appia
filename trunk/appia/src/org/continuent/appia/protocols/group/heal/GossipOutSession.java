@@ -105,9 +105,9 @@ public class GossipOutSession extends Session implements InitializableSession {
    * Possible parameters:
    * <ul>
    * <li><b>CHANNEL_NAME</b> the name of the channel.
-   * <li><b>FIFO_RETRIES</b> number of Fifo retries.
+   * <li><b>FIFO_RETRIES</b> the number of retries before giving up on the current used server, and starts using the next supplied server.
    * <li><b>UDP_LAYER</b> String representation of the class that should be used as UDP layer.
-   * <li><b>SHARE_UDP</b> true is UDP session should be shared, false otherwise.
+   * <li><b>SHARE_UDP</b> true if UDP session should be shared, false otherwise.
    * </ul>
    * 
    * @param params The parameters given in the XML configuration.

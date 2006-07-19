@@ -117,7 +117,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
    * <ul>
    * <li><b>local_address</b> the address to which the UDP socket is bound.
    * <li><b>max_udp_message_size</b> the maximum size of an underlying UDP message payload.
-   * <li><b>reader_sotimeout</b> the timeout of the threads that listen UDP sockets. Default is 5 seconds.
+   * <li><b>reader_sotimeout</b> the timeout of the threads that listen on UDP sockets. (in milliseconds)
    * </ul>
    * 
    * @param params The parameters given in the XML configuration.

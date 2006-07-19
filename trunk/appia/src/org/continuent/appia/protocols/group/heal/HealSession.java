@@ -59,8 +59,8 @@ public class HealSession extends Session implements InitializableSession {
    * Initializes the session using the parameters given in the XML configuration.
    * Possible parameters:
    * <ul>
-   * <li><b>GOSSIP_TIME</b> the gossip time.
-   * <li><b>HELLO_MIN_TIME</b> minimum hello time.
+   * <li><b>GOSSIP_TIME</b> time between gossip messages. (in milliseconds)
+   * <li><b>HELLO_MIN_TIME</b> minimum time between Hello messages. (in milliseconds)
    * <li><b>DEBUGON</b> boolean indicating whether debug messages should be printed or not.
    * </ul>
    * 
