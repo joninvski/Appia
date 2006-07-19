@@ -30,6 +30,7 @@ import javax.management.AttributeChangeNotification;
 import javax.management.Notification;
 
 import org.continuent.appia.core.*;
+import org.continuent.appia.core.events.AppiaMulticast;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.events.channel.EchoEvent;
 import org.continuent.appia.management.ManagedSession;
@@ -353,7 +354,16 @@ private ViewState vs;
       return;
     }
     
-    undelivered((InetSocketAddress)event.dest,ev.getChannel());
+    if (event.dest instanceof InetSocketAddress)
+        undelivered((InetSocketAddress)event.dest,ev.getChannel());
+    else if (event.dest instanceof AppiaMulticast) {
+        Object[] dests=((AppiaMulticast)event.dest).getDestinations();
+        for (int i=0 ; i < dests.length ; i++) {
+            if (dests[i] instanceof InetSocketAddress)
+                undelivered((InetSocketAddress)dests[i],ev.getChannel());
+        }
+    } else
+        debug("Received FIFOUndelivered with unknown destination address. Ignoring it.");
   }
   
   private void handleTcpUndeliveredEvent(TcpUndeliveredEvent ev) {
