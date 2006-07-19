@@ -601,7 +601,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
               + dp.getAddress().getHostAddress() + " (port " + dp.getPort() + ")");
       }
     } catch (IOException ex) {
-      ex.printStackTrace();
+      if (UdpSimpleConfig.debugOn)
+          ex.printStackTrace();
       /* Couldn't send message to socket. */
       try {
         SendableNotDeliveredEvent snd = new SendableNotDeliveredEvent(e.getChannel(), this, e);
