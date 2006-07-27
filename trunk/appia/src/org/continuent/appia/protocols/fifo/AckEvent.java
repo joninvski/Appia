@@ -62,7 +62,6 @@ public class AckEvent extends SendableEvent {
      * @param source source of the ack
      * @see org.continuent.appia.core.Session
      * @see FifoSession
-     * @see org.continuent.appia.protocols.common.InetWithPort
      */
     public AckEvent(Channel c,Session gen, Object dest, Object source) 
 	throws AppiaEventException {
