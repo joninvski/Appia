@@ -125,7 +125,7 @@ public class AppiaEventException extends AppiaException {
    * @param s the details message
    */
   public AppiaEventException(int type, String s) {
-    super("AppiaEventException:"+s);
+    super("AppiaEventException: "+s);
     this.type=type;
   }
   
