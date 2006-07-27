@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE appia PUBLIC "-//DTDName//DTD//EN"
-	"http://appia.di.fc.ul.pt/xml/appiaxml.dtd">
+	"http://appia.di.fc.ul.pt/xml/3.2/appiaxml.dtd">
 <appia>
 <template name="text">
 	<session name="tcp" sharing="global">
