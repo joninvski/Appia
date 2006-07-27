@@ -40,6 +40,8 @@ import org.xml.sax.SAXException;
  */
 public class ExecuteXML {
 	
+    private ExecuteXML(){}
+    
 	public static void main(String args[]){
 		/*
 		 * Number of arguments is 1 
@@ -50,20 +52,15 @@ public class ExecuteXML {
 			System.exit(0);
 		}
 		
-		String filename = args[0];
-		File file = new File(filename);
+		final String filename = args[0];
+		final File file = new File(filename);
 		try {
 			AppiaXML.loadAndRun(file);
 		} catch (SAXException e) {
-			Exception we = e.getException();
-			if (we != null )
-				we.printStackTrace();
-			else
-				e.printStackTrace();
+		    e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		Appia.run();
     }	
 
 }
