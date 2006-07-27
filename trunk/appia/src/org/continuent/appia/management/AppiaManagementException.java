@@ -28,33 +28,49 @@
 
 package org.continuent.appia.management;
 
-import org.continuent.appia.core.AppiaEventException;
-import org.continuent.appia.core.Channel;
-import org.continuent.appia.core.Event;
-import org.continuent.appia.core.Session;
-import org.continuent.appia.xml.utils.SessionProperties;
+import org.continuent.appia.core.AppiaException;
 
-public class ManagedSessionEvent extends Event {
+/**
+ * This class defines a AppiaManagementException
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
+ */
+public class AppiaManagementException extends AppiaException {
 
-	private SessionProperties properties;
-	
-	public SessionProperties getProperties() {
-		return properties;
-	}
+    private static final long serialVersionUID = 7635406621774706090L;
 
-	public void setProperties(SessionProperties properties) {
-		this.properties = properties;
-	}
+    /**
+     * Creates a new AppiaManagementException.
+     */
+    public AppiaManagementException() {
+        super();
+    }
 
-	public ManagedSessionEvent(SessionProperties properties) {
-		super();
-		this.properties = properties;
-	}
+    /**
+     * 
+     * Creates a new AppiaManagementException.
+     * @param s
+     */
+    public AppiaManagementException(String s) {
+        super(s);
+    }
 
-	public ManagedSessionEvent(Channel channel, int dir, Session src, SessionProperties props)
-			throws AppiaEventException {
-		super(channel, dir, src);
-		properties = props;
-	}
+    /**
+     * Creates a new AppiaManagementException.
+     * @param s
+     * @param cause
+     */
+    public AppiaManagementException(String s, Throwable cause) {
+        super(s, cause);
+    }
+
+    /**
+     * Creates a new AppiaManagementException.
+     * @param cause
+     */
+    public AppiaManagementException(Throwable cause) {
+        super("", cause);
+    }
 
 }

@@ -30,6 +30,12 @@ package org.continuent.appia.management;
 
 import javax.management.Notification;
 
+/**
+ * This interface defines a SensorSession.
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
+ */
 public interface SensorSession {
 
 	public void addSensorListener(SensorSessionListener listener);

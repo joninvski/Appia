@@ -22,9 +22,18 @@ package org.continuent.appia.core;
 
 import java.util.Hashtable;
 
-import org.continuent.appia.core.events.channel.*;
-import org.continuent.appia.core.memoryManager.*;
+import org.apache.log4j.Logger;
+import org.continuent.appia.core.events.channel.ChannelClose;
+import org.continuent.appia.core.events.channel.ChannelInit;
+import org.continuent.appia.core.events.channel.Debug;
+import org.continuent.appia.core.events.channel.EchoEvent;
+import org.continuent.appia.core.events.channel.PeriodicTimer;
+import org.continuent.appia.core.events.channel.Timer;
+import org.continuent.appia.core.memoryManager.MemoryManager;
+import org.continuent.appia.management.SensorSession;
 import org.continuent.appia.management.jmx.ChannelManager;
+import org.continuent.appia.management.jmx.ConnectionServerFactory;
+import org.continuent.appia.management.jmx.JMXConfiguration;
 
 
 
@@ -60,6 +69,8 @@ import org.continuent.appia.management.jmx.ChannelManager;
  */
 public class Channel {
   
+    private static Logger log = Logger.getLogger(Channel.class);
+    
   String channelID;
   private QoS qos;
   private Hashtable eventsRoutes=null;
@@ -73,8 +84,7 @@ public class Channel {
   // added on 9-Jul-2001
   private MemoryManager memoryManager=null;
   
-  private ChannelManager channelManager;
-  private boolean managed = false;
+  private JMXConfiguration jmxConfiguration = null;
   
   /**
    * The {@link org.continuent.appia.core.Session Sessions} stack.
@@ -90,14 +100,14 @@ public class Channel {
    * @param qos the {@link org.continuent.appia.core.QoS QoS} that <i>models</i> the Channel
    * @param eventScheduler the {@link org.continuent.appia.core.EventScheduler EventScheduler} used
    */
-  public Channel(String channelID, QoS qos, EventScheduler eventScheduler, boolean managed) {
+  public Channel(String channelID, QoS qos, EventScheduler eventScheduler, JMXConfiguration jmxConfig) {
     
     this.channelID=channelID;
     this.qos=qos;
     this.eventScheduler=eventScheduler;
     sessions=new Session[qos.getLayers().length];
     timerManager=(eventScheduler.getAppiaInstance()).instanceGetTimerManager();
-    this.managed = managed;
+    this.jmxConfiguration = jmxConfig;
   }
   
     /* new methods added */
@@ -110,7 +120,7 @@ public class Channel {
    * @param eventScheduler the {@link org.continuent.appia.core.EventScheduler EventScheduler} used
    */
   public Channel(String channelID, QoS qos, EventScheduler eventScheduler,
-  MemoryManager memoryManager, boolean managed) {
+  MemoryManager memoryManager, JMXConfiguration jmxConfig) {
     
     this.channelID=channelID;
     this.qos=qos;
@@ -119,7 +129,7 @@ public class Channel {
     sessions=new Session[qos.getLayers().length];
     timerManager=eventScheduler.getAppiaInstance().instanceGetTimerManager();
     this.memoryManager = memoryManager;
-    this.managed = managed;
+    this.jmxConfiguration = jmxConfig;
   }
   
   /**
@@ -191,10 +201,10 @@ public class Channel {
       if ( channelRoute != null ) {
         eventsRoutes.put(event.getClass(),channelRoute);
       } else {
-        throw new AppiaEventException(AppiaEventException.UNWANTEDEVENT,"Unwanted Event");
+        throw new AppiaEventException(AppiaEventException.UNWANTEDEVENT,"Unwanted Event '"+event.getClass().getName()
+                +"' on Channel '"+this.channelID+"'.");
       }
     }
-    
     return channelRoute;
   }
   
@@ -213,7 +223,7 @@ public class Channel {
   public int getFirstSession(ChannelEventRoute channelRoute, int dir, Session source)
   throws AppiaEventException {
     
-    Session[] route=channelRoute.getRoute();
+    final Session[] route=channelRoute.getRoute();
     
     int i,index;
     
@@ -353,10 +363,9 @@ public class Channel {
       e.printStackTrace();
     }
     
-    if(managed){
-    		channelManager = new ChannelManager(this);
+    if(jmxConfiguration != null){
     		try {
-    			channelManager.registerMBean();
+    			this.registerMBean();
     		} catch (AppiaException e) {
     			e.printStackTrace();
     		}
@@ -376,14 +385,12 @@ public class Channel {
    */
   public void end() {
     synchronized (this) {
-    	if(managed){
+    	if(jmxConfiguration != null){
     		try {
-    			channelManager.unregisterMBean();
+    			this.unregisterMBean();
     		} catch (AppiaException e) {
     			e.printStackTrace();
     		}
-    		channelManager = null;
-    		System.out.println("MBean unregistered.");
     	}
       if (alive) {
         try {
@@ -440,7 +447,7 @@ public class Channel {
   
   private void createUnboundedSessions() {
     int i;
-    Layer[] layers=qos.getLayers();
+    final Layer[] layers=qos.getLayers();
     
     for (i=sessions.length-1 ; i >= 0 ; i--) {
       if (sessions[i]==null)
@@ -449,7 +456,7 @@ public class Channel {
   }
   
   private void makeEventsRoutes() {
-    QoSEventRoute[] qosRoutes=qos.getEventsRoutes();
+    final QoSEventRoute[] qosRoutes=qos.getEventsRoutes();
     eventsRoutes=new Hashtable();
     
     for (int i=0 ; i < qosRoutes.length ; i++) {
@@ -517,7 +524,7 @@ public class Channel {
     
     // EchoEvent
     if ( event instanceof EchoEvent ) {
-      Event e=((EchoEvent)event).getEvent();
+      final Event e=((EchoEvent)event).getEvent();
       
       e.setChannel(this);
       e.setDir(event.getDir() == Direction.UP ? Direction.DOWN : Direction.UP);
@@ -537,4 +544,45 @@ public class Channel {
       return;
     }
   }
+
+    private void registerMBean() throws AppiaException{
+        log.info("Registering MBean for channel "+channelID);
+        final ChannelManager manager = new ChannelManager(this);
+        Session currentSession = null;
+        int numSensorSessions = 0;
+        ConnectionServerFactory.getInstance(jmxConfiguration).registerMBean(this,manager);
+        
+      final ChannelCursor cc = getCursor();
+      cc.top();
+      while(cc.isPositioned()){
+          currentSession = cc.getSession();
+          if(currentSession instanceof SensorSession){
+              ((SensorSession)currentSession).addSensorListener(manager);
+              manager.addManagedSession(currentSession);
+              numSensorSessions++;
+          }
+          cc.down();
+      }
+      log.info("MBean registered on channel "+channelID+". Listening on "+numSensorSessions+" SensorSession(s).");
+    }
+
+    private void unregisterMBean() throws AppiaException{
+        log.info("Unregistering MBean for channel "+channelID);
+        Session currentSession = null;
+        final ChannelManager manager = 
+            (ChannelManager) ConnectionServerFactory.getInstance(jmxConfiguration).unregisterMBean(this);
+        
+        final ChannelCursor cc = getCursor();
+        cc.top();
+        while(cc.isPositioned()){
+            currentSession = cc.getSession();
+            if(currentSession instanceof SensorSession){
+                ((SensorSession)currentSession).removeSensorListener(manager);
+                manager.removeManagedSession(currentSession);
+            }
+            cc.down();
+        }
+        log.info("MBean unregistered from channel "+channelID+".");
+    }
+  
 }

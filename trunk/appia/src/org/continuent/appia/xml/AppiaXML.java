@@ -32,6 +32,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.log4j.Logger;
 import org.continuent.appia.core.Appia;
 import org.continuent.appia.core.AppiaException;
 import org.continuent.appia.core.Channel;
@@ -53,6 +54,8 @@ import org.xml.sax.SAXException;
  */
 public class AppiaXML {
 	
+    private static Logger log = Logger.getLogger(AppiaXML.class);
+
 	// Template groups list
 	//private LinkedList templateGroups;
 	// Channel templates list
@@ -84,12 +87,15 @@ public class AppiaXML {
 		// None of the above exceptions should ever happen if the parser
 		// used is the one supplied with Java2
 		} catch (ParserConfigurationException e) {
+            log.fatal("Exception creating XML parser: "+e);
 			e.printStackTrace();
 			System.exit(-1);
 		} catch (FactoryConfigurationError e) {
+            log.fatal("Exception creating XML parser: "+e);
 			e.printStackTrace();
 			System.exit(-1);
 		} catch (SAXException e) {
+            log.fatal("Exception creating XML parser: "+e);
 			e.printStackTrace();
 			System.exit(-1);
 		}
@@ -189,6 +195,7 @@ public class AppiaXML {
 				config = new Configuration(appia);
 				handler = new XMLFileHandler(config);
 			}
+        log.info("Loading XML configuration from file: "+xmlfile);
 		parser.parse(xmlfile,handler);
 	}
 	
@@ -236,6 +243,7 @@ public class AppiaXML {
 			if (config == null)
 				config = new Configuration(appia);
 		handler = new XMLFileHandler(config);
+        log.info("Loading XML configuration from a caracter stream...");
 		parser.parse(new InputSource(new StringReader(xmlstr)),handler);
 	}
 	
@@ -346,8 +354,33 @@ public class AppiaXML {
 			ChannelProperties params,
 			boolean initialized,
 			MemoryManager mm) throws AppiaException {
-		return config.createChannel(name,templateName,label,params,initialized,mm);
+		return config.createChannel(name,templateName,label,params,initialized,mm,false);
 	}
+
+    /**
+     * Auxiliary method.
+     * <p>
+     * <b>INTERNAL USE ONLY!</b>
+     * 
+     * @param name
+     * @param templateName
+     * @param label
+     * @param params
+     * @param initialized
+     * @param mm the memory manager to use in the channel
+     * @param managed true if the channel is managed
+     * @return Channel
+     * @throws AppiaException
+     */
+    public Channel instanceCreateChannel(String name,
+            String templateName,
+            String label,
+            ChannelProperties params,
+            boolean initialized,
+            MemoryManager mm,
+            boolean managed) throws AppiaException {
+        return config.createChannel(name,templateName,label,params,initialized,mm,managed);
+    }
 
 	/**
 	 * Auxiliary method.
@@ -367,8 +400,30 @@ public class AppiaXML {
 			String label,
 			ChannelProperties params,
 			boolean initialized) throws AppiaException {
-		return config.createChannel(name,templateName,label,params,initialized,null);
+		return config.createChannel(name,templateName,label,params,initialized,null,false);
 	}
+
+    /**
+     * Auxiliary method.
+     * <p>
+     * <b>INTERNAL USE ONLY!</b>
+     * 
+     * @param name
+     * @param templateName
+     * @param label
+     * @param params
+     * @param initialized
+     * @return Channel
+     * @throws AppiaException
+     */
+    public Channel instanceCreateChannel(String name,
+            String templateName,
+            String label,
+            ChannelProperties params,
+            boolean initialized,
+            boolean managed) throws AppiaException {
+        return config.createChannel(name,templateName,label,params,initialized,null,managed);
+    }
 
 	/**
 	 * Returns a chosen Channel based on its name.

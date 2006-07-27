@@ -35,6 +35,7 @@ import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.QoS;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.memoryManager.MemoryManager;
+import org.continuent.appia.management.jmx.JMXConfiguration;
 import org.continuent.appia.xml.AppiaXMLException;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.ChannelProperties;
@@ -150,7 +151,9 @@ public class ChannelTemplate {
 				ChannelProperties params,
 				Hashtable globalSessions,
 				Hashtable labelSessions,
-				EventScheduler eventScheduler, MemoryManager memoryManager) 
+				EventScheduler eventScheduler, 
+                MemoryManager memoryManager,
+                JMXConfiguration jmxConfig) 
 		throws AppiaXMLException {
 			// Complete name is equal to the given name plus the template name
 			//String completeName = name + " " + this.name;
@@ -171,13 +174,13 @@ public class ChannelTemplate {
 			// Creates the channel based on the QoS
 			Channel channel;
 			if (eventScheduler == null && memoryManager == null)
-				channel = qos.createUnboundChannel(name);
+				channel = qos.createUnboundChannel(name,jmxConfig);
 			else if (eventScheduler == null && memoryManager != null)
-				channel = qos.createUnboundChannel(name,memoryManager);
+				channel = qos.createUnboundChannel(name,memoryManager,jmxConfig);
 			else if (eventScheduler != null && memoryManager == null)
-				channel = qos.createUnboundChannel(name,eventScheduler);
+				channel = qos.createUnboundChannel(name,eventScheduler,jmxConfig);
 			else
-				channel = qos.createUnboundChannel(name,eventScheduler,memoryManager);
+				channel = qos.createUnboundChannel(name,eventScheduler,memoryManager,jmxConfig);
 			final ChannelCursor cc = channel.getCursor();
 			cc.bottom();
 			// Associates the sessions to their corresponding layers

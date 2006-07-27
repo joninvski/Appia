@@ -42,9 +42,9 @@ public class ChannelInfo {
 	private ChannelProperties params;
 	private boolean initialized;
 	private EventScheduler eventScheduler;
-	
 	private MemoryManager memoryManager = null;
-	
+	private boolean managed;
+    
 	private LinkedList dependencies;
 	
 	/**
@@ -213,4 +213,20 @@ public class ChannelInfo {
         else
             return false;
 	}
+
+    /**
+     * Gets the managed state.
+     * @return true if this channel is managed.
+     */
+    public boolean isManaged() {
+        return managed;
+    }
+
+    /**
+     * Sets the managed state.
+     * @param managed
+     */
+    public void setManaged(boolean managed) {
+        this.managed = managed;
+    }
 }

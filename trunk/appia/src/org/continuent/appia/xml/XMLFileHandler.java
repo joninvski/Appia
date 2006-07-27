@@ -55,6 +55,7 @@ public class XMLFileHandler extends DefaultHandler {
 	private String channelTemplateName;
 	private String channelLabel;
 	private String channelInitialized;
+    private String channelManaged;
 	// Session related attributes
 	private String sessionName;
 	private boolean settingParameter;
@@ -64,6 +65,8 @@ public class XMLFileHandler extends DefaultHandler {
 	//Memory management related attributes
 	private String mmSize, mmUPThreshold, mmDOWNThreshold;
 	private MemoryManager memoryManager = null;
+    //JMX Management variables
+    private String namingHost,namingPort;
 	// Auxiliary flag used to solve the problem of the characters() method not reading
 	// all the text at once
 	private boolean charactersUsed;
@@ -84,7 +87,7 @@ public class XMLFileHandler extends DefaultHandler {
 		this.config = config;
 	}
 	
-	/* (non-Javadoc)
+	/**
 	 * @see org.xml.sax.ContentHandler#characters(char[], int, int)
 	 */
 	public void characters(char[] ch, int start, int length) {
@@ -164,6 +167,7 @@ public class XMLFileHandler extends DefaultHandler {
 			channelName = attributes.getValue("name");
 			channelTemplateName = attributes.getValue("template");
 			channelInitialized = attributes.getValue("initialized");
+             channelManaged = attributes.getValue("managed");
 			channelLabel = attributes.getValue("label");
 		}
 		else if (qName.equals("chsession")) {
@@ -177,6 +181,10 @@ public class XMLFileHandler extends DefaultHandler {
 			mmUPThreshold = attributes.getValue("up_threshold");
 			mmDOWNThreshold = attributes.getValue("down_threshold");
 		}
+        else if (qName.equals("management")) {
+            namingHost = attributes.getValue("naming_host");
+            namingPort = attributes.getValue("naming_port");
+        }
 		else if (qName.equals("parameter")) {
 			paramName = attributes.getValue("name");
 			settingParameter = true;
@@ -201,17 +209,19 @@ public class XMLFileHandler extends DefaultHandler {
 			settingProtocol = false;
 		}
 		else if (qName.equals("channel")) {
-			boolean init = false;
+			boolean init = false, managed = false;
 			if (channelInitialized.equals("yes"))
 				init = true;
+            if (channelManaged != null && channelManaged.equals("yes"))
+                managed = true;
 			if (config.usesGlobalScheduler())
 				try {
-					config.createChannel(channelName,channelTemplateName,channelLabel,params,init,memoryManager);
+					config.createChannel(channelName,channelTemplateName,channelLabel,params,init,memoryManager,managed);
 				} catch (AppiaXMLException e) {
 					throw new SAXException(e);
 				}
 			else
-				config.storeChannel(channelName,channelTemplateName,channelLabel,params,init,memoryManager);
+				config.storeChannel(channelName,channelTemplateName,channelLabel,params,init,memoryManager,managed);
 			creatingChannel = false;
 		}
 		else if (qName.equals("chsession") && creatingChannel) {
@@ -223,6 +233,12 @@ public class XMLFileHandler extends DefaultHandler {
 					Integer.parseInt(mmUPThreshold),
 					Integer.parseInt(mmDOWNThreshold));
 		}
+        else if (qName.equals("management")) {
+            if(namingHost != null)
+                config.getJMXConfiguration().setNamingServer(namingHost);
+            if(namingPort != null)
+                config.getJMXConfiguration().setNamingPort(Integer.parseInt(namingPort));
+        }
 		else if (qName.equals("parameter")) {
 			settingParameter = false;
 		}

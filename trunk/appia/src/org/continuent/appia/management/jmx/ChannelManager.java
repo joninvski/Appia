@@ -28,144 +28,123 @@
 
 package org.continuent.appia.management.jmx;
 
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
+import java.util.Hashtable;
+import java.util.Map;
+
 import javax.management.Notification;
 import javax.management.NotificationBroadcasterSupport;
-import javax.management.ObjectName;
 
-import org.continuent.appia.core.AppiaEventException;
-import org.continuent.appia.core.AppiaException;
 import org.continuent.appia.core.Channel;
-import org.continuent.appia.core.ChannelCursor;
-import org.continuent.appia.core.Direction;
 import org.continuent.appia.core.Session;
-import org.continuent.appia.management.ManagedSessionEvent;
-import org.continuent.appia.management.SensorSession;
+import org.continuent.appia.management.AppiaManagementException;
+import org.continuent.appia.management.ManagedSession;
 import org.continuent.appia.management.SensorSessionListener;
-import org.continuent.appia.xml.utils.SessionProperties;
 
 /**
- * @author nuno
- *
+ * This class defines a ChannelManager.
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
  */
 public class ChannelManager extends NotificationBroadcasterSupport 
 implements ChannelManagerMBean, SensorSessionListener {
 	
 	private Channel channel;
+    private Map managedSessions;
 	
-	public ChannelManager(Channel ch){
+    /**
+     * Creates a new ChannelManager.
+     * @param ch the managed channel.
+     */
+	public ChannelManager(Channel ch, Map sessions){
 		channel = ch;
-	}
-	
-	public void registerMBean() throws AppiaException{
-		System.out.println("Starting JMX...");
-		// Get the Platform MBean Server
-		MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-		
-		// Construct the ObjectName for the MBean we will register
-		ObjectName name;
-		try {
-			name = new ObjectName("appia.mbeans:type=ChannelManager "+channel.getChannelID());
-			System.out.println("MBean Object name created.");
-		} catch (MalformedObjectNameException e) {
-			throw new AppiaException("Could not create MBean Object: "+e.getMessage());
-		} catch (NullPointerException e) {
-			throw new AppiaException("Could not create MBean Object: "+e.getMessage());
-		}
-		
-		// Register it self
-		try {
-			mbs.registerMBean(this, name);
-			System.out.println("MBean registered in server.");
-		} catch (InstanceAlreadyExistsException e) {
-			throw new AppiaException("Could not register MBean: "+e.getMessage());
-		} catch (MBeanRegistrationException e) {
-			throw new AppiaException("Could not register MBean: "+e.getMessage());
-		} catch (NotCompliantMBeanException e) {
-			throw new AppiaException("Could not register MBean: "+e.getMessage());
-		}
-		
-		ChannelCursor cc = channel.getCursor();
-		cc.top();
-		while(cc.isPositioned()){
-			System.out.println("Session: "+cc.getSession());
-
-			Session session = cc.getSession();
-			if(session instanceof SensorSession){
-				SensorSession ss = (SensorSession) session;
-				ss.addSensorListener(this);
-			}
-			cc.down();
-		}
+        managedSessions = sessions;
 	}
 
-	public void unregisterMBean() throws AppiaException{
-		// Get the Platform MBean Server
-		MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-		
-		// Construct the ObjectName for the MBean we will register
-		ObjectName name;
-		try {
-			name = new ObjectName("appia.mbeans:type=ChannelManager "+channel.getChannelID());
-		} catch (MalformedObjectNameException e) {
-			throw new AppiaException("Could not create MBean Object: "+e.getMessage());
-		} catch (NullPointerException e) {
-			throw new AppiaException("Could not create MBean Object: "+e.getMessage());
-		}
-		
-		try {
-			mbs.unregisterMBean(name);			
-			System.out.println("MBean unRegistered from server.");
-		} catch (MBeanRegistrationException e) {
-			throw new AppiaException("Could not unregister MBean: "+e.getMessage());
-		} catch (InstanceNotFoundException e) {
-			throw new AppiaException("MBean not found: "+e.getMessage());
-		}
-		
-		ChannelCursor cc = channel.getCursor();
-		cc.top();
-		while(cc.isPositioned()){
-			System.out.println("Session: "+cc.getSession());
+    /**
+     * Creates a new ChannelManager.
+     * @param ch the managed channel.
+     */
+    public ChannelManager(Channel ch){
+        channel = ch;
+        managedSessions = new Hashtable();
+    }
 
-			Session session = cc.getSession();
-			if(session instanceof SensorSession){
-				SensorSession ss = (SensorSession) session;
-				ss.removeSensorListener(this);
-			}
-			cc.down();
-		}
+    /**
+     * Adds a session to manage.
+     * @param s the session to manage.
+     */
+    public void addManagedSession(Session s){
+        managedSessions.put(getSessionID(s,channel),s);
+    }
+
+    /**
+     * Removes a session to manage.
+     * @param s the session to manage
+     * @return the removed session, or null if no session was removed.
+     */
+    public Session removeManagedSession(Session s){
+        return (Session) managedSessions.remove(getSessionID(s,channel));
+    }
+    
+    private String getSessionID(Session s,Channel ch){
+        return s.getClass().getName()+":"+ch.getChannelID();
+    }
+    
+    /**
+     * Sets a parameter in one or more sessions of this channel.
+     * 
+     * @param parameter the parameter name
+     * @param value the parameter value
+     * @param sessionID the managed session
+     * @see org.continuent.appia.management.jmx.ChannelManagerMBean#setParameter(java.lang.String, java.lang.String)
+     */
+	public void setParameter(String parameter, String value, String sessionID) 
+    throws AppiaManagementException {
+        final ManagedSession session = (ManagedSession) managedSessions.get(sessionID);
+        if(session == null)
+            throw new AppiaManagementException("Session with ID '"+sessionID+"' does not exist");
+        session.setParameter(parameter,value);
 	}
-	
-	public void setParameter(String parameter, String value) {
-		SessionProperties props = new SessionProperties();
-		props.setProperty(parameter,value);
-		try {
-			ManagedSessionEvent event = new ManagedSessionEvent(props);
-			event.asyncGo(channel,Direction.DOWN);
-		} catch (AppiaEventException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
+
+    /**
+     * Get the value of a parameter.
+     * 
+     * @param parameter the parameter to query
+     * @param sessionID the managed session
+     * @return the value of the parameter.
+     * @see org.continuent.appia.management.jmx.ChannelManagerMBean#getParameter(java.lang.String)
+     */
+    public String getParameter(String parameter, String sessionID) throws AppiaManagementException {
+        final ManagedSession session = (ManagedSession) managedSessions.get(sessionID);
+        if(session == null)
+            throw new AppiaManagementException("Session with ID '"+sessionID+"' does not exist");
+        return session.getParameter(parameter);
+    }
+
+    /**
+     * Callback that receives a notification from the channel. Received the notification and pushes it
+     * to the registered clients.
+     * 
+     * @param notification the received notification
+     * @see org.continuent.appia.management.SensorSessionListener#onNotification(javax.management.Notification)
+     */
 	public void onNotification(Notification notification) {
 		notification.setSource(this);
 		sendNotification(notification);
 	}
 
+    /**
+     * Gets the name of the menaged channel.
+     * 
+     * @see org.continuent.appia.management.jmx.ChannelManagerMBean#getChannelName()
+     */
 	public String getChannelName() {
 		return channel.getChannelID();
 	}
 
-	public String getParameter(String parameter) {
-		// TODO Auto-generated method stub
-		return "TODO";
-	}
+    public boolean getStarted() {
+        return channel.isStarted();
+    }
 
 }

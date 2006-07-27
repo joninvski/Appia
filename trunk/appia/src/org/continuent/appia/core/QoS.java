@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import org.continuent.appia.core.memoryManager.*;
+import org.continuent.appia.management.jmx.JMXConfiguration;
 
 /**
  * This class defines a QoS.
@@ -47,7 +48,7 @@ import org.continuent.appia.core.memoryManager.*;
  */
 public class QoS {
   
-  private String ID;
+  private String qosID;
   
   protected QoSEventRoute[] eventsRoutes;
   protected Layer[] layers;
@@ -55,9 +56,9 @@ public class QoS {
   protected Class[][] eventsAccepted=null;
   private Class[] eventsProvided=null;
   
-  public QoS(String ID, Layer[] layers) throws AppiaInvalidQoSException {
+  public QoS(String id, Layer[] layers) throws AppiaInvalidQoSException {
     this.layers=layers;
-    this.ID=ID;
+    this.qosID=id;
     
     eventsAccepted=new Class[layers.length+1][];
     
@@ -98,7 +99,7 @@ public class QoS {
       ex.printStackTrace();
       System.exit(1);
     }
-    f.println("{"+ID+"}");
+    f.println("{"+qosID+"}");
     for (i=0 ; i < eventsRoutes.length ; i++) {
       f.println("\t["+eventsRoutes[i].getEventType().getName()+"]=");
       boolean[] w=eventsRoutes[i].waypoints;
@@ -120,28 +121,42 @@ public class QoS {
   }
   
   public String getQoSID() {
-    return ID;
+    return qosID;
   }
-  
-  //TODO: change this to support the "managed" option
   
   public Channel createUnboundChannel(String channelID, EventScheduler eventScheduler) {
-    return new Channel(channelID, this, eventScheduler, false);
+    return new Channel(channelID, this, eventScheduler, null);
   }
-  
+
+  public Channel createUnboundChannel(String channelID, EventScheduler eventScheduler, JMXConfiguration config) {
+      return new Channel(channelID, this, eventScheduler, config);
+  }
+
   public Channel createUnboundChannel(String channelID) {
-    return new Channel(channelID, this, new EventScheduler(), false);
+    return new Channel(channelID, this, new EventScheduler(), null);
   }
-  
-  // added on 9-Jul-2001
+
+  public Channel createUnboundChannel(String channelID, JMXConfiguration config) {
+      return new Channel(channelID, this, new EventScheduler(), config);
+  }
+
   public Channel createUnboundChannel(String channelID, EventScheduler eventScheduler, MemoryManager mm) {
-    return new Channel(channelID, this, eventScheduler,mm, false);
+    return new Channel(channelID, this, eventScheduler,mm, null);
   }  
-  
+
+  public Channel createUnboundChannel(String channelID, EventScheduler eventScheduler, MemoryManager mm,
+          JMXConfiguration config) {
+      return new Channel(channelID, this, eventScheduler,mm, config);
+  }  
+
   public Channel createUnboundChannel(String channelID, MemoryManager mm) {
-    return new Channel(channelID, this, new EventScheduler(), mm, false);
+    return new Channel(channelID, this, new EventScheduler(), mm, null);
   }
-  
+
+  public Channel createUnboundChannel(String channelID, MemoryManager mm, JMXConfiguration config) {
+      return new Channel(channelID, this, new EventScheduler(), mm, config);
+  }
+
   public Layer[] getLayers() {
     return (Layer[])layers.clone();
   }

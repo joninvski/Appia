@@ -28,11 +28,28 @@
 
 package org.continuent.appia.management;
 
-import org.continuent.appia.core.Channel;
-import org.continuent.appia.xml.utils.SessionProperties;
 
+/**
+ * This class defines a ManagedSession. A managed session is a session that can receive new
+ * property values from the respective managed channel.
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
+ */
 public interface ManagedSession{
-	
-	public void setParameter(SessionProperties props, Channel channel);
-	
+
+    /**
+     * Sets parameters to its new values.
+     * @param parameter the parameter to set.
+     * @param value the new value.
+     */
+	public void setParameter(String parameter, String value) throws AppiaManagementException;
+
+    /**
+     * Gets the parameter value.
+     * 
+     * @param parameter the parameter to query.
+     */
+    public String getParameter(String parameter) throws AppiaManagementException;
+
 }

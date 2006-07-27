@@ -35,6 +35,7 @@ import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.EventScheduler;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.memoryManager.MemoryManager;
+import org.continuent.appia.management.jmx.JMXConfiguration;
 import org.continuent.appia.xml.templates.ChannelTemplate;
 import org.continuent.appia.xml.templates.SessionTemplate;
 import org.continuent.appia.xml.utils.ChannelInfo;
@@ -75,6 +76,9 @@ public class Configuration {
 	// Global EventScheduler
 	private EventScheduler globalEventScheduler;
 	
+    //JMX global configuration
+    private JMXConfiguration jmxConfiguration;
+
 	// EventScheduler class and constructors
 	private boolean schedulerClassIsSet;
 	private Class eventSchedulerClass;
@@ -95,6 +99,7 @@ public class Configuration {
 		// Behavior by default: one global scheduler
 		globalEventScheduler = new EventScheduler();
 		//globalEventScheduler = getEventScheduler();
+        jmxConfiguration = new JMXConfiguration();
 	}
 	
 	/*
@@ -131,9 +136,10 @@ public class Configuration {
 		// Behavior by default: one global scheduler
 		globalEventScheduler = new EventScheduler(appia);
 		//globalEventScheduler = getEventScheduler();
+        jmxConfiguration = new JMXConfiguration();
 	}
 	
-	/**
+	/*
 	 * Builds an empty configuration.
 	 *
 	 */
@@ -199,7 +205,7 @@ public class Configuration {
 		}
 		schedulerClassIsSet = true;
 	}
-	
+
 	private EventScheduler getEventScheduler() throws AppiaXMLException {
 		if (globalEventScheduler != null)
 			return globalEventScheduler;
@@ -275,7 +281,15 @@ public class Configuration {
 				currentSessionSharingState,
 				layerInstance);
 	}
-	
+
+    /**
+     * Gets the instance of the JMX configuration.
+     * @return the JMX configuration.
+     */
+    public JMXConfiguration getJMXConfiguration(){
+        return jmxConfiguration;
+    }
+
 	// Holds the channel information for each channel to be created
 	private LinkedList channelList = new LinkedList();
 	
@@ -300,12 +314,14 @@ public class Configuration {
 			String label,
 			ChannelProperties params,
 			boolean initialized,
-			MemoryManager mm) {
+			MemoryManager mm,
+            boolean managed) {
 		ChannelInfo cinfo = null;
 		if(mm == null)
 			cinfo = new ChannelInfo(name,templateName,label,params,initialized);
 		else
 			cinfo = new ChannelInfo(name,templateName,label,params,initialized,mm);
+        cinfo.setManaged(managed);
 		channelList.add(cinfo);
 		final ChannelTemplate ctempl = (ChannelTemplate) templates.get(templateName);
 		final LinkedList stls = ctempl.getSessionTemplates();
@@ -401,7 +417,8 @@ public class Configuration {
 		while (!newChannelList.isEmpty()) {
 			ci = (ChannelInfo) newChannelList.removeFirst();
 			createChannel(ci.getName(),ci.getTemplateName(),ci.getLabel(),
-					ci.getParams(),ci.isInitialized(),ci.getEventScheduler(),ci.getMemoryManager());
+					ci.getParams(),ci.isInitialized(),ci.getEventScheduler(),ci.getMemoryManager(),
+                    (ci.isManaged()? jmxConfiguration : null));
 		}
 	}
 	
@@ -424,10 +441,12 @@ public class Configuration {
 			String label,
 			ChannelProperties params,
 			boolean initialized, 
-			MemoryManager mm) 
+			MemoryManager mm, 
+            boolean managed) 
 	throws AppiaXMLException {
 		final ChannelTemplate chnt = ((ChannelTemplate) templates.get(templateName));
-		final Channel chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,globalEventScheduler,mm);
+		final Channel chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,globalEventScheduler,
+                mm,(managed? jmxConfiguration : null));
 		channels.put(name,chn);
 		// Should the channel be returned already "started"?
 		if (initialized){
@@ -462,11 +481,12 @@ public class Configuration {
 			ChannelProperties params,
 			boolean initialized,
 			EventScheduler eventScheduler,
-			MemoryManager mm)
+			MemoryManager mm,
+            JMXConfiguration jmxConfig)
 	throws AppiaXMLException {
 		final ChannelTemplate chnt = ((ChannelTemplate) templates.get(templateName));
 		Channel chn = null;
-            chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,eventScheduler,mm);
+            chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,eventScheduler,mm,jmxConfig);
 		channels.put(name,chn);
 		// Should the channel be returned already "started"?
 		if (initialized){

@@ -37,6 +37,13 @@ import javax.management.Notification;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
 
+/**
+ * 
+ * This class defines a AbstractSensorSession.
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
+ */
 public abstract class AbstractSensorSession extends Session implements SensorSession {
 	
 	private List listeners;
@@ -74,8 +81,7 @@ public abstract class AbstractSensorSession extends Session implements SensorSes
 	}
 	
 	public long getNotificationSequenceNumber(){
-		return ++sequenceNumber;
+		return sequenceNumber++;
 	}
-
 
 }

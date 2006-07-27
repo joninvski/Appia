@@ -28,8 +28,17 @@
 
 package org.continuent.appia.management.jmx;
 
+import org.continuent.appia.management.AppiaManagementException;
+
+/**
+ * This interface defines a ChannelManagerMBean.
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
+ */
 public interface ChannelManagerMBean {
 	public String getChannelName();
-	public void setParameter(String parameter, String value);
-	public String getParameter(String parameter);
+    public boolean getStarted();
+	public void setParameter(String parameter, String value, String sessionID) throws AppiaManagementException ;
+	public String getParameter(String parameter, String sessionID) throws AppiaManagementException;
 }
