@@ -254,8 +254,10 @@ public class FifoSession extends Session {
 	}
 
 	private void handleSendableNotDelivered(SendableNotDeliveredEvent e) {
+        // If the source of the event is null, this protocol cannot do nothing.
+        if(e.event.source == null)
+            return;
 	    PeerInfo p = findPeer(e.event.source);
-        System.out.println("Find peer: "+p+" source: "+e.event.source+" event: "+e.event);
 	    if (FifoConfig.debugOn)
 	        System.out.println("FifoSession: going to giveup sending some message because of NotDelivered!");
 	    giveup(p, e.event);
