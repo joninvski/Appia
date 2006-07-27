@@ -584,5 +584,13 @@ public class Channel {
         }
         log.info("MBean unregistered from channel "+channelID+".");
     }
+
+    /**
+     * Gets the JMX configuration.
+     * @return Returns the JMX configuration.
+     */
+    public JMXConfiguration getJMXConfiguration() {
+        return jmxConfiguration;
+    }
   
 }
