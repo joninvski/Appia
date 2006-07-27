@@ -44,11 +44,11 @@
  */
 
 public interface FifoConfig {
-    public static final boolean debugOn = false;
+    public static final boolean DEBUG_ON = false;
 
-    public static final long timerPeriod = 750;
-    public static final int numTimersToResend = 3;
-    public static final int nResends = 10;
+    public static final long TIMER_PERIOD = 750;
+    public static final int TIMERS_TO_RESEND = 3;
+    public static final int NUM_RESENDS = 10;
 
-    public static final long oldPeerTime = 2000;
+    public static final long PEER_INACTIVITY_TIME = 2000;
 }

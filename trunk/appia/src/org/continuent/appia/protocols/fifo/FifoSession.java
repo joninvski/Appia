@@ -100,9 +100,9 @@ public class FifoSession extends Session {
 		addresses = new HashMap();
 		messages = new LinkedList();
 		channels = new LinkedList();
-		timerPeriod = FifoConfig.timerPeriod;
-		currentTTR = timersToResend = FifoConfig.numTimersToResend;
-		this.nResends = FifoConfig.nResends;
+		timerPeriod = FifoConfig.TIMER_PERIOD;
+		currentTTR = timersToResend = FifoConfig.TIMERS_TO_RESEND;
+		this.nResends = FifoConfig.NUM_RESENDS;
 	}
 
 	/**
@@ -158,7 +158,7 @@ public class FifoSession extends Session {
 	}
 
 	private void handleInit(ChannelInit e) {
-		if (FifoConfig.debugOn && debugOutput != null)
+		if (FifoConfig.DEBUG_ON && debugOutput != null)
 			debugOutput.println(
 				"FIFO: channel init from channel "
 					+ e.getChannel().getChannelID());
@@ -188,7 +188,7 @@ public class FifoSession extends Session {
 
 		/* removes the channel from the List of
 		 * channels of each Peer */
-		Iterator peers = newPeerIterator();
+		final Iterator peers = newPeerIterator();
 		PeerInfo p = null;
 		while (peers.hasNext()) {
 			p = nextPeer(peers);
@@ -203,7 +203,7 @@ public class FifoSession extends Session {
 
 	/* Changes configuration */
 	private void handleConfigEvent(FIFOConfigEvent e) {
-		if (FifoConfig.debugOn) {
+		if (FifoConfig.DEBUG_ON) {
 			System.out.println(
 				"FifoSession: handleConfigEvent: received config event. Definitions to change:"
 					+ "Period:"
@@ -229,8 +229,8 @@ public class FifoSession extends Session {
 			changeTimer = true;
 		}
 		if (e.isWindowDef()) {
-			int newWindow = e.getWindow();
-			Iterator peers = newPeerIterator();
+			final int newWindow = e.getWindow();
+			final Iterator peers = newPeerIterator();
 			while (peers.hasNext())
 				 ((PeerInfo) peers.next()).windowChange(newWindow);
 		}
@@ -257,15 +257,15 @@ public class FifoSession extends Session {
         // If the source of the event is null, this protocol cannot do nothing.
         if(e.event.source == null)
             return;
-	    PeerInfo p = findPeer(e.event.source);
-	    if (FifoConfig.debugOn)
+	    final PeerInfo p = findPeer(e.event.source);
+	    if (FifoConfig.DEBUG_ON)
 	        System.out.println("FifoSession: going to giveup sending some message because of NotDelivered!");
 	    giveup(p, e.event);
 	}
 
 	private void handleDebug(Debug e) {
 
-		int q = e.getQualifierMode();
+		final int q = e.getQualifierMode();
 
 		if (q == EventQualifier.ON) {
 			debugOutput = new PrintStream(e.getOutput());
@@ -289,7 +289,7 @@ public class FifoSession extends Session {
 		out.println("Buffer of messages size is " + sizeOfBuffer());
 
 		int count = 0;
-		Iterator peers = newPeerIterator();
+		final Iterator peers = newPeerIterator();
 		PeerInfo p = null;
 		while (peers.hasNext()) {
 			p = nextPeer(peers);
@@ -337,7 +337,7 @@ public class FifoSession extends Session {
 	 * pending messages waiting for confirmation.
 	 */
 	private void handleAck(AckEvent e) {
-		if (FifoConfig.debugOn && debugOutput != null)
+		if (FifoConfig.DEBUG_ON && debugOutput != null)
 			debugOutput.println("FIFO: Ack event received");
 		/* Sanity checks */
 		if (e.getDir() != Direction.UP) {
@@ -345,7 +345,7 @@ public class FifoSession extends Session {
 			handleSendable((SendableEvent) e);
 			return;
 		}
-		PeerInfo p = findPeer(e.source);
+		final PeerInfo p = findPeer(e.source);
 		/* False is only expected when the peer has failed. Ignored */
 		if (p == null)
 			return;
@@ -354,10 +354,10 @@ public class FifoSession extends Session {
 		e.getMessage().pop(msgBuf);
 		/* false is not expected */
 		if (hasSynActive(msgBuf)) {
-			int confirmation = byteToSeq(msgBuf);
+			final int confirmation = byteToSeq(msgBuf);
 			confirmedUntil(p, confirmation);
 			p.mySynAck();
-			if (FifoConfig.debugOn && debugOutput != null)
+			if (FifoConfig.DEBUG_ON && debugOutput != null)
 				debugOutput.println(
 					"FIFO: Ack received until sequence "
 						+ "number "
@@ -369,7 +369,7 @@ public class FifoSession extends Session {
 	 * takes care of an inoming SendableEvent
 	 */
 	private void handleSendable(SendableEvent e) {
-		if (FifoConfig.debugOn && debugOutput != null)
+		if (FifoConfig.DEBUG_ON && debugOutput != null)
 			debugOutput.println(
 				"(FIFO:handleSendable) SendableEvent received! "+e);
 			
@@ -385,7 +385,7 @@ public class FifoSession extends Session {
 	}
 
 	private WaitingMessage prepareMessage(SendableEvent e) {
-		WaitingMessage we = new WaitingMessage(e, nResends);
+		final WaitingMessage we = new WaitingMessage(e, nResends);
 		addMessage(we);
 		return we;
 	}
@@ -408,7 +408,7 @@ public class FifoSession extends Session {
 			clone.setSource(this);
 			clone.init();
 			clone.go();
-			if (FifoConfig.debugOn && debugOutput != null)
+			if (FifoConfig.DEBUG_ON && debugOutput != null)
 				debugOutput.println("(FIFO:sendMessage) Event sent to channel");
 		} catch (AppiaEventException ex) {
 			System.err.println(
@@ -429,7 +429,7 @@ public class FifoSession extends Session {
 			/* find peer (or create it) */
 			peer = findPeer(dests[i]);
 			if (peer == null) {
-				if (FifoConfig.debugOn && debugOutput != null)
+				if (FifoConfig.DEBUG_ON && debugOutput != null)
 					debugOutput.println("(FIFO) Creating a new peer");
 				peer = newPeer(dests[i], we.event.getChannel());
 			} else
@@ -452,27 +452,27 @@ public class FifoSession extends Session {
 	 * this is just for p2p messages.
 	 */
 	private void processOutgoing(SendableEvent e) {
-		WaitingMessage we = prepareMessage(e);
+		final WaitingMessage we = prepareMessage(e);
 		PeerInfo peer = null;
 		Header header = null;
 
 		if (e.dest instanceof AppiaMulticast) {
 			/* do Multicast */
-			if (FifoConfig.debugOn && debugOutput != null)
+			if (FifoConfig.DEBUG_ON && debugOutput != null)
 				debugOutput.println(
 					"(FIFO) Processing outgoing multicast message.");
 
-			AppiaMulticast am = (AppiaMulticast) e.dest;
-			Object[] dests = am.getDestinations();
+			final AppiaMulticast am = (AppiaMulticast) e.dest;
+			final Object[] dests = am.getDestinations();
 			makeMulticast(dests, we);
 		} else {
 			/* point to point */
-			if (FifoConfig.debugOn && debugOutput != null)
+			if (FifoConfig.DEBUG_ON && debugOutput != null)
 				debugOutput.println("(FIFO) Processing outgoing p2p message.");
 			/* gets PeerInfo from HashMap */
 			peer = findPeer(e.dest);
 			if (peer == null) {
-				if (FifoConfig.debugOn && debugOutput != null)
+				if (FifoConfig.DEBUG_ON && debugOutput != null)
 					debugOutput.println("(FIFO) Creating a new peer");
 				peer = newPeer(e.dest, e.getChannel());
 			} else
@@ -491,7 +491,7 @@ public class FifoSession extends Session {
 	 * process incoming SendableEvent
 	 */
 	private void processIncoming(SendableEvent e) {
-		if (FifoConfig.debugOn && debugOutput != null)
+		if (FifoConfig.DEBUG_ON && debugOutput != null)
 			debugOutput.println(
 				"(FIFO:processIncoming) Processing incoming message.");
 
@@ -502,7 +502,7 @@ public class FifoSession extends Session {
 		header.len = INT_SIZE * 2;
 		e.getMessage().pop(header);
 
-		PeerInfo p = checkConnection(e, header);
+		final PeerInfo p = checkConnection(e, header);
 		/* p==null means "discard message" */
 		if (p == null)
 			return;
@@ -517,12 +517,12 @@ public class FifoSession extends Session {
 	 * remove nodes not needed anymore
 	 */
 	private void confirmedUntil(PeerInfo peer, int seq) {
-		if (FifoConfig.debugOn && debugOutput != null)
+		if (FifoConfig.DEBUG_ON && debugOutput != null)
 			debugOutput.println("(FIFO:confirmedUntil) seqNumber = " + seq);
 
 		peer.confirmedUntil(seq);
 		peer.usedOn(timeProvider.currentTimeMillis());
-		ListIterator it = peer.headers.listIterator();
+		final ListIterator it = peer.headers.listIterator();
 		boolean done = false;
 		Header h = null;
 		while (it.hasNext() && !done) {
@@ -544,9 +544,9 @@ public class FifoSession extends Session {
 
 	private void processUnackedMessages() {
 		// sends acks
-		if (FifoConfig.debugOn && debugOutput != null)
+		if (FifoConfig.DEBUG_ON && debugOutput != null)
 			debugOutput.println("(FIFO:handleTimer) Processing acks.");
-		Iterator peers = newPeerIterator();
+		final Iterator peers = newPeerIterator();
 		PeerInfo peer = null;
 		/*
 			if (!peers.hasNext())
@@ -569,12 +569,12 @@ public class FifoSession extends Session {
 	}
 
 	private void processResend() {
-		if (FifoConfig.debugOn && debugOutput != null)
+		if (FifoConfig.DEBUG_ON && debugOutput != null)
 			debugOutput.println(
 				"(FIFO) fifo will verify if she feels like resending messages.");
 
-		Object[] msg = getArrayOfBuffer();
-		long currentTime = timeProvider.currentTimeMillis();
+		final Object[] msg = getArrayOfBuffer();
+		final long currentTime = timeProvider.currentTimeMillis();
 		long delta = 0;
 		boolean stop = false;
 		for (int i = 0;(i < msg.length) && (!stop); i++) {
@@ -588,17 +588,17 @@ public class FifoSession extends Session {
 
 	private void resendMessage(WaitingMessage we) {
     
-		Object[] headers = we.toHeaderArray();
+		final Object[] headers = we.toHeaderArray();
 		removeMessage(we);
 		we.nResends--;
 		if (we.nResends < 0) {
-			if (FifoConfig.debugOn)
+			if (FifoConfig.DEBUG_ON)
 				System.out.println(
 					"FifoSession: going to giveup sending some message because exceeded number of resends!");
 			for (int i = 0; i < headers.length; i++)
 				giveup(((Header) headers[i]).peer, we.event);
 		} else {
-			if (FifoConfig.debugOn)
+			if (FifoConfig.DEBUG_ON)
 				System.out.println(
 					"FifoSession: going to resend a message! Number of retries left: "
 						+ we.nResends);
@@ -615,7 +615,7 @@ public class FifoSession extends Session {
 	 * - sends acks (if needed)
 	 */
 	private void handleTimer(FifoTimer timer) {
-		if (FifoConfig.debugOn && debugOutput != null)
+		if (FifoConfig.DEBUG_ON && debugOutput != null)
 			debugOutput.println(
 				"(FIFO:handleTimer) Processing periodic timer event.");
     
@@ -627,7 +627,7 @@ public class FifoSession extends Session {
 		processUnackedMessages();
 
 		if (changeTimer) {
-			Channel channel = timer.getChannel();
+			final Channel channel = timer.getChannel();
 			/* if a configEvent was received and period was changed, 
 			 * we need to change thid timer.
 			 * We cancel this one and start another with new period
@@ -655,11 +655,11 @@ public class FifoSession extends Session {
 	/* if there are peers that didn't exchange messages for a long time, this info is discarded.
 	 * this is done periodically */
 	private void cleanOldPeers() {
-		if (FifoConfig.debugOn && debugOutput != null)
+		if (FifoConfig.DEBUG_ON && debugOutput != null)
 			debugOutput.println("(FIFO:handleTimer) cleaning old peers...");
-		Iterator peers = newPeerIterator();
+		final Iterator peers = newPeerIterator();
 		PeerInfo peer = null;
-		long now = timeProvider.currentTimeMillis();
+		final long now = timeProvider.currentTimeMillis();
 		while (peers.hasNext()) {
 			peer = nextPeer(peers);
 			if (peer.isOld(now))
@@ -710,7 +710,7 @@ public class FifoSession extends Session {
 			unAckedEvent.getMessage().pop(new MsgBuffer(new byte[HEADER_SIZE], 0, HEADER_SIZE));
 		}
 		try {
-			FIFOUndeliveredEvent e =
+			final FIFOUndeliveredEvent e =
 				new FIFOUndeliveredEvent(s.getChannel(), this, unAckedEvent);
 			e.go();
 		} catch (AppiaEventException ex) {
@@ -741,7 +741,7 @@ public class FifoSession extends Session {
 	 * sends acks to the specified address (PeerInfo)
 	 */
 	private void sendAck(PeerInfo p) {
-		if (FifoConfig.debugOn && debugOutput != null)
+		if (FifoConfig.DEBUG_ON && debugOutput != null)
 			debugOutput.println(
 				"(FIFO:sendAck) Fifo will send a Ack event to:"
 					+ (p.peer instanceof InetSocketAddress
@@ -759,7 +759,7 @@ public class FifoSession extends Session {
 					this,
 					p.peer,
 					myAddr);
-			Message m = new Message();
+			final Message m = new Message();
 			MsgBuffer msgBuf = new MsgBuffer();
 			msgBuf.len = INT_SIZE;
 			m.push(msgBuf);
@@ -770,7 +770,7 @@ public class FifoSession extends Session {
 			p.ackSentNow();
 			p.usedOn(timeProvider.currentTimeMillis());
 
-			if (FifoConfig.debugOn && debugOutput != null)
+			if (FifoConfig.DEBUG_ON && debugOutput != null)
 				debugOutput.println("(FIFO:sendAck) ack sent");
 		} catch (AppiaEventException ex) {
 			System.err.println(
@@ -810,28 +810,12 @@ public class FifoSession extends Session {
 		return (buf.data[buf.off + 3] & 128) != 0;
 	}
 
-//	private void putInt(int i, MsgBuffer mbuf) {
-//		mbuf.data[mbuf.off + 0] = (byte) ((i >>> 24) & 0xFF);
-//		mbuf.data[mbuf.off + 1] = (byte) ((i >>> 16) & 0xFF);
-//		mbuf.data[mbuf.off + 2] = (byte) ((i >>> 8) & 0xFF);
-//		mbuf.data[mbuf.off + 3] = (byte) ((i >>> 0) & 0xFF);
-//	}
-//
-//	private int getInt(MsgBuffer mbuf) {
-//		int i = 0;
-//		i |= (((int) mbuf.data[mbuf.off + 0]) & 0xFF) << 24;
-//		i |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 16;
-//		i |= (((int) mbuf.data[mbuf.off + 2]) & 0xFF) << 8;
-//		i |= (((int) mbuf.data[mbuf.off + 3]) & 0xFF) << 0;
-//		return i;
-//	}
-
 	/*
 	 * used to create a peer when fifo receives a message
 	 * from a new Addr
 	 */
 	private PeerInfo newPeer(Object who, Channel c) {
-		PeerInfo newpeer = new PeerInfo(who, c);
+		final PeerInfo newpeer = new PeerInfo(who, c);
 		addresses.put(who, newpeer);
 		return newpeer;
 	}
@@ -870,16 +854,16 @@ public class FifoSession extends Session {
 	 * methods to help processIncoming()
 	 * ******************************************* */
 	private PeerInfo checkConnection(SendableEvent e, MsgBuffer header) {
-		boolean syn = hasSynActive(header);
+		final boolean syn = hasSynActive(header);
 		header.off += INT_SIZE;
-		boolean synAck = hasSynActive(header);
+		final boolean synAck = hasSynActive(header);
 		header.off -= INT_SIZE;
 
-		if(FifoConfig.debugOn)
+		if(FifoConfig.DEBUG_ON)
 			System.out.println("<<-- Recebida mensagem "+byteToSeq(header)+ " de "+e.source);
 
 		PeerInfo p = findPeer(e.source);
-		if (FifoConfig.debugOn && debugOutput != null)
+		if (FifoConfig.DEBUG_ON && debugOutput != null)
 			debugOutput.println(
 				"(FIFO:checkConnection) PeerInfo is "
 					+ ((p == null) ? "NULL" : "NOT NULL"));
@@ -893,7 +877,7 @@ public class FifoSession extends Session {
 			/* 1: The peer is sending his half of a connection that was
 			   already half open by this peer */
 			if (p != null && !p.isHisSynSent()) {
-				if (FifoConfig.debugOn && debugOutput != null)
+				if (FifoConfig.DEBUG_ON && debugOutput != null)
 					debugOutput.println(
 						"FIFO: Peer completed connection " + "establishment");
 				p.synReceived(byteToSeq(header));
@@ -908,7 +892,7 @@ public class FifoSession extends Session {
 				   A new peer is created to handle the new connection
 				   messages. */
 				if (p != null && !p.isDuplicatedSyn(byteToSeq(header))) {
-					if (FifoConfig.debugOn && debugOutput != null)
+					if (FifoConfig.DEBUG_ON && debugOutput != null)
 						debugOutput.println(
 							"FIFO: Peer quick " + "failure/resume noticed");
 					addresses.remove(e.source);
@@ -920,7 +904,7 @@ public class FifoSession extends Session {
 				if (p == null || !p.isDuplicatedSyn(byteToSeq(header))) {
 					p = newPeer(e.source, e.getChannel());
 					p.synReceived(byteToSeq(header));
-					if (FifoConfig.debugOn && debugOutput != null)
+					if (FifoConfig.DEBUG_ON && debugOutput != null)
 						debugOutput.println(
 							"Half-connection established " + "with peer");
 				}
@@ -949,13 +933,13 @@ public class FifoSession extends Session {
 
 	private boolean checkOrder(PeerInfo p, SendableEvent e, MsgBuffer header) {
 		/* Extracting sequence number */
-		int seqNumber = byteToSeq(header);
+		final int seqNumber = byteToSeq(header);
 		header.off += INT_SIZE;
-		int confirmation = byteToSeq(header);
+		final int confirmation = byteToSeq(header);
 		/* Checks the piggybacked acknowledgment number */
 		if (hasSynActive(header)) {
 			confirmedUntil(p, confirmation);
-			if (FifoConfig.debugOn && debugOutput != null)
+			if (FifoConfig.DEBUG_ON && debugOutput != null)
 				debugOutput.println(
 					"(FIFO:checkOrder) Peer piggybacked confirmation until "
 						+ confirmation+" from channel "+e.getChannel().getChannelID());
@@ -965,7 +949,7 @@ public class FifoSession extends Session {
 			p.incIncoming();
 			try {
 				e.go();
-				if (FifoConfig.debugOn && debugOutput != null)
+				if (FifoConfig.DEBUG_ON && debugOutput != null)
 					debugOutput.println(
 						"(FIFO:checkOrder) received event ("
 							+ seqNumber
@@ -979,7 +963,7 @@ public class FifoSession extends Session {
 		} else {
 			if (!p.isDuplicated(seqNumber)) {
 				p.enqueueIncoming(e, seqNumber);
-				if (FifoConfig.debugOn && debugOutput != null)
+				if (FifoConfig.DEBUG_ON && debugOutput != null)
 					debugOutput.println(
 						"(FIFO:checkOrder) received event ("
 							+ seqNumber
@@ -991,7 +975,7 @@ public class FifoSession extends Session {
 				   acknowledgment by considering that the lastAckSent is lower than
 				   it realy is */
 				p.forceAck();
-				if (FifoConfig.debugOn && debugOutput != null)
+				if (FifoConfig.DEBUG_ON && debugOutput != null)
 					debugOutput.println(
 						"(FIFO:checkOrder) Duplicated message ("
 							+ seqNumber

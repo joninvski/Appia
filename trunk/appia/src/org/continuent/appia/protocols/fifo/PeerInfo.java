@@ -116,7 +116,7 @@ public class PeerInfo {
 	}
 
 	public boolean isOld(long now) {
-		return ((now - lastUsed) >= FifoConfig.oldPeerTime);
+		return ((now - lastUsed) >= FifoConfig.PEER_INACTIVITY_TIME);
 	}
 
 	/* methods that deal with sequence numbers */

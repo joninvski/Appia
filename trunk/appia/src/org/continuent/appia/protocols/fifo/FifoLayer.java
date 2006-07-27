@@ -17,23 +17,23 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package org.continuent.appia.protocols.fifo;
+package org.continuent.appia.protocols.fifo;
 
 //////////////////////////////////////////////////////////////////////
-//                                                                  //
-// Appia: protocol development and composition framework            //
-//                                                                  //
-// Version: 1.0/J                                                   //
-//                                                                  //
-// Copyright, 2000, Universidade de Lisboa                          //
-// All rights reserved                                              //
-// See license.txt for further information                          //
-//                                                                  //
-// Class: FifoLayer                                                 //
-//                                                                  //
-// Author: Nuno Carvalho, 11/2001                                   //
-//                                                                  //
-// Change Log:                                                      //
+////
+//Appia: protocol development and composition framework            //
+////
+//Version: 1.0/J                                                   //
+////
+//Copyright, 2000, Universidade de Lisboa                          //
+//All rights reserved                                              //
+//See license.txt for further information                          //
+////
+//Class: FifoLayer                                                 //
+////
+//Author: Nuno Carvalho, 11/2001                                   //
+////
+//Change Log:                                                      //
 //////////////////////////////////////////////////////////////////////
 
 import org.continuent.appia.core.*;
@@ -87,42 +87,45 @@ import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
  * @author Nuno Carvalho
  */
 public class FifoLayer 
-    extends Layer
-    implements org.continuent.appia.core.events.AppiaMulticastSupport{
+extends Layer
+implements org.continuent.appia.core.events.AppiaMulticastSupport{
     
     public FifoLayer() {
-	super();
-	
-	/* Events enumeration */
-	evProvide=new Class[4];
-	evProvide[0] = org.continuent.appia.core.events.SendableEvent.class;
-	evProvide[1] = org.continuent.appia.protocols.fifo.FifoTimer.class;
-	evProvide[2] = org.continuent.appia.protocols.fifo.AckEvent.class;
-	evProvide[3] = org.continuent.appia.protocols.common.FIFOUndeliveredEvent.class;
-	
-	evRequire=new Class[5];
-	evRequire[0] = org.continuent.appia.core.events.SendableEvent.class;
-	evRequire[1] = org.continuent.appia.core.events.channel.ChannelInit.class;
-	evRequire[2] = org.continuent.appia.core.events.channel.ChannelClose.class;
-	evRequire[3] = org.continuent.appia.protocols.fifo.FifoTimer.class;
-	evRequire[4] = org.continuent.appia.protocols.common.RegisterSocketEvent.class;
-	
-	evAccept=new Class[9];
-	evAccept[0] = org.continuent.appia.core.events.SendableEvent.class;
-	evAccept[1] = org.continuent.appia.core.events.channel.ChannelInit.class;
-	evAccept[2] = org.continuent.appia.core.events.channel.ChannelClose.class;
-	evAccept[3] = org.continuent.appia.core.events.channel.Debug.class;
-	evAccept[4] = org.continuent.appia.protocols.fifo.FifoTimer.class;
-	evAccept[5] = org.continuent.appia.protocols.fifo.FIFOConfigEvent.class;
-	evAccept[6] = org.continuent.appia.protocols.common.RegisterSocketEvent.class;
-	evAccept[7] = SendableNotDeliveredEvent.class;
-	evAccept[8] = org.continuent.appia.protocols.frag.MaxPDUSizeEvent.class;
+        super();
+        
+        /* Events enumeration */
+        evProvide=new Class[]{
+                org.continuent.appia.core.events.SendableEvent.class,
+                org.continuent.appia.protocols.fifo.FifoTimer.class,
+                org.continuent.appia.protocols.fifo.AckEvent.class,
+                org.continuent.appia.protocols.common.FIFOUndeliveredEvent.class,
+        };
+        
+        evRequire=new Class[]{
+                org.continuent.appia.core.events.SendableEvent.class,
+                org.continuent.appia.core.events.channel.ChannelInit.class,
+                org.continuent.appia.core.events.channel.ChannelClose.class,
+                org.continuent.appia.protocols.fifo.FifoTimer.class,
+                org.continuent.appia.protocols.common.RegisterSocketEvent.class,
+        };
+        
+        evAccept=new Class[]{
+                org.continuent.appia.core.events.SendableEvent.class,
+                org.continuent.appia.core.events.channel.ChannelInit.class,
+                org.continuent.appia.core.events.channel.ChannelClose.class,
+                org.continuent.appia.core.events.channel.Debug.class,
+                org.continuent.appia.protocols.fifo.FifoTimer.class,
+                org.continuent.appia.protocols.fifo.FIFOConfigEvent.class,
+                org.continuent.appia.protocols.common.RegisterSocketEvent.class,
+                SendableNotDeliveredEvent.class,
+                org.continuent.appia.protocols.frag.MaxPDUSizeEvent.class,
+        };
     }
     
     /**
      * Standard session instantiation
      */
     public Session createSession() {
-	return new FifoSession(this);
+        return new FifoSession(this);
     }
 }
