@@ -202,7 +202,7 @@ public class FifoSession extends Session {
 
 	/* Changes configuration */
 	private void handleConfigEvent(FIFOConfigEvent e) {
-		if (FifoConfig.peterdebugOn) {
+		if (FifoConfig.debugOn) {
 			System.out.println(
 				"FifoSession: handleConfigEvent: received config event. Definitions to change:"
 					+ "Period:"
@@ -254,7 +254,7 @@ public class FifoSession extends Session {
 
 	private void handleSendableNotDelivered(SendableNotDeliveredEvent e) {
 		PeerInfo p = findPeer(e.event.source);
-    if (FifoConfig.peterdebugOn)
+    if (FifoConfig.debugOn)
       System.out.println(
       "FifoSession: going to giveup sending some message because of NotDelivered!");
     giveup(p, e.event);
@@ -589,13 +589,13 @@ public class FifoSession extends Session {
 		removeMessage(we);
 		we.nResends--;
 		if (we.nResends < 0) {
-			if (FifoConfig.peterdebugOn)
+			if (FifoConfig.debugOn)
 				System.out.println(
 					"FifoSession: going to giveup sending some message because exceeded number of resends!");
 			for (int i = 0; i < headers.length; i++)
 				giveup(((Header) headers[i]).peer, we.event);
 		} else {
-			if (FifoConfig.peterdebugOn)
+			if (FifoConfig.debugOn)
 				System.out.println(
 					"FifoSession: going to resend a message! Number of retries left: "
 						+ we.nResends);
@@ -872,7 +872,7 @@ public class FifoSession extends Session {
 		boolean synAck = hasSynActive(header);
 		header.off -= 4;
 
-		if(FifoConfig.peterdebugOn)
+		if(FifoConfig.debugOn)
 			System.out.println("<<-- Recebida mensagem "+byteToSeq(header)+ " de "+e.source);
 
 		PeerInfo p = findPeer(e.source);

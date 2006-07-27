@@ -45,7 +45,6 @@
 
 public interface FifoConfig {
     public static final boolean debugOn = false;
-    public static final boolean peterdebugOn = false;
 
     public static final long timerPeriod = 750;
     public static final int numTimersToResend = 3;
