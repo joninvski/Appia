@@ -31,11 +31,12 @@ import javax.management.Notification;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.AppiaMulticast;
+import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.events.channel.EchoEvent;
+import org.continuent.appia.management.AppiaManagementException;
 import org.continuent.appia.management.ManagedSession;
 import org.continuent.appia.management.AbstractSensorSession;
-import org.continuent.appia.management.ManagedSessionEvent;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
 import org.continuent.appia.protocols.group.ArrayOptimized;
 import org.continuent.appia.protocols.group.LocalState;
@@ -46,8 +47,6 @@ import org.continuent.appia.protocols.group.intra.View;
 import org.continuent.appia.protocols.tcpcomplete.TcpUndeliveredEvent;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
-
-
 
 /** The <I>Appia</I> failure detector.
  * @see org.continuent.appia.protocols.group.suspect.SuspectLayer
@@ -89,26 +88,62 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
       rounds_idle=(params.getLong("suspect_time")/suspect_sweep)+2;
   }
 
-  public void setParameter(SessionProperties params, Channel channel) {
+  /**
+   * Change a parameter of a session.
+   * Possible parameters:
+   * <ul>
+   * <li><b>suspect_sweep</b> duration of a round in milliseconds.
+   * <li><b>suspect_time</b> time to suspect a member, in milliseconds. 
+   * This value is converted in number of rounds and added 2 for transmission safety.
+   * </ul>
+   * 
+   * @see org.continuent.appia.management.ManagedSession#setParameter(java.lang.String, java.lang.String)
+   */
+  public void setParameter(String parameter, String value) throws AppiaManagementException {
 	  Notification notif = null;
-	  if (params.containsKey("suspect_sweep")){
-		  Long old_value = new Long(suspect_sweep);
-		  suspect_sweep=params.getLong("suspect_sweep");
-		  notif = new AttributeChangeNotification(this,1,channel.getTimeProvider().currentTimeMillis(),"Suspect sweep Changed",
-				  "suspect_sweep",Long.class.getName(),old_value,new Long(suspect_sweep));
+	  if (parameter.equals("suspect_sweep")){
+		  final Long oldValue = new Long(suspect_sweep);
+          final Long newValue = new Long(value);
+		  suspect_sweep=newValue.longValue();
+		  notif = new AttributeChangeNotification(this,1,time.currentTimeMillis(),"Suspect sweep Changed",
+				  "suspect_sweep",Long.class.getName(),oldValue,newValue);
+          //FIXME: remove println
 		  System.out.println("SWEEP changed to "+suspect_sweep);
 	  }
-	  if (params.containsKey("suspect_time")){
-		  Long old_value = new Long(rounds_idle);
-		  rounds_idle=(params.getLong("suspect_time")/suspect_sweep)+2;
-		  notif = new AttributeChangeNotification(this,1,channel.getTimeProvider().currentTimeMillis(),"Rounds idle Changed",
-				  "rounds_idle",Long.class.getName(),old_value,new Long(rounds_idle));
+      else if (parameter.equals("suspect_time")){
+		  final Long oldValue = new Long(rounds_idle);
+		  rounds_idle=(new Long(value).longValue()/suspect_sweep)+2;
+		  notif = new AttributeChangeNotification(this,1,time.currentTimeMillis(),"Rounds idle Changed",
+				  "rounds_idle",Long.class.getName(),oldValue,new Long(rounds_idle));
 	  }
+      else 
+          throw new AppiaManagementException("The session "+SuspectSession.class.getName()
+                  +" do not accept the parameter '"+parameter+"'.");
 	  if(notif != null)
 		  notifySensorListeners(notif);
   }
-  
-  /** Event handler.
+
+  /**
+   * Gets the value of a parameter.
+   * Possible parameters:
+   * <ul>
+   * <li><b>suspect_sweep</b> duration of a round in milliseconds.
+   * <li><b>suspect_time</b> time to suspect a member, in milliseconds. 
+   * This value is converted in number of rounds and added 2 for transmission safety.
+   * </ul>
+   * 
+   * @see org.continuent.appia.management.ManagedSession#getParameter(java.lang.String)
+   */
+  public String getParameter(String parameter) throws AppiaManagementException{
+      if (parameter.equals("suspect_sweep"))
+          return ""+suspect_sweep;          
+      if (parameter.equals("suspect_time"))
+          return "" + ((rounds_idle-2)*suspect_sweep);
+      throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+SuspectSession.class.getName());
+  }
+
+  /** 
+   * Event handler.
    */  
   public void handle(Event event) {
     
@@ -130,8 +165,8 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
     // TcpUndeliveredEvent
     } else if (event instanceof TcpUndeliveredEvent) {
       handleTcpUndeliveredEvent((TcpUndeliveredEvent)event); return;
-    } else if (event instanceof ManagedSessionEvent) {
-    		handleManagedSessionEvent((ManagedSessionEvent)event); return;
+    } else if (event instanceof ChannelInit){
+        handleChannelInit((ChannelInit)event); return;
     // Debug
     } else if (event instanceof Debug) {
       Debug ev=(Debug)event;
@@ -155,23 +190,27 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
     try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
   }
   
-  private void handleManagedSessionEvent(ManagedSessionEvent event) {
-      setParameter(event.getProperties(), event.getChannel());
+  /*
+   * handles ChannelInit
+   * @param init
+   */
+  private void handleChannelInit(ChannelInit init) {
       try {
-		event.go();
-	} catch (AppiaEventException e) {
-		e.printStackTrace();
-	}
-	
-}
+        init.go();
+    } catch (AppiaEventException e) {
+        e.printStackTrace();
+    }
+    time = init.getChannel().getTimeProvider();
+  }
 
-private ViewState vs;
+  private ViewState vs;
   private LocalState ls;
   
   private long suspect_sweep=DEFAULT_SUSPECT_SWEEP;
   private long rounds_idle=(DEFAULT_SUSPECT_TIME/DEFAULT_SUSPECT_SWEEP)+2;
   private long round=0;
   private long[] last_recv=new long[0];
+  private TimeProvider time = null;
   
   private void handleView(View ev) {
     vs=ev.vs;

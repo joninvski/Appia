@@ -30,9 +30,9 @@ package org.continuent.appia.protocols.group.suspect;
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
+import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.events.channel.EchoEvent;
-import org.continuent.appia.management.ManagedSessionEvent;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 import org.continuent.appia.protocols.group.intra.View;
@@ -59,11 +59,11 @@ public class SuspectLayer extends Layer {
         Suspect.class,
         Fail.class,
         SuspectTimer.class,
-        EchoEvent.class
+        EchoEvent.class,
     };
     
     evRequire=new Class[] {
-        View.class
+        View.class,
     };
     
     evAccept=new Class[] {
@@ -74,7 +74,7 @@ public class SuspectLayer extends Layer {
         FIFOUndeliveredEvent.class,
         TcpUndeliveredEvent.class,
         Debug.class,
-        ManagedSessionEvent.class
+        ChannelInit.class,
     };
   }
   
