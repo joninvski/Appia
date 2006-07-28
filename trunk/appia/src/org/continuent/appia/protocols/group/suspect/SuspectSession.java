@@ -107,8 +107,6 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
 		  suspect_sweep=newValue.longValue();
 		  notif = new AttributeChangeNotification(this,1,time.currentTimeMillis(),"Suspect sweep Changed",
 				  "suspect_sweep",Long.class.getName(),oldValue,newValue);
-          //FIXME: remove println
-		  System.out.println("SWEEP changed to "+suspect_sweep);
 	  }
       else if (parameter.equals("suspect_time")){
 		  final Long oldValue = new Long(rounds_idle);
