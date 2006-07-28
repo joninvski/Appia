@@ -1,3 +1,30 @@
+======================
+21/06/2006 Version 3.2
+======================
+
+This new version contains fixes for several issues on protocols, a new management interface for protocols to
+be accessed by JMX, and several improvements that include Thread management, Javadoc descriptions and exception
+handling. The issues solved for this release are listed as follows:
+
+** Bug
+    * [APPIA-18] - Remove System.currentTimeMillis() direct calls
+    * [APPIA-19] - Handling of IOException in the UdpSimpleSession (when sending to the socket) not being taken care properly.
+    * [APPIA-29] - NullPointerException on FifoSession
+
+** New Feature
+    * [APPIA-6] - Create JMX interfaces to manage Appia channels and parameters.
+    * [APPIA-12] - Add Trowable cause to Appia exceptions.
+
+** Task
+    * [APPIA-3] - Replace InetWithPort by InetSocketAddress
+
+** Improvement
+    * [APPIA-15] - Replace all Serializable Appia objects to the Externalizable interface.
+    * [APPIA-17] - Improve Exception handling in the XML configuration.
+    * [APPIA-20] - Create a Thread factory and create Threads from this factory. This threads are usually needed to receive messages from sockets.
+    * [APPIA-24] - Create a default runnable implementation for the Appia thread to ease the Appia interface with programmers.
+
+
 ========================
 21/06/2006 Version 3.1.1
 ========================
