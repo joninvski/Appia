@@ -61,7 +61,7 @@ import org.continuent.appia.management.AppiaManagementException;
  */
 public class ConnectionServerFactory {
 
-    private static Logger log = Logger.getLogger(ChannelManager.class);
+    private static Logger log = Logger.getLogger(ConnectionServerFactory.class);
 
     private static final Hashtable FACTORIES = new Hashtable();
     private MBeanServer mbeanServer = null;
