@@ -61,10 +61,7 @@ import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
  */
 public class FifoSession extends Session {
 
-    private static final int INT_SIZE = 4;
-    private static final int HEADER_SIZE = INT_SIZE * 2;
-    
-	/*
+    /*
 	 * Keeps all addresses. hitch address is a PeerInfo
 	 * that has a reference to all sequence numbers
 	 * of Waiting messages on a HashMap.
@@ -244,7 +241,7 @@ public class FifoSession extends Session {
 	private void handlePDUSize(MaxPDUSizeEvent e) {
 		try {
 			/* Subtract to the actual PDUSize the biggest possible header */
-			e.pduSize -= HEADER_SIZE;
+			e.pduSize -= Header.HEADER_SIZE;
 			e.go();
 		} catch (AppiaEventException ex) {
 			System.err.println(
@@ -350,7 +347,7 @@ public class FifoSession extends Session {
 		if (p == null)
 			return;
 		MsgBuffer msgBuf = new MsgBuffer();
-		msgBuf.len = INT_SIZE;
+		msgBuf.len = Header.INT_SIZE;
 		e.getMessage().pop(msgBuf);
 		/* false is not expected */
 		if (hasSynActive(msgBuf)) {
@@ -499,7 +496,7 @@ public class FifoSession extends Session {
 
 		/* get header message */
 		header = new MsgBuffer();
-		header.len = INT_SIZE * 2;
+		header.len = Header.INT_SIZE * 2;
 		e.getMessage().pop(header);
 
 		final PeerInfo p = checkConnection(e, header);
@@ -707,7 +704,7 @@ public class FifoSession extends Session {
 		} else {
 			unAckedEvent = s;
 			// remove the fifo header before sending the event back
-			unAckedEvent.getMessage().pop(new MsgBuffer(new byte[HEADER_SIZE], 0, HEADER_SIZE));
+			unAckedEvent.getMessage().pop(new MsgBuffer(new byte[Header.HEADER_SIZE], 0, Header.HEADER_SIZE));
 		}
 		try {
 			final FIFOUndeliveredEvent e =
@@ -761,7 +758,7 @@ public class FifoSession extends Session {
 					myAddr);
 			final Message m = new Message();
 			MsgBuffer msgBuf = new MsgBuffer();
-			msgBuf.len = INT_SIZE;
+			msgBuf.len = Header.INT_SIZE;
 			m.push(msgBuf);
 			/* Always acknowledges the SYN */
 			seqToByte(msgBuf, p.nextIncoming, true);
@@ -855,9 +852,9 @@ public class FifoSession extends Session {
 	 * ******************************************* */
 	private PeerInfo checkConnection(SendableEvent e, MsgBuffer header) {
 		final boolean syn = hasSynActive(header);
-		header.off += INT_SIZE;
+		header.off += Header.INT_SIZE;
 		final boolean synAck = hasSynActive(header);
-		header.off -= INT_SIZE;
+		header.off -= Header.INT_SIZE;
 
 		if(FifoConfig.DEBUG_ON)
 			System.out.println("<<-- Recebida mensagem "+byteToSeq(header)+ " de "+e.source);
@@ -934,7 +931,7 @@ public class FifoSession extends Session {
 	private boolean checkOrder(PeerInfo p, SendableEvent e, MsgBuffer header) {
 		/* Extracting sequence number */
 		final int seqNumber = byteToSeq(header);
-		header.off += INT_SIZE;
+		header.off += Header.INT_SIZE;
 		final int confirmation = byteToSeq(header);
 		/* Checks the piggybacked acknowledgment number */
 		if (hasSynActive(header)) {

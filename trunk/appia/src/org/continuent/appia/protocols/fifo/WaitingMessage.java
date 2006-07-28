@@ -96,10 +96,10 @@ public class WaitingMessage {
     
     public boolean equals(Object o) {
 	if (o instanceof WaitingMessage) {
-	    WaitingMessage we = (WaitingMessage)o;
+	    final WaitingMessage we = (WaitingMessage)o;
 	    return event.equals(we.event) &&
 		(endPoints == we.endPoints) &&
-		(timeStamp == we.timeStamp) ;
+		(timeStamp == we.timeStamp);
 	}
 	else return false;
     }

@@ -52,6 +52,8 @@ public class Header {
 	protected int sequenceNumber;
 	protected WaitingMessage waitingMessage;
 	protected PeerInfo peer;
+    protected static final int INT_SIZE = 4;
+    protected static final int HEADER_SIZE = INT_SIZE * 2;
 
 	public Header(PeerInfo peer, WaitingMessage we) {
 		this.mySyn = peer.sendMySyn();
@@ -73,34 +75,34 @@ public class Header {
 				+ " and confirmation = "
 				+ nextIncoming); */
 		/* Append header with sequence number */
-		Message m = e.getMessage();
+		final Message m = e.getMessage();
 		/* Asks for 8 bytes and puts header in it*/
-		MsgBuffer msgBuf = new MsgBuffer();
+		final MsgBuffer msgBuf = new MsgBuffer();
 
-		msgBuf.len = 8;
+		msgBuf.len = HEADER_SIZE;
 		m.push(msgBuf);
 		seqToByte(msgBuf, sequenceNumber, mySyn);
-		msgBuf.off += 4;
+		msgBuf.off += INT_SIZE;
 		seqToByte(msgBuf, nextIncoming, hisSyn);
 	}
 
-	/**
-	 * push a header with a id into the message of the sendable event
-	 */
-	public void pushHeader(SendableEvent e, int nextIncoming, int id) {
-		/* Append header with sequence number */
-		Message m = e.getMessage();
-		/* Asks for 8 bytes and puts header in it*/
-		MsgBuffer msgBuf = new MsgBuffer();
-
-		msgBuf.len = 12;
-		m.push(msgBuf);
-		putInt(id, msgBuf);
-		msgBuf.off += 4;
-		seqToByte(msgBuf, sequenceNumber, mySyn);
-		msgBuf.off += 4;
-		seqToByte(msgBuf, nextIncoming, hisSyn);
-	}
+//	/**
+//	 * push a header with a id into the message of the sendable event
+//	 */
+//	public void pushHeader(SendableEvent e, int nextIncoming, int id) {
+//		/* Append header with sequence number */
+//		final Message m = e.getMessage();
+//		/* Asks for 8 bytes and puts header in it*/
+//		final MsgBuffer msgBuf = new MsgBuffer();
+//
+//		msgBuf.len = 12;
+//		m.push(msgBuf);
+//		putInt(id, msgBuf);
+//		msgBuf.off += 4;
+//		seqToByte(msgBuf, sequenceNumber, mySyn);
+//		msgBuf.off += 4;
+//		seqToByte(msgBuf, nextIncoming, hisSyn);
+//	}
 
 	public boolean equals(Object o) {
 		return (o instanceof Header)

@@ -46,6 +46,7 @@ import org.continuent.appia.core.message.*;
  * @see SendableEvent
  * @see FifoSession
  * @author Nuno Carvalho
+ * @deprecated
  */
 public class MulticastHeader {
     

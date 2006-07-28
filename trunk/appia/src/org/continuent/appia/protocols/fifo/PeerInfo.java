@@ -55,14 +55,14 @@ import org.continuent.appia.core.events.*;
  * feature. Only efficiency might be slightly compromised.
  * @author Hugo Miranda, Nuno Carvalho
  */
-
 public class PeerInfo {
 
+    protected static final int DEFAULT_QUEUE_SIZE = 11;
 	public int nextOutgoing, firstUnconfirmed, nextIncoming, lastAckSent;
 	public int peerSyn;
 	private boolean isMySynSent, isHisSynSent, isMySynAck;
 	private PeerWaitingMessage[] waitQueue;
-	private int queueSize = 11;
+	private int queueSize = DEFAULT_QUEUE_SIZE;
 
 	/* Used to now if FIFO has give up sending messages to this endpoint. */
 	public boolean failed = false;
@@ -79,11 +79,12 @@ public class PeerInfo {
 	public Object peer;
 
 	public PeerInfo(Object peer, Channel c) {
-		long now = c.getTimeProvider().currentTimeMillis();
+		final long now = c.getTimeProvider().currentTimeMillis();
 		headers = new LinkedList();
 		channels = new LinkedList();
 		channels.add(c);
 		this.peer = peer;
+        //FIXME: why this number?
 		nextOutgoing = (int) (now % 0x7FFFFFFF);
 		nextIncoming = 0;
 		firstUnconfirmed = nextOutgoing;
@@ -166,12 +167,12 @@ public class PeerInfo {
 		if (nextIncoming < queueSize)
 			return null;
 
-		int queueIndex = nextIncoming % queueSize;
+		final int queueIndex = nextIncoming % queueSize;
 
 		if (waitQueue[queueIndex] == null)
 			return null;
 
-		SendableEvent ret = waitQueue[queueIndex].e;
+		final SendableEvent ret = waitQueue[queueIndex].e;
 		waitQueue[queueIndex] = null;
 
 		return ret;
@@ -184,7 +185,7 @@ public class PeerInfo {
 		if (seqNumber - nextIncoming > queueSize || seqNumber < queueSize) {
 			return;
 		}
-		int queueIndex = seqNumber % queueSize;
+		final int queueIndex = seqNumber % queueSize;
 		if (waitQueue[queueIndex] == null) {
 			waitQueue[queueIndex] = new PeerWaitingMessage(e, seqNumber);
 		}
@@ -250,8 +251,9 @@ public class PeerInfo {
 	}
 
 	public void windowChange(int newWindow) {
-		PeerWaitingMessage[] newQueue = new PeerWaitingMessage[newWindow];
-		int i = nextIncoming, j = Math.min(newWindow, queueSize) + nextIncoming;
+		final PeerWaitingMessage[] newQueue = new PeerWaitingMessage[newWindow];
+		int i = nextIncoming;
+        final int j = Math.min(newWindow, queueSize) + nextIncoming;
 		for (; i < j; i++)
 			newQueue[i % newWindow] = waitQueue[i % queueSize];
 		waitQueue = newQueue;

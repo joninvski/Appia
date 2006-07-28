@@ -72,10 +72,10 @@ public abstract class AbstractSensorSession extends Session implements SensorSes
 	 * @see org.continuent.appia.management.SensorSession#notifySensorListeners(javax.management.Notification)
 	 */
 	public void notifySensorListeners(Notification notif){
-		//FIXME: notify with clones!!!!!
-		ListIterator it = listeners.listIterator();
+		//FIXME: notify with clones
+		final ListIterator it = listeners.listIterator();
 		while(it.hasNext()){
-			SensorSessionListener listener = (SensorSessionListener) it.next();
+			final SensorSessionListener listener = (SensorSessionListener) it.next();
 			listener.onNotification(notif);
 		}
 	}

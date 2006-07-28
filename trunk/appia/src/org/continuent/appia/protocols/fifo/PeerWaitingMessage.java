@@ -45,7 +45,6 @@
  * to keep the holding messages wether they go down (unacknowledged
  * messages) or up (out of order)
  */
-
 class PeerWaitingMessage {
     
     public org.continuent.appia.core.events.SendableEvent e;
