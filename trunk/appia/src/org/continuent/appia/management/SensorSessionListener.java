@@ -30,8 +30,18 @@ package org.continuent.appia.management;
 
 import javax.management.Notification;
 
+/**
+ * This class defines a SensorSessionListener
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
+ */
 public interface SensorSessionListener {
 
+    /**
+     * Callback for a notification.
+     * @param notification
+     */
 	public void onNotification(Notification notification);
 	
 }
