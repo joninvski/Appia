@@ -43,7 +43,10 @@ public class TotalTokenLayer extends Layer {
 		evProvide = new Class[]{
 				TokenEvent.class,
 		};
-		evRequire = new Class[]{};
+		evRequire = new Class[]{
+		        GroupSendableEvent.class,
+                View.class,
+        };
 		evAccept = new Class[]{
 				TokenEvent.class,
 				GroupSendableEvent.class,

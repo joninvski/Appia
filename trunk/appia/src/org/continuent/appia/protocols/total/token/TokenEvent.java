@@ -37,8 +37,8 @@ import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 public class TokenEvent extends GroupSendableEvent {
 
 	public TokenEvent(Channel channel, int dir, Session source, Group group,
-			ViewID view_id) throws AppiaEventException {
-		super(channel, dir, source, group, view_id);
+			ViewID viewID) throws AppiaEventException {
+		super(channel, dir, source, group, viewID);
 	}
 
 	public TokenEvent() {

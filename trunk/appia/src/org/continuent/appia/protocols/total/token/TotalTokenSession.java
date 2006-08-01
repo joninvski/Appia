@@ -181,7 +181,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 		}
 		// event from network
 		else {
-			long seq = event.getMessage().popLong();
+			final long seq = event.getMessage().popLong();
 			
 			if(seq <= globalSeqNumber){
 				throw new AppiaError("Received message with seq = "+seq+" was expecting seq = "+(globalSeqNumber+1));
@@ -198,7 +198,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 				return;
 			}
 			
-			boolean hasToken = event.getMessage().popBoolean();
+			final boolean hasToken = event.getMessage().popBoolean();
 			if(log.isDebugEnabled())
 				log.debug("Received Group Sendable from the network with seq = "+seq+" token = "+hasToken);
 			
@@ -220,12 +220,12 @@ public class TotalTokenSession extends Session implements InitializableSession {
 				rotateToken();
 			
 			while(undeliveredMessages.size() > 0){
-				GroupSendableEvent auxEvent = (GroupSendableEvent) undeliveredMessages.getFirst();
-				long seqaux = auxEvent.getMessage().peekLong();
+				final GroupSendableEvent auxEvent = (GroupSendableEvent) undeliveredMessages.getFirst();
+				final long seqaux = auxEvent.getMessage().peekLong();
 				if(seqaux == (globalSeqNumber + 1)){
 					undeliveredMessages.removeFirst();
 					auxEvent.getMessage().popLong();
-					boolean auxHasToken = auxEvent.getMessage().popBoolean();
+					final boolean auxHasToken = auxEvent.getMessage().popBoolean();
 					if(!(auxEvent instanceof TokenEvent)){
 						try {
 							auxEvent.go();
@@ -267,12 +267,12 @@ public class TotalTokenSession extends Session implements InitializableSession {
 		if(log.isDebugEnabled())
 			log.debug("I'll try to send some messages");
 
-		int listSize = pendingMessages.size();
+		final int listSize = pendingMessages.size();
 		if(listSize == 0){
 			if(log.isDebugEnabled())
 				log.debug("I do not have any messages. Rotanting token. My rank is "+localState.my_rank);
 			try {
-				TokenEvent token = new TokenEvent(channel,Direction.DOWN,this,viewState.group,viewState.id);
+				final TokenEvent token = new TokenEvent(channel,Direction.DOWN,this,viewState.group,viewState.id);
 				token.getMessage().pushBoolean(true);
 				token.getMessage().pushLong(++globalSeqNumber);
 				token.go();
@@ -286,11 +286,11 @@ public class TotalTokenSession extends Session implements InitializableSession {
 		for(int i=0; !sendToken; i++){
 			if((i+1) == listSize || (i+1) ==  numMessagesPerToken)
 				sendToken = true;
-			GroupSendableEvent ev = (GroupSendableEvent) pendingMessages.removeFirst();
+			final GroupSendableEvent ev = (GroupSendableEvent) pendingMessages.removeFirst();
 			ev.orig = localState.my_rank;
 			try {
 				// Deliver my message
-				GroupSendableEvent clone = (GroupSendableEvent) ev.cloneEvent();
+				final GroupSendableEvent clone = (GroupSendableEvent) ev.cloneEvent();
 				clone.setDir(Direction.invert(ev.getDir()));
 				clone.setSource(this);
 				clone.init();
@@ -304,7 +304,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 			if(log.isDebugEnabled())
 				log.debug("Sending message #"+(globalSeqNumber+1)+" with token = "+sendToken);
 
-			Message m = ev.getMessage();			
+			final Message m = ev.getMessage();			
 			m.pushBoolean(sendToken);
 			m.pushLong(++globalSeqNumber);
 			try {
@@ -319,10 +319,10 @@ public class TotalTokenSession extends Session implements InitializableSession {
 	
 	  private void storeUndelivered(SendableEvent ev, long seq) {
 		  ev.getMessage().pushLong(seq);
-		    ListIterator aux=undeliveredMessages.listIterator(undeliveredMessages.size());
+		    final ListIterator aux=undeliveredMessages.listIterator(undeliveredMessages.size());
 		    while (aux.hasPrevious()) {
-		      SendableEvent evaux=(SendableEvent)aux.previous();
-		      long seqaux= evaux.getMessage().peekLong();
+		      final SendableEvent evaux=(SendableEvent)aux.previous();
+		      final long seqaux= evaux.getMessage().peekLong();
 		      if (seqaux == seq) {
 		        //debug("Received undelivered message already stored. Discarding new copy.");
 		        return;
