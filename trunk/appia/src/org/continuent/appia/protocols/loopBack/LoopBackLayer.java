@@ -48,18 +48,21 @@ public class LoopBackLayer extends Layer {
     public LoopBackLayer() {
 
     	// Events that the protocol needs.
-    	evRequire=new Class[1];
-    	evRequire[0]=GroupSendableEvent.class;
+    	evRequire=new Class[]{
+    	        GroupSendableEvent.class,
+        };
     	
     	// Events that the protocol accepts.
-    	evAccept=new Class[3];
-    	evAccept[0]=evRequire[0];
-    	evAccept[1]=ChannelInit.class;
-    	evAccept[2]=View.class;
+    	evAccept=new Class[]{
+    	        evRequire[0],
+    	        ChannelInit.class,
+    	        View.class,
+        };
     	
     	// Events provided by this layer
-    	evProvide=new Class[1];
-	    evProvide[0]=evRequire[0];
+    	evProvide=new Class[]{
+    	        evRequire[0],
+        };
     }
 
     /**

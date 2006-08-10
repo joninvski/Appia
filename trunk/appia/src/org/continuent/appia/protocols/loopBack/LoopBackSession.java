@@ -36,7 +36,6 @@ import org.continuent.appia.protocols.group.intra.*;
  */
 public class LoopBackSession extends Session {
 
-    private Channel channel;
     private int myRank;
     private Endpt myEndpt;
 
@@ -53,9 +52,7 @@ public class LoopBackSession extends Session {
      */
     public void handle(Event e) {	
 	
-	if(e instanceof ChannelInit) {
-	    channel=e.getChannel();
-	}
+	if(e instanceof ChannelInit) {}
 
 	if(e instanceof View){
 	    myRank = ((View)e).ls.my_rank;
@@ -89,6 +86,7 @@ public class LoopBackSession extends Session {
 	    cloned.dest=e.source;
 	    cloned.source=myEndpt;
 	    cloned.orig=myRank;
+        cloned.setChannel(e.getChannel());
 	    try{
 		cloned.init();
 		cloned.go();
