@@ -186,7 +186,6 @@ public class ChannelInfo {
 	
     /**
      * @param channel
-     * @return
      */
 	public boolean depends(ChannelInfo channel) {
 		if (dependencies.contains(channel))

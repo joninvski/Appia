@@ -97,7 +97,7 @@ implements ChannelManagerMBean, SensorSessionListener {
      * @param parameter the parameter name
      * @param value the parameter value
      * @param sessionID the managed session
-     * @see org.continuent.appia.management.jmx.ChannelManagerMBean#setParameter(java.lang.String, java.lang.String)
+     * @see org.continuent.appia.management.jmx.ChannelManagerMBean#setParameter(String, String, String)
      */
 	public void setParameter(String parameter, String value, String sessionID) 
     throws AppiaManagementException {
@@ -113,7 +113,7 @@ implements ChannelManagerMBean, SensorSessionListener {
      * @param parameter the parameter to query
      * @param sessionID the managed session
      * @return the value of the parameter.
-     * @see org.continuent.appia.management.jmx.ChannelManagerMBean#getParameter(java.lang.String)
+     * @see org.continuent.appia.management.jmx.ChannelManagerMBean#getParameter(String, String)
      */
     public String getParameter(String parameter, String sessionID) throws AppiaManagementException {
         final ManagedSession session = (ManagedSession) managedSessions.get(sessionID);

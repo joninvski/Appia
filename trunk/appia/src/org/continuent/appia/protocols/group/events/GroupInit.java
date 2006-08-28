@@ -107,7 +107,8 @@ public class GroupInit extends Event {
    *
    * @param vs the initial <i>view</i>
    * @param endpt the {@link org.continuent.appia.protocols.group.Endpt Endpt} of the member
-   * @param ip_multicast the <i>IP multicast</i> address, or <b>null</b>
+   * @param ipMulticast the <i>IP multicast</i> address, or <b>null</b>
+   * @param ipGossip the IP of the gossip service
    * @param channel the {@link org.continuent.appia.core.Channel Channel} of the Event
    * @param dir the {@link org.continuent.appia.core.Direction Direction} of the Event
    * @param source the {@link org.continuent.appia.core.Session Session} that is generating the Event

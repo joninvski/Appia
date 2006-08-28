@@ -116,7 +116,7 @@ public class ViewState implements Externalizable {
 	 * <i>views</i>
 	 * @param view the {@link org.continuent.appia.protocols.group.Endpt Endpts} of the members
 	 * of the <i>view</i>
-	 * @param addresses the addresses of the members of the <i>view</i>
+	 * @param addrs the addresses of the members of the <i>view</i>
 	 * @throws NullPointerException if group or id or view or addresses are
 	 * <b>null</b>
 	 * @throws AppiaGroupException if the sizes of view and addresses are different
