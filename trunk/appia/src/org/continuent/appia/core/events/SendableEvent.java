@@ -35,7 +35,12 @@ package org.continuent.appia.core.events;
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.message.Message;
 
-
+/**
+ * This class defines a SendableEvent
+ * 
+ * @author <a href="mailto:apinto@di.fc.ul.pt">Alexandre Pinto</a>
+ * @version 1.0
+ */
 public class SendableEvent extends Event implements Cloneable {
 
 	private boolean detached;
@@ -133,7 +138,7 @@ public class SendableEvent extends Event implements Cloneable {
  	 * @see org.continuent.appia.core.Event#cloneEvent()
  	 */
 	public Event cloneEvent() throws CloneNotSupportedException {
-		SendableEvent ev = (SendableEvent) super.cloneEvent();
+		final SendableEvent ev = (SendableEvent) super.cloneEvent();
 		ev.message = (Message) message.clone();
 		return ev;
 	}

@@ -107,7 +107,7 @@ public class Appia {
     int i;
     thread = Thread.currentThread();
     for (i=0 ; i < eventSchedulers.size() ; i++) {
-      EventScheduler es=(EventScheduler)eventSchedulers.elementAt(i);
+      final EventScheduler es=(EventScheduler)eventSchedulers.elementAt(i);
       es.start();
     }
     

@@ -28,7 +28,13 @@
  */
 package org.continuent.appia.core;
 
-
+/**
+ * 
+ * This class defines a Session
+ * 
+ * @author <a href="mailto:apinto@di.fc.ul.pt">Alexandre Pinto</a>
+ * @version 1.0
+ */
 public abstract class Session {
 
   protected Layer layer;

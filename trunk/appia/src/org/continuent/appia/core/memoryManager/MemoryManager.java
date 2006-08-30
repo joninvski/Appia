@@ -34,6 +34,8 @@ import org.continuent.appia.core.*;
  */
 public class MemoryManager {
 	
+    private static final float NOTIFY_THRESHOLD = (float) 0.9;
+    
 	private PrintStream debugOutput = System.out;
 	private String mmID;
 	/*
@@ -228,9 +230,9 @@ public class MemoryManager {
 		
 		currentSize -= Math.min(nBytes,currentSize);
 		
-		if(currentSize <= (downthreshold*0.9))
+		if(currentSize <= (downthreshold*NOTIFY_THRESHOLD))
 			synchronized (downMutex) { downMutex.notifyAll(); }
-		if(currentSize <= (upthreshold*0.9))
+		if(currentSize <= (upthreshold*NOTIFY_THRESHOLD))
 			synchronized (upMutex) { upMutex.notifyAll(); }
 		
 		if(AppiaConfig.MM_DEBUG_ON && debugOutput!=null)

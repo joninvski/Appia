@@ -92,7 +92,12 @@ public class Message implements Cloneable {
 	private MsgBuffer mbuf;
 	
 	
-	
+	/**
+     * This class defines a Block
+     * 
+     * @author <a href="mailto:apinto@di.fc.ul.pt">Alexandre Pinto</a>
+     * @version 1.0
+	 */
 	public class Block {
 		public byte[] buf;
 		public int offset;

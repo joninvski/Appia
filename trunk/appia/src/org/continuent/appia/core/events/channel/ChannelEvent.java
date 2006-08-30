@@ -107,7 +107,6 @@ public class ChannelEvent extends Event {
    * {@link org.continuent.appia.core.Event#cloneEvent Event.cloneEvent()}
    */
   public Event cloneEvent() throws CloneNotSupportedException {
-    ChannelEvent e=(ChannelEvent)super.cloneEvent();
-    return e;
+    return (ChannelEvent)super.cloneEvent();
   }
 }

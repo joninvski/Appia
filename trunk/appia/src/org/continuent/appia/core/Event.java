@@ -271,7 +271,7 @@ public class Event {
     if (!sourceSet)
       throw new AppiaEventException(AppiaEventException.ATTRIBUTEMISSING,"Missing Event attribute: Source");
     
-    ChannelEventRoute channelRoute = channel.getEventRoute(this);
+    final ChannelEventRoute channelRoute = channel.getEventRoute(this);
     route = channelRoute.getRoute();
     
     firstSession = channel.getFirstSession(channelRoute, dir, src);
@@ -294,7 +294,7 @@ public class Event {
    * @throws CloneNotSupportedException
    */
   public Event cloneEvent() throws CloneNotSupportedException {
-    Event e = (Event) clone();
+    final Event e = (Event) clone();
     
     /*
      e.firstSession=-1;
@@ -346,7 +346,7 @@ public class Event {
     
     // blocks if there are too many events in the channel from the application
     // This is used only if there is a memory manager in the channel
-    MemoryManager mm = channel.getMemoryManager();
+    final MemoryManager mm = channel.getMemoryManager();
     if (AppiaConfig.QUOTA_ON && mm != null) {
     	try {
 			mm.synchronizedAboveThreshold(this.dir);

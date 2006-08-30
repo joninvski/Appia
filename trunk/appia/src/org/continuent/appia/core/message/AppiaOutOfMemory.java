@@ -19,28 +19,26 @@
  */
  package org.continuent.appia.core.message;
 
-//////////////////////////////////////////////////////////////////////
-//                                                                  //
-// Appia: protocol development and composition framework            //
-//                                                                  //
-// Version: 1.0/J                                                   //
-//                                                                  //
-// Copyright, 2000, Universidade de Lisboa                          //
-// All rights reserved                                              //
-// See license.txt for further information                          //
-//                                                                  //
-// Interface: AppiaOutOfMemory                                      //
-//                                                                  //
-// Author: Nuno Carvalho - 9 Jul 2001                               //
-//                                                                  //
-//////////////////////////////////////////////////////////////////////
-
+/**
+ * This class defines a AppiaOutOfMemory Error
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
+ */
 public class AppiaOutOfMemory extends OutOfMemoryError {
   private static final long serialVersionUID = -4853326694790664140L;
 
+  /**
+   * Creates a new AppiaOutOfMemory.
+   */
   public AppiaOutOfMemory () {
     super();
   }
+  
+  /**
+   * Creates a new AppiaOutOfMemory.
+   * @param s the error message.
+   */
   public AppiaOutOfMemory(String s) {
     super(s);
   }

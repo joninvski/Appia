@@ -62,12 +62,12 @@ public class QoS {
     
     eventsAccepted=new Class[layers.length+1][];
     
-    HashSet provided=new HashSet();
+    final HashSet provided=new HashSet();
     
     int i,j;
     //gathers provided and accepted events from layers
     for (i=0 ; i < layers.length ; i++) {
-      Class[] provides=layers[i].getProvidedEvents();
+      final Class[] provides=layers[i].getProvidedEvents();
       
       if (provides != null) {
         for (j=0 ; j < provides.length ; j++)
@@ -166,7 +166,7 @@ public class QoS {
     
     //checks if all required events belong to provided
     for (i=0 ; i < layers.length ; i++) {
-      Class[] requires=layers[i].getRequiredEvents();
+      final Class[] requires=layers[i].getRequiredEvents();
       
       if (requires != null) {
         for (j=0 ; (requires != null) && (j < requires.length) ; j++) {
@@ -179,7 +179,7 @@ public class QoS {
   
   protected void makeEventsRoutes() {
     // gathers all provided and accepted events
-    HashSet all=new HashSet();
+    final HashSet all=new HashSet();
     
     int i,j;
     for (i=0 ; i < eventsProvided.length ; i++) {
@@ -196,10 +196,10 @@ public class QoS {
     //creates QoSEventRoute for all events
     eventsRoutes=new QoSEventRoute[all.size()];
     
-    Iterator iter=all.iterator();
+    final Iterator iter=all.iterator();
     
     for (i=0 ; iter.hasNext() ; i++) {
-      Class eventType=(Class)iter.next();
+      final Class eventType=(Class)iter.next();
       
       eventsRoutes[i]=new QoSEventRoute(this,eventType);
     }

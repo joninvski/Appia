@@ -28,4 +28,14 @@
  */
 package org.continuent.appia.core.events.channel;
 
-public class ExternalEvent extends ChannelEvent {}
+/**
+ * This class defines a ExternalEvent. It should be used to insert events from external sources.
+ * 
+ * @author <a href="mailto:apinto@di.fc.ul.pt">Alexandre Pinto</a>
+ * @version 1.0
+ */
+public class ExternalEvent extends ChannelEvent {
+    public ExternalEvent(){
+        super();
+    }
+}

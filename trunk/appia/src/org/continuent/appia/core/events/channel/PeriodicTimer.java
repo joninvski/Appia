@@ -52,7 +52,7 @@ public class PeriodicTimer extends ChannelEvent implements Cloneable {
    * Creates a uninitialized PeriodicTimer Event.
    */
   public PeriodicTimer() {
-	  this.setPriority(200);
+	  this.setPriority(Timer.DEFAULT_TIMER_PRIORITY);
   }
 
   /**
@@ -66,7 +66,7 @@ public class PeriodicTimer extends ChannelEvent implements Cloneable {
     super(channel,dir,source,qualifier);
 
     this.timerID=timerID;
-    this.setPriority(200);
+    this.setPriority(Timer.DEFAULT_TIMER_PRIORITY);
     
     if ( period < 0 )
        throw new AppiaException("PeriodicTimer: period is negative");

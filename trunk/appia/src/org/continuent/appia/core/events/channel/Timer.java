@@ -30,8 +30,20 @@ package org.continuent.appia.core.events.channel;
 
 import org.continuent.appia.core.*;
 
+/**
+ * This class defines an Appia Timer
+ * 
+ * @author <a href="mailto:apinto@di.fc.ul.pt">Alexandre Pinto</a>
+ * @version 1.0
+ */
 public class Timer extends ChannelEvent {
 
+    /**
+     * Defines the default timer priority. The default for simple events is 127, so these kind
+     * of events have more priority and are dispatched before others.
+     */
+    protected static final int DEFAULT_TIMER_PRIORITY=200;
+    
   /**
    * The timer unique Identification.
    */
@@ -46,7 +58,7 @@ public class Timer extends ChannelEvent {
    * Creates a uninitialized Timer Event.
    */
   public Timer() {
-	  this.setPriority(200);
+	  this.setPriority(DEFAULT_TIMER_PRIORITY);
   }
 
   /**
@@ -64,7 +76,7 @@ public class Timer extends ChannelEvent {
     super(channel,dir,source,qualifier);
 
     this.timerID=timerID;
-    this.setPriority(200);
+    this.setPriority(DEFAULT_TIMER_PRIORITY);
 
     if ( when < 0 )
        throw new AppiaException("Timer: when is negative");
@@ -92,7 +104,7 @@ public class Timer extends ChannelEvent {
     super(channel,dir,source,qualifier);
 
     this.timerID=timerID;
-    this.setPriority(200);
+    this.setPriority(DEFAULT_TIMER_PRIORITY);
     
     if ( when < 0 )
        throw new AppiaException("Timer: when is negative");

@@ -34,8 +34,18 @@ import org.continuent.appia.protocols.common.AppiaThreadFactory;
  */
 public class TimerManager implements Runnable, TimeProvider {
   
+    private static final long MICROS = 1000;
+    private static final long NANOS = 1000000;
+    
+    /**
+     * This class defines a MyTimer
+     * 
+     * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+     * @version 1.0
+     */
   private class MyTimer {
     /**
+     * The ID of the timer.
      */    
     public String id;
     public long time;
@@ -55,10 +65,16 @@ public class TimerManager implements Runnable, TimeProvider {
   private Thread thread;
   private MyTimer next=null;
   
+  /**
+   * This class defines a MyClock
+   * 
+   * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+   * @version 1.0
+   */
   private class MyClock {
-    public final long SYNC_TIME=1000;
+    public final long syncTime=1000;
     
-    private long last_sync=0;
+    private long lastSync=0;
     private long now=0;
     
     public MyClock() {
@@ -67,7 +83,7 @@ public class TimerManager implements Runnable, TimeProvider {
     
     public synchronized void sync() {
       now=currentTimeMillis();
-      last_sync=now;
+      lastSync=now;
     }
     
     public synchronized void update(long elapsed) {
@@ -79,9 +95,9 @@ public class TimerManager implements Runnable, TimeProvider {
     }
     
     public synchronized void conditionalSync() {
-      if (now > last_sync + SYNC_TIME) {
+      if (now > lastSync + syncTime) {
         now=currentTimeMillis();
-        last_sync=now;
+        lastSync=now;
       }
     }
   }
@@ -126,7 +142,7 @@ public class TimerManager implements Runnable, TimeProvider {
   
   private synchronized MyTimer getNextTimer(long now) {
     if ( (next != null) && (next.time <= now) ) {
-      MyTimer t=next;
+      final MyTimer t=next;
       next=next.next;
       return t;
     } else
@@ -138,7 +154,7 @@ public class TimerManager implements Runnable, TimeProvider {
     if ( next != null ) {
       sleep=next.time-now;
     } else {
-      sleep=clock.SYNC_TIME;
+      sleep=clock.syncTime;
     }
     
     if ( sleep > 0 ) {
@@ -179,7 +195,7 @@ public class TimerManager implements Runnable, TimeProvider {
    * @see org.continuent.appia.core.events.channel.Timer
    */  
   public void handleTimerRequest(Timer timer) {
-    int q=timer.getQualifierMode();
+    final int q=timer.getQualifierMode();
     
     if ( q != EventQualifier.NOTIFY ) {
       
@@ -204,12 +220,12 @@ public class TimerManager implements Runnable, TimeProvider {
    * @see org.continuent.appia.core.events.channel.PeriodicTimer
    */  
   public void handlePeriodicTimer(PeriodicTimer timer) {
-    int q=timer.getQualifierMode();
+    final int q=timer.getQualifierMode();
     
     if ( q != EventQualifier.NOTIFY ) {
       
       if ( q == EventQualifier.ON ) {
-        long period=timer.getPeriod();
+        final long period=timer.getPeriod();
         clock.sync();
         insert(new MyTimer(timer.timerID,currentTimeMillis()+period,period,timer));
       } else {
@@ -251,7 +267,7 @@ public class TimerManager implements Runnable, TimeProvider {
    * Uses {@linkplain System#currentTimeMillis()} therefore only has a millisecond precision.
    */
   public long currentTimeMicros() {
-  	return System.currentTimeMillis()*1000;
+  	return System.currentTimeMillis()*MICROS;
   }
 
   /**
@@ -259,7 +275,7 @@ public class TimerManager implements Runnable, TimeProvider {
    * Uses {@linkplain System#currentTimeMillis()} therefore only has a millisecond precision.
    */
   public long nanoTime() {
-  	return System.currentTimeMillis()*1000000;
+  	return System.currentTimeMillis()*NANOS;
   }
 
   ////////////////////////////////////////////
@@ -272,7 +288,7 @@ public class TimerManager implements Runnable, TimeProvider {
     while (isAlive()) {
       clock.conditionalSync();
       
-      long now=clock.read();
+      final long now=clock.read();
       MyTimer timer;
       
       while ( (timer=getNextTimer(now)) != null ) {

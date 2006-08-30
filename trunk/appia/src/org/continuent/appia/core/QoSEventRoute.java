@@ -28,11 +28,17 @@
  */
 package org.continuent.appia.core;
 
+/**
+ * This class defines a QoSEventRoute
+ * 
+ * @author <a href="mailto:apinto@di.fc.ul.pt">Alexandre Pinto</a>
+ * @version 1.0
+ */
 public class QoSEventRoute {
 
   private QoS qos;
   private Class eventType;
-  private Layer[] layers;
+  //private Layer[] layers;
 
   protected boolean[] waypoints;
 
@@ -40,8 +46,8 @@ public class QoSEventRoute {
     this.eventType=eventType;
     this.qos=qos;
 
-    Class[][] accepted=this.qos.eventsAccepted;
-    layers=this.qos.layers;
+    final Class[][] accepted=this.qos.eventsAccepted;
+    //layers=this.qos.layers;
     waypoints=new boolean[accepted.length];
 
 
