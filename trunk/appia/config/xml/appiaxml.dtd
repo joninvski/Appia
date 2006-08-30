@@ -11,7 +11,7 @@
 	name CDATA #REQUIRED 
 	sharing (private|label|global) #REQUIRED>
 <!ELEMENT protocol (#PCDATA)>
-<!ELEMENT management (naming_host?,naming_port?)>
+<!ELEMENT management EMPTY>
 <!ATTLIST management
 	naming_host CDATA #IMPLIED
 	naming_port CDATA #IMPLIED>
@@ -28,7 +28,7 @@
 <!ELEMENT parameter (#PCDATA)>
 <!ATTLIST parameter
 	name CDATA #REQUIRED>
-<!ELEMENT memorymanagement (size,up_threshold,down_threshold)>
+<!ELEMENT memorymanagement EMPTY>
 <!ATTLIST memorymanagement
 	size CDATA #REQUIRED
 	up_threshold CDATA #REQUIRED
