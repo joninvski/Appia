@@ -24,7 +24,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 
 /**
- * Exception raised by any of the methods of ObjectsMessage.
+ * Exception raised by any of the methods of the Message.
  * <br>
  * To allow a transparent redefenition of the methods of Message, it extends
  * RuntimeException.

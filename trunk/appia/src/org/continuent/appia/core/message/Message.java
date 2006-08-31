@@ -1494,7 +1494,9 @@ public class Message implements Cloneable {
 		InetAddress inet = null;
 		try {
 			inet = InetAddress.getByName(ip);
-		} catch (UnknownHostException ex) {}
+		} catch (UnknownHostException ex) {
+            throw new MessageException(ex);
+        }
 		int port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
 		port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
 		return new InetSocketAddress(inet,port);
