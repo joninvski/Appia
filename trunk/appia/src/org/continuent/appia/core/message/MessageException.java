@@ -20,9 +20,6 @@
  
 package org.continuent.appia.core.message;
 
-import java.io.PrintStream;
-import java.io.PrintWriter;
-
 /**
  * Exception raised by any of the methods of the Message.
  * <br>
@@ -43,43 +40,28 @@ public class MessageException extends RuntimeException {
   private static final long serialVersionUID = 6445053185311031824L;
 
   /**
-   * The original exception that caused this exception to be raised.
-   */
-  public Exception original;
-
-  /**
    * Constructs a new exception.
    *
-   * @param ex the original Exception raised.
+   * @param cause the original Exception raised.
    */
-  public MessageException(Exception ex) {
-    original=ex;
+  public MessageException(Throwable cause) {
+      super(cause);
   }
 
   /**
-   * Redefenition.
-   * Also prints original exception.
+   * Creates a new MessageException.
+   * @param m the error message
+   * @param cause the exception that caused this one.
    */
-  public void printStackTrace() {
-    original.printStackTrace();
-    super.printStackTrace();
+  public MessageException(String m, Throwable cause){
+      super(m,cause);
   }
 
   /**
-   * Redefenition.
-   * Also prints original exception.
+   * Creates a new MessageException.
+   * @param m the error message.
    */
-  public void printStackTrace(PrintStream s) {
-    original.printStackTrace(s);
-    super.printStackTrace(s);
-  }
-
-  /**
-   * Redefenition.
-   * Also prints original exception.
-   */
-  public void printStackTrace(PrintWriter s) {
-    original.printStackTrace(s);
-    super.printStackTrace(s);
+  public MessageException(String m){
+      super(m);
   }
 }

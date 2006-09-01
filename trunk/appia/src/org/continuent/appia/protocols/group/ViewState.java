@@ -450,7 +450,7 @@ public class ViewState implements Externalizable {
 					ArrayOptimized.popArrayEndpt(message),
 					ArrayOptimized.popArrayInetWithPort(message));
 		} catch (AppiaGroupException ex) {
-			throw new MessageException(ex);
+			throw new MessageException("Error poping view state.",ex);
 		}
 	}
 	
@@ -466,7 +466,7 @@ public class ViewState implements Externalizable {
 			ViewState.push(vs,message);
 			return vs;
 		} catch (AppiaGroupException ex) {
-			throw new MessageException(ex);
+			throw new MessageException("Error peeking view state from message.",ex);
 		}
 	}
 	

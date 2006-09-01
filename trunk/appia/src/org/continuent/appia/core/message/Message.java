@@ -995,7 +995,7 @@ public class Message implements Cloneable {
 			oos.writeObject(obj);
 			oos.close();
 		} catch (IOException ex) {
-			throw new MessageException(ex);
+			throw new MessageException("Error writing object to message.",ex);
 		}
 		
 		mbuf.len = aos.length();
@@ -1173,7 +1173,7 @@ public class Message implements Cloneable {
 		this.push(mbuf);
 		
 		if (utflen > 65535)
-			throw new MessageException(new UTFDataFormatException());
+			throw new MessageException("Error writing string to message.",new UTFDataFormatException());
 		
 		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 8) & 0xFF);
 		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 0) & 0xFF);
@@ -1228,10 +1228,14 @@ public class Message implements Cloneable {
 		pop(mbuf);
 		ais.setBuffer(mbuf.data, mbuf.off, mbuf.len);
 		try {
-			ObjectInputStream ois = new ObjectInputStream(ais);
-			return ois.readObject();
+		    ObjectInputStream ois = new ObjectInputStream(ais);
+		    return ois.readObject();
+		} catch (IOException e) {
+            throw new MessageException("IO error reading object from message.",e);
+		} catch (ClassNotFoundException e) {
+            throw new MessageException("Trying to read an unknown object from message.",e);
 		} catch (Exception ex) {
-			throw new MessageException(ex);
+		    throw new MessageException("Error reading object from message.",ex);
 		}
 	}
 	
@@ -1257,7 +1261,7 @@ public class Message implements Cloneable {
 		long ch7 = mbuf.data[mbuf.off + 6] & 0xFF;
 		long ch8 = mbuf.data[mbuf.off + 7] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4 | ch5 | ch6 | ch7 | ch8) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error reading long value.", new EOFException());
 		return (
 				(ch1 << 56)
 				+ (ch2 << 48)
@@ -1288,7 +1292,7 @@ public class Message implements Cloneable {
 		int ch3 = mbuf.data[mbuf.off + 2] & 0xFF;
 		int ch4 = mbuf.data[mbuf.off + 3] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error reading integer from message.",new EOFException());
 		return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
 	}
 	
@@ -1308,7 +1312,7 @@ public class Message implements Cloneable {
 		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
 		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error reading short value.",new EOFException());
 		return (short) ((ch1 << 8) + (ch2 << 0));
 	}
 	
@@ -1327,7 +1331,7 @@ public class Message implements Cloneable {
 		
 		int ch = mbuf.data[mbuf.off + 0] & 0xFF;
 		if (ch < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error reading boolean value.",new EOFException());
 		return (ch != 0);
 	}
 	
@@ -1375,7 +1379,7 @@ public class Message implements Cloneable {
 		long ch3 = mbuf.data[mbuf.off + 2] & 0xFF;
 		long ch4 = mbuf.data[mbuf.off + 3] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error reading Unsigned int value.",new EOFException());
 		return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));      
 	}
 	
@@ -1395,7 +1399,7 @@ public class Message implements Cloneable {
 		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
 		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2 ) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error reading Unsigned short value.",new EOFException());
 		return ((ch1 << 8) + (ch2 << 0));      
 	}
 	
@@ -1437,7 +1441,7 @@ public class Message implements Cloneable {
 		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
 		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error reading string from message.",new EOFException());
 		int utflen = (ch1 << 8) + (ch2 << 0);
 		
 		mbuf.len = utflen;
@@ -1495,7 +1499,7 @@ public class Message implements Cloneable {
 		try {
 			inet = InetAddress.getByName(ip);
 		} catch (UnknownHostException ex) {
-            throw new MessageException(ex);
+            throw new MessageException("Unable to retrieve the IP address \""+ip+"\" correctly.",ex);
         }
 		int port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
 		port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
@@ -1538,7 +1542,7 @@ public class Message implements Cloneable {
 		} catch (Exception ex) {
 			pushInt(size);
 			pushByte(objectType);
-			throw new MessageException(ex);
+			throw new MessageException("Error peeking object.",ex);
 		}
 	}
 	
@@ -1564,7 +1568,7 @@ public class Message implements Cloneable {
 		int ch7 = mbuf.data[mbuf.off + 6] & 0xFF;
 		int ch8 = mbuf.data[mbuf.off + 7] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4 | ch5 | ch6 | ch7 | ch8) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error peeking value.",new EOFException());
 		return (
 				(ch1 << 56)
 				+ (ch2 << 48)
@@ -1595,7 +1599,7 @@ public class Message implements Cloneable {
 		int ch3 = mbuf.data[mbuf.off + 2] & 0xFF;
 		int ch4 = mbuf.data[mbuf.off + 3] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error peeking int value.",new EOFException());
 		return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
 	}
 	
@@ -1615,7 +1619,7 @@ public class Message implements Cloneable {
 		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
 		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error reading short value.", new EOFException());
 		return (short) ((ch1 << 8) + (ch2 << 0));
 	}
 	
@@ -1634,7 +1638,7 @@ public class Message implements Cloneable {
 		
 		int ch = mbuf.data[mbuf.off + 0] & 0xFF;
 		if (ch < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error peeking boolean value.", new EOFException());
 		return (ch != 0);
 	}
 	
@@ -1682,7 +1686,7 @@ public class Message implements Cloneable {
 		long ch3 = mbuf.data[mbuf.off + 2] & 0xFF;
 		long ch4 = mbuf.data[mbuf.off + 3] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error peeking unsigned integer value.",new EOFException());
 		return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));      
 	}
 	
@@ -1702,7 +1706,7 @@ public class Message implements Cloneable {
 		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
 		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2 ) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error peeking unsigned short value.",new EOFException());
 		return ((ch1 << 8) + (ch2 << 0));      
 	}
 	
@@ -1744,7 +1748,7 @@ public class Message implements Cloneable {
 		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
 		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2) < 0)
-			throw new MessageException(new EOFException());
+			throw new MessageException("Error peeking string from message.",new EOFException());
 		int utflen = (ch1 << 8) + (ch2 << 0);
 		
 		mbuf.len = utflen;
@@ -1805,7 +1809,9 @@ public class Message implements Cloneable {
 		InetAddress inet = null;
 		try {
 			inet = InetAddress.getByName(ip);
-		} catch (UnknownHostException ex) {}
+		} catch (UnknownHostException ex) {
+            throw new MessageException("Unable to retrieve the IP address \""+ip+"\" correctly.",ex);
+        }
 		int port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
 		port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
 		return new InetSocketAddress(inet,port);
