@@ -216,7 +216,7 @@ public class TotalSequencerSession extends Session {
             clonedEvent=(GroupSendableEvent) e.cloneEvent();
         }
         catch(CloneNotSupportedException ex){
-            System.err.println("erro: criacao do clone");
+            System.err.println("Error cloning event.");
         }
         clonedEvent.setDir(Direction.invert(clonedEvent.getDir()));
         clonedEvent.source=viewState.view[localView.my_rank];
@@ -274,7 +274,6 @@ public class TotalSequencerSession extends Session {
 
         h=getHeader(e);
         
-        //se sou o sequenciador tenho de criar um TotalOrderEvent
         // if this is the sequencer, it creates the event of the order.
         if(amCoordinator()){
             if(blocked){
@@ -321,13 +320,12 @@ public class TotalSequencerSession extends Session {
         }
     }
 
-
     /*
      * 
      */
     private void handleView(View e){
         if(TotalSequencerConfig.debugOn)
-        	debug("Recebi Vista");
+        	debug("Received new view.");
         blocked = false;
         /*Old View*/
         cleanCounters();
