@@ -1217,8 +1217,7 @@ public class Message implements Cloneable {
 	public Object popObject() {
 		byte objectType = popByte();
 		if(objectType == INET_SOCKET_ADDR){
-			InetSocketAddress addr = popInetSocketAddress();
-			return addr;
+			return popInetSocketAddress();
 		}
 		// else, is the generic object
 		if (ais == null)
