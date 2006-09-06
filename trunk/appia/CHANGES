@@ -1,3 +1,20 @@
+========================
+06/09/2006 Version 3.2.1
+========================
+
+This is a milestone release that contains some important bug fixes in the message class and 
+an optimization in the same class when deserializing objects. It contains also a bug fix in 
+the DTD specification.
+
+Release notes: 
+
+** Bug
+    * [APPIA-39] - memorymanagement tag is not correctly configured in DTD file
+    * [APPIA-41] - Stream corrupted exception when using Appia with Sequoia under high load
+
+** New Feature
+    * [APPIA-43] - Create protocol to check the integrity of a message in any point of the channel stack, based in the message size.
+
 ======================
 28/08/2006 Version 3.2
 ======================
