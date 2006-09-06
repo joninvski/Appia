@@ -1224,7 +1224,7 @@ public class Message implements Cloneable {
 			ais=new AuxInputStream();
 		
 		mbuf.len = popInt();
-		pop(mbuf);
+		popReadOnly(mbuf);
 		ais.setBuffer(mbuf.data, mbuf.off, mbuf.len);
 		try {
 		    ObjectInputStream ois = new ObjectInputStream(ais);
