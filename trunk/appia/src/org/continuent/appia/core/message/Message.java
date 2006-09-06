@@ -1242,9 +1242,7 @@ public class Message implements Cloneable {
 			ais=new AuxInputStream();
 		
 		mbuf.len = popInt();
-        // FIXME
-		pop(mbuf);
-        System.out.println("TESTE: "+mbuf.data.length+" "+mbuf.off+" "+mbuf.len);
+		popReadOnly(mbuf);
         
 		ais.setBuffer(mbuf.data, mbuf.off, mbuf.len);
 		try {
