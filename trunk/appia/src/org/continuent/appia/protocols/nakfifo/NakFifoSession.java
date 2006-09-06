@@ -533,7 +533,7 @@ public class NakFifoSession extends Session implements InitializableSession {
       SendableEvent ev = (SendableEvent) peer.unconfirmed_msgs.removeFirst();
       peer.last_msg_confirmed++;
       // FIXME: this cannot be done here
-      ev.getMessage().discardAll();
+      //ev.getMessage().discardAll();
     }
   }
   
