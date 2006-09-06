@@ -312,7 +312,7 @@ public class Message implements Cloneable {
 	
 	/**
 	 * Pops a header from the message and puts the data into the MessageBuffer.
-	 * The nunber of bytes poped could be different from the nunber of bytes requested.
+	 * The number of bytes poped could be different from the nunber of bytes requested.
 	 * This method has the same semantics as a receive() when using TCP. 
 	 * @param mbuf the MessageBuffer to store the poped data.
 	 */
@@ -325,12 +325,11 @@ public class Message implements Cloneable {
 		}
 		
 		if ((ro_mode && (mbuf.len <= ro_len)) || (!ro_mode && (mbuf.len <= first.len))) {
-			if (first.refs > 1) {
-				if (ro_mode)
-					clearReadOnly();
-				else
-					first=copyBlock(first,first.off,first.len);
-			}
+            if (ro_mode)
+                clearReadOnly();
+            
+			if (first.refs > 1)
+			    first=copyBlock(first,first.off,first.len);
 			
 			mbuf.data = first.buf;
 			mbuf.off = first.off;
@@ -776,12 +775,31 @@ public class Message implements Cloneable {
 		}
 	}
 	
+    /**
+     * Gets a MessageWalk object, which is used to travel through the message blocks.
+     * This method should be used only when the message is shared and
+     * the user don't want to modify the requested data. This method was created 
+     * for performance reasons.
+     * @return a new instance of MessageWalk object. 
+     */
+    public MsgWalk getMsgWalkReadOnly() {
+        if (ro_mode)
+          return new MsgWalk(first, ro_off, ro_len);
+        else
+          return new MsgWalk(first);
+    }
+    
 	/*
 	 * Clear the Read Only mode, copying the remaining blocks
 	 */ 
 	private void clearReadOnly() {
-		first=copyBlock(first,ro_off,ro_len);
-		
+        if (first.refs > 1) {
+            first=copyBlock(first,ro_off,ro_len);
+        } else {
+            first.off=ro_off;
+            first.len=ro_len;
+        }
+        
 		ro_mode = false;
 		ro_off = 0;
 		ro_len = 0;
@@ -1224,7 +1242,10 @@ public class Message implements Cloneable {
 			ais=new AuxInputStream();
 		
 		mbuf.len = popInt();
-		popReadOnly(mbuf);
+        // FIXME
+		pop(mbuf);
+        System.out.println("TESTE: "+mbuf.data.length+" "+mbuf.off+" "+mbuf.len);
+        
 		ais.setBuffer(mbuf.data, mbuf.off, mbuf.len);
 		try {
 		    ObjectInputStream ois = new ObjectInputStream(ais);

@@ -33,9 +33,18 @@ import org.continuent.appia.core.message.Message;
 public class MsgWalk {
 
   private Message.Block block;
+  private int first_off,first_len;
 
   public MsgWalk(Message.Block first) {
     block=first;
+    this.first_off=-1;
+    this.first_len=-1;
+  }
+  
+  public MsgWalk(Message.Block first, int first_off, int first_len) {
+    block=first;
+    this.first_off=first_off;
+    this.first_len=first_len;
   }
 
   public void next(MsgBuffer mbuf) {
@@ -49,8 +58,15 @@ public class MsgWalk {
       block=block.next;
 
       mbuf.data=b.buf;
-      mbuf.off=b.off;
-      mbuf.len=b.len;
+      if ((first_off >= 0) && (first_len >= 0)) {
+        mbuf.off=first_off;
+        mbuf.len=first_len;
+        first_off=-1;
+        first_len=-1;
+      } else {
+        mbuf.off=b.off;
+        mbuf.len=b.len;
+      }
     }
   }
 }
