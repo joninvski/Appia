@@ -278,7 +278,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     if (!multicastReaders.containsKey(e.ipMulticast)) {
       /*creates a multicast socket and binds it to a specific port on the local host machine*/
       try {
-        MulticastSocket multicastSock = new MulticastSocket(e.ipMulticast);
+        MulticastSocket multicastSock = new MulticastSocket(((InetSocketAddress)e.ipMulticast).getPort());
         
         if (UdpSimpleConfig.debugOn)
           debug(":handleAppiaMulticastInit: Socket Multicast created. Address: "  + e.ipMulticast);
