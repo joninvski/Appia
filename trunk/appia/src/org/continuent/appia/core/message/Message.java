@@ -72,18 +72,6 @@ import org.continuent.appia.core.message.MsgBuffer;
  */
 public class Message implements Cloneable {
 	
-    private static final byte MASK_FF = (byte)0xFF;
-    private static final byte MASK_0F = (byte)0x0F;
-    private static final byte MASK_E0 = (byte)0xE0;
-    private static final byte MASK_3F = (byte)0x3F;
-    private static final byte MASK_1F = (byte)0x1F;
-    private static final byte MASK_80 = (byte)0x80;
-    private static final byte MASK_C0 = (byte)0xC0;
-    
-    private static final char UTF8_CHAR_SINGLE_BYTE = 0x007F;
-    private static final char UTF8_CHAR_3BYTES = 0x07FF;
-    private static final int MAX_STRING_SIZE = 65535;
-    
 	public static final int INCREASE = 512;
 	
 	// From ExtendedMessage:
@@ -94,7 +82,6 @@ public class Message implements Cloneable {
 	private static final int INTSIZE = 4;
 	private static final int LONGSIZE = 8;
 	private static final int BOOLSIZE = 1;
-    private static final int INET_SOCKET_ADDR_SIZE = INTSIZE + SHORTSIZE;
 	
 	private static final byte GENERIC_OBJECT = 0;
 	private static final byte INET_SOCKET_ADDR = 1;
@@ -134,9 +121,9 @@ public class Message implements Cloneable {
 	protected Block first = null;
 	protected int size = 0;
 	
-	protected boolean roMode = false;
-	protected int roOffset = 0;
-	protected int roLen = 0;
+	protected boolean ro_mode = false;
+	protected int ro_off = 0;
+	protected int ro_len = 0;
 	
 	/* Memory Manager to bind and unbind */
 	private MemoryManager memoryManager=null;
@@ -162,7 +149,7 @@ public class Message implements Cloneable {
 		if (AppiaConfig.QUOTA_ON)
 			bind(length);
 		
-		final Block b = new Block(data, offset, length, offset);
+		Block b = new Block(data, offset, length, offset);
 		first = b;
 		size = length;
 		init();
@@ -197,13 +184,13 @@ public class Message implements Cloneable {
 			first = first.next;
 		}
 		
-		final Block b = new Block(data, offset, length, offset);
+		Block b = new Block(data, offset, length, offset);
 		first = b;
 		size = length;
 		
-		roMode = false;
-		roLen = 0;
-		roOffset = 0;
+		ro_mode = false;
+		ro_len = 0;
+		ro_off = 0;
 	}
 	
 	/**
@@ -226,9 +213,9 @@ public class Message implements Cloneable {
 			return;
 		}
 		
-		if ((roMode && (mbuf.len <= roLen)) || (!roMode && (mbuf.len <= first.len))) {
+		if ((ro_mode && (mbuf.len <= ro_len)) || (!ro_mode && (mbuf.len <= first.len))) {
 			if (first.refs > 1) {
-				if (roMode)
+				if (ro_mode)
 					clearReadOnly();
 				else
 					first=copyBlock(first,first.off,first.len);
@@ -241,7 +228,7 @@ public class Message implements Cloneable {
 			// this is done because pop was called.
 			if (AppiaConfig.QUOTA_ON)
 				bind(mbuf.len);
-			final Block b = new Block(mbuf.data, mbuf.off, mbuf.len, mbuf.off);
+			Block b = new Block(mbuf.data, mbuf.off, mbuf.len, mbuf.off);
 			b.next = first;
 			first = b;
 			size += b.len;
@@ -258,35 +245,35 @@ public class Message implements Cloneable {
 		if (AppiaConfig.QUOTA_ON && ((size-length)>0))
 			unBind(Math.min(length,size));
 		
-		final int r = length > size ? size : length;
-		final int newsize = size - r;
+		int r = length > size ? size : length;
+		int newsize = size - r;
 		
 		while ((size > newsize) && (first != null)) {
-			if (!roMode && (first.refs > 1)) {
-				roMode = true;
-				roOffset = first.off;
-				roLen = first.len;
+			if (!ro_mode && (first.refs > 1)) {
+				ro_mode = true;
+				ro_off = first.off;
+				ro_len = first.len;
 			}
 			
-			if (roMode) {
-				if ((size - newsize) >= roLen) {
-					size -= roLen;
+			if (ro_mode) {
+				if ((size - newsize) >= ro_len) {
+					size -= ro_len;
 					first.refs--;
 					first = first.next;
 					
 					if (first != null) {
-						roOffset = first.off;
-						roLen = first.len;
+						ro_off = first.off;
+						ro_len = first.len;
 					} else {
-						roMode = false;
-						roOffset = 0;
-						roLen = 0;
+						ro_mode = false;
+						ro_off = 0;
+						ro_len = 0;
 					}
 				} else {
-					final int remove = size - newsize;
+					int remove = size - newsize;
 					
-					roOffset += remove;
-					roLen -= remove;
+					ro_off += remove;
+					ro_len -= remove;
 					size -= remove;
 				}
 			} else {
@@ -294,7 +281,7 @@ public class Message implements Cloneable {
 					size -= first.len;
 					first = first.next;
 				} else {
-					final int remove = size - newsize;
+					int remove = size - newsize;
 					
 					first.off += remove;
 					first.len -= remove;
@@ -320,7 +307,7 @@ public class Message implements Cloneable {
 			first.refs--;
 			first = first.next;
 		}
-		roMode = false;
+		ro_mode = false;
 	}
 	
 	/**
@@ -337,8 +324,8 @@ public class Message implements Cloneable {
 			return;
 		}
 		
-		if ((roMode && (mbuf.len <= roLen)) || (!roMode && (mbuf.len <= first.len))) {
-            if (roMode)
+		if ((ro_mode && (mbuf.len <= ro_len)) || (!ro_mode && (mbuf.len <= first.len))) {
+            if (ro_mode)
                 clearReadOnly();
             
 			if (first.refs > 1)
@@ -360,20 +347,20 @@ public class Message implements Cloneable {
 			mbuf.len = mbuf.len > size ? size : mbuf.len;
 			mbuf.off = 0;
 			mbuf.data = new byte[mbuf.len];
-			final int newsize = size - mbuf.len;
+			int newsize = size - mbuf.len;
 			int off = 0;
 			
-			if (roMode) {
-				System.arraycopy(first.buf, roOffset, mbuf.data, off, roLen);
-				off += roLen;
+			if (ro_mode) {
+				System.arraycopy(first.buf, ro_off, mbuf.data, off, ro_len);
+				off += ro_len;
 				
 				first.refs--;
 				first=first.next;
-				size-=roLen;
+				size-=ro_len;
 				
-				roMode=false;
-				roOffset=0;
-				roLen=0;
+				ro_mode=false;
+				ro_off=0;
+				ro_len=0;
 			}
 			
 			while ((size > newsize) && (first != null)) {
@@ -385,7 +372,7 @@ public class Message implements Cloneable {
 					first.refs--;
 					first = first.next;
 				} else {
-					final int remove = size - newsize;
+					int remove = size - newsize;
 					
 					System.arraycopy(first.buf, first.off, mbuf.data, off, remove);
 					off += remove;
@@ -417,14 +404,14 @@ public class Message implements Cloneable {
 		if (AppiaConfig.QUOTA_ON && canBind)
 			bind(mbuf.len);
 		
-		if (roMode)
+		if (ro_mode)
 			clearReadOnly();
 		
-		final int l = mbuf.len;
+		int l = mbuf.len;
 		
 		if ((first == null) || (l > (first.off - first.offset)) || (first.refs > 1)) {
-			final byte[] a = new byte[l + INCREASE];
-			final Block b = new Block(a, 0, a.length, a.length - l);
+			byte[] a = new byte[l + INCREASE];
+			Block b = new Block(a, 0, a.length, a.length - l);
 			
 			b.next = first;
 			first = b;
@@ -456,7 +443,7 @@ public class Message implements Cloneable {
 		if (AppiaConfig.QUOTA_ON && (size<newLength))
 			unBind(size-newLength);
 		
-		if (roMode)
+		if (ro_mode)
 			clearReadOnly();
 		
 		for (b = first;(remain > 0) && (b != null); b = b.next) {
@@ -499,12 +486,12 @@ public class Message implements Cloneable {
 		
 		// added on 7-Oct-2003
 		if (AppiaConfig.QUOTA_ON) {
-			final int auxSize = Math.max(size-length,0);
+			int auxSize = Math.max(size-length,0);
 			m.bind(auxSize);
 			unBind(auxSize);
 		}
 		
-		if (roMode)
+		if (ro_mode)
 			clearReadOnly();
 		
 		Block copy=null;
@@ -576,9 +563,9 @@ public class Message implements Cloneable {
 			return;
 		}
 		
-		if (roMode)
+		if (ro_mode)
 			clearReadOnly();
-		if (m.roMode)
+		if (m.ro_mode)
 			m.clearReadOnly();
 		
 		Block b;
@@ -586,7 +573,7 @@ public class Message implements Cloneable {
 		
 		for (b = first; b != null; b = b.next) {
 			if (b.refs > 1) {
-				final Block aux=copyBlock(b,b.off,b.len);
+				Block aux=copyBlock(b,b.off,b.len);
 				if (prev == null)
 					first=aux;
 				else
@@ -611,15 +598,15 @@ public class Message implements Cloneable {
 	 * @return a byte array containing the message.
 	 */
 	public byte[] toByteArray() {
-		final int len = length();
+		int len = length();
 		
-		final byte[] array = new byte[len];
+		byte[] array = new byte[len];
 		int off = 0;
 		
 		Block b;
-		if (roMode) {
-			System.arraycopy(first.buf, roOffset, array, off, roLen);
-			off += roLen;
+		if (ro_mode) {
+			System.arraycopy(first.buf, ro_off, array, off, ro_len);
+			off += ro_len;
 			b = first.next;
 		} else {
 			b = first;
@@ -654,7 +641,7 @@ public class Message implements Cloneable {
 		if (AppiaConfig.QUOTA_ON)
 			bind(length());
 		
-		final Message msg = (Message) super.clone();
+		Message msg = (Message) super.clone();
 		
 		for (Block b=first ; b != null ; b=b.next)
 			b.refs++;
@@ -682,29 +669,29 @@ public class Message implements Cloneable {
 		}
 		
 		if (first.refs < 2) {
-			if (roMode) {
-				first.off=roOffset;
-				first.len=roLen;
+			if (ro_mode) {
+				first.off=ro_off;
+				first.len=ro_len;
 				
-				roMode=false;
-				roOffset=0;
-				roLen=0;
+				ro_mode=false;
+				ro_off=0;
+				ro_len=0;
 			}
 			pop(mbuf);
 			return;
 		}
 		
-		if (roMode) {
-			if (mbuf.len > roLen) {
+		if (ro_mode) {
+			if (mbuf.len > ro_len) {
 				pop(mbuf);
 				return;
 			}
 			
 			mbuf.data = first.buf;
-			mbuf.off = roOffset;
+			mbuf.off = ro_off;
 			
-			roOffset += mbuf.len;
-			roLen -= mbuf.len;
+			ro_off += mbuf.len;
+			ro_len -= mbuf.len;
 			
 			size -= mbuf.len;
 			
@@ -717,20 +704,20 @@ public class Message implements Cloneable {
 			mbuf.data = first.buf;
 			mbuf.off = first.off;
 			
-			roOffset = first.off + mbuf.len;
-			roLen = first.len - mbuf.len;
+			ro_off = first.off + mbuf.len;
+			ro_len = first.len - mbuf.len;
 			size -= mbuf.len;
 			
-			roMode = true;
+			ro_mode = true;
 		}
 		
-		if (roLen == 0) {
+		if (ro_len == 0) {
 			first.refs--;
 			first = first.next;
 			
-			roMode = false;
-			roOffset = 0;
-			roLen = 0;
+			ro_mode = false;
+			ro_off = 0;
+			ro_len = 0;
 		}
 		
 		if (AppiaConfig.QUOTA_ON)
@@ -753,26 +740,26 @@ public class Message implements Cloneable {
 		}
 		
 		if (first.refs < 2) {
-			if (roMode) {
-				first.off=roOffset;
-				first.len=roLen;
+			if (ro_mode) {
+				first.off=ro_off;
+				first.len=ro_len;
 				
-				roMode=false;
-				roOffset=0;
-				roLen=0;
+				ro_mode=false;
+				ro_off=0;
+				ro_len=0;
 			}
 			peek(mbuf);
 			return;
 		}
 		
-		if (roMode) {
-			if (mbuf.len > roLen) {
+		if (ro_mode) {
+			if (mbuf.len > ro_len) {
 				peek(mbuf);
 				return;
 			}
 			
 			mbuf.data = first.buf;
-			mbuf.off = roOffset;
+			mbuf.off = ro_off;
 		} else {
 			if (mbuf.len > first.len) {
 				peek(mbuf);
@@ -782,9 +769,9 @@ public class Message implements Cloneable {
 			mbuf.data = first.buf;
 			mbuf.off = first.off;
 			
-			roOffset = first.off;
-			roLen = first.len;
-			roMode = true;
+			ro_off = first.off;
+			ro_len = first.len;
+			ro_mode = true;
 		}
 	}
 	
@@ -796,8 +783,8 @@ public class Message implements Cloneable {
      * @return a new instance of MessageWalk object. 
      */
     public MsgWalk getMsgWalkReadOnly() {
-        if (roMode)
-          return new MsgWalk(first, roOffset, roLen);
+        if (ro_mode)
+          return new MsgWalk(first, ro_off, ro_len);
         else
           return new MsgWalk(first);
     }
@@ -807,15 +794,15 @@ public class Message implements Cloneable {
 	 */ 
 	private void clearReadOnly() {
         if (first.refs > 1) {
-            first=copyBlock(first,roOffset,roLen);
+            first=copyBlock(first,ro_off,ro_len);
         } else {
-            first.off=roOffset;
-            first.len=roLen;
+            first.off=ro_off;
+            first.len=ro_len;
         }
         
-		roMode = false;
-		roOffset = 0;
-		roLen = 0;
+		ro_mode = false;
+		ro_off = 0;
+		ro_len = 0;
 	}
 	
 	/*
@@ -825,8 +812,8 @@ public class Message implements Cloneable {
 		if (first == null)
 			return;
 		
-		final byte[] a = toByteArray();
-		final Block b = new Block(a, 0, a.length, 0);
+		byte[] a = toByteArray();
+		Block b = new Block(a, 0, a.length, 0);
 		while (first != null) {
 			first.refs--;
 			first = first.next;
@@ -839,9 +826,9 @@ public class Message implements Cloneable {
 	 */
 	private Block copyBlock(Block b, int off, int len) {
 		//byte[] a=new byte[len > INCREASE ? len+INCREASE : INCREASE];
-		final byte[] a=new byte[len];
+		byte[] a=new byte[len];
 		
-		final Block aux=new Block(a,0,a.length,a.length-len);
+		Block aux=new Block(a,0,a.length,a.length-len);
 		System.arraycopy(b.buf,off,aux.buf,aux.off,len);
 		
 		aux.next=b.next;
@@ -929,18 +916,13 @@ public class Message implements Cloneable {
 		}
 	}
 	
-	static final boolean DEBUG_FULL = false;
+	static final boolean debugFull = false;
 	static java.io.PrintStream debug = System.out;
 	
 	// Auxiliary classes
 	
-    /**
-     * Auxiliary input stream
-     */
 	private class AuxInputStream extends InputStream {
 		
-        AuxInputStream(){}
-        
 		private byte[] buf;
 		private int off;
 		private int len;
@@ -960,7 +942,7 @@ public class Message implements Cloneable {
 				return (-1);
 			
 			len--;
-			return (buf[off++] & MASK_FF);
+			return (buf[off++] & 0xff);
 		}
 		
 		public int read(byte[] b) {
@@ -1027,7 +1009,7 @@ public class Message implements Cloneable {
 		
 		aos.setInternal();
 		try {
-			final ObjectOutputStream oos = new ObjectOutputStream(aos);
+			ObjectOutputStream oos = new ObjectOutputStream(aos);
 			oos.writeObject(obj);
 			oos.close();
 		} catch (IOException ex) {
@@ -1051,14 +1033,14 @@ public class Message implements Cloneable {
 		mbuf.len = LONGSIZE;
 		push(mbuf);
 		
-		mbuf.data[mbuf.off + 0] = (byte) ((int) (l >>> 56) & MASK_FF);
-		mbuf.data[mbuf.off + 1] = (byte) ((int) (l >>> 48) & MASK_FF);
-		mbuf.data[mbuf.off + 2] = (byte) ((int) (l >>> 40) & MASK_FF);
-		mbuf.data[mbuf.off + 3] = (byte) ((int) (l >>> 32) & MASK_FF);
-		mbuf.data[mbuf.off + 4] = (byte) ((int) (l >>> 24) & MASK_FF);
-		mbuf.data[mbuf.off + 5] = (byte) ((int) (l >>> 16) & MASK_FF);
-		mbuf.data[mbuf.off + 6] = (byte) ((int) (l >>> 8) & MASK_FF);
-		mbuf.data[mbuf.off + 7] = (byte) ((int) (l >>> 0) & MASK_FF);
+		mbuf.data[mbuf.off + 0] = (byte) ((int) (l >>> 56) & 0xFF);
+		mbuf.data[mbuf.off + 1] = (byte) ((int) (l >>> 48) & 0xFF);
+		mbuf.data[mbuf.off + 2] = (byte) ((int) (l >>> 40) & 0xFF);
+		mbuf.data[mbuf.off + 3] = (byte) ((int) (l >>> 32) & 0xFF);
+		mbuf.data[mbuf.off + 4] = (byte) ((int) (l >>> 24) & 0xFF);
+		mbuf.data[mbuf.off + 5] = (byte) ((int) (l >>> 16) & 0xFF);
+		mbuf.data[mbuf.off + 6] = (byte) ((int) (l >>> 8) & 0xFF);
+		mbuf.data[mbuf.off + 7] = (byte) ((int) (l >>> 0) & 0xFF);
 	}
 	
 	/**
@@ -1071,10 +1053,10 @@ public class Message implements Cloneable {
 		mbuf.len = INTSIZE;
 		push(mbuf);
 		
-		mbuf.data[mbuf.off + 0] = (byte) ((i >>> 24) & MASK_FF);
-		mbuf.data[mbuf.off + 1] = (byte) ((i >>> 16) & MASK_FF);
-		mbuf.data[mbuf.off + 2] = (byte) ((i >>> 8) & MASK_FF);
-		mbuf.data[mbuf.off + 3] = (byte) ((i >>> 0) & MASK_FF);
+		mbuf.data[mbuf.off + 0] = (byte) ((i >>> 24) & 0xFF);
+		mbuf.data[mbuf.off + 1] = (byte) ((i >>> 16) & 0xFF);
+		mbuf.data[mbuf.off + 2] = (byte) ((i >>> 8) & 0xFF);
+		mbuf.data[mbuf.off + 3] = (byte) ((i >>> 0) & 0xFF);
 	}
 	
 	/**
@@ -1087,8 +1069,8 @@ public class Message implements Cloneable {
 		mbuf.len = SHORTSIZE;
 		push(mbuf);
 		
-		mbuf.data[mbuf.off + 0] = (byte) ((s >>> 8) & MASK_FF);
-		mbuf.data[mbuf.off + 1] = (byte) ((s >>> 0) & MASK_FF);
+		mbuf.data[mbuf.off + 0] = (byte) ((s >>> 8) & 0xFF);
+		mbuf.data[mbuf.off + 1] = (byte) ((s >>> 0) & 0xFF);
 	}
 	
 	/**
@@ -1134,10 +1116,10 @@ public class Message implements Cloneable {
 		mbuf.len = INTSIZE;
 		push(mbuf);
 		
-		mbuf.data[mbuf.off + 0] = (byte) ((ui >>> 24) & MASK_FF);
-		mbuf.data[mbuf.off + 1] = (byte) ((ui >>> 16) & MASK_FF);
-		mbuf.data[mbuf.off + 2] = (byte) ((ui >>> 8) & MASK_FF);
-		mbuf.data[mbuf.off + 3] = (byte) ((ui >>> 0) & MASK_FF);
+		mbuf.data[mbuf.off + 0] = (byte) ((ui >>> 24) & 0xFF);
+		mbuf.data[mbuf.off + 1] = (byte) ((ui >>> 16) & 0xFF);
+		mbuf.data[mbuf.off + 2] = (byte) ((ui >>> 8) & 0xFF);
+		mbuf.data[mbuf.off + 3] = (byte) ((ui >>> 0) & 0xFF);
 	}
 	
 	/**
@@ -1150,8 +1132,8 @@ public class Message implements Cloneable {
 		mbuf.len = SHORTSIZE;
 		push(mbuf);
 		
-		mbuf.data[mbuf.off + 0] = (byte) ((us >>> 8) & MASK_FF);
-		mbuf.data[mbuf.off + 1] = (byte) ((us >>> 0) & MASK_FF);
+		mbuf.data[mbuf.off + 0] = (byte) ((us >>> 8) & 0xFF);
+		mbuf.data[mbuf.off + 1] = (byte) ((us >>> 0) & 0xFF);
 	}
 	
 	/**
@@ -1177,7 +1159,7 @@ public class Message implements Cloneable {
 		mbuf.len = 1;
 		push(mbuf);
 		
-		mbuf.data[mbuf.off + 0] = (byte)(ub & MASK_FF);
+		mbuf.data[mbuf.off + 0] = (byte)(ub & 0xFF);
 	}
 	
 	/** Pushes the given string into the message.
@@ -1187,18 +1169,18 @@ public class Message implements Cloneable {
 	 * @see java.io.DataOutputStream
 	 */
 	public void pushString(String str) {
-		final int strlen = str.length();
+		int strlen = str.length();
 		int utflen = 0;
-		final char[] charr = new char[strlen];
+		char[] charr = new char[strlen];
 		int c, count = 0;
 		
 		str.getChars(0, strlen, charr, 0);
 		
 		for (int i = 0; i < strlen; i++) {
 			c = charr[i];
-			if ((c >= 0x0001) && (c <= UTF8_CHAR_SINGLE_BYTE)) {
+			if ((c >= 0x0001) && (c <= 0x007F)) {
 				utflen++;
-			} else if (c > UTF8_CHAR_3BYTES) {
+			} else if (c > 0x07FF) {
 				utflen += 3;
 			} else {
 				utflen += 2;
@@ -1208,22 +1190,22 @@ public class Message implements Cloneable {
 		mbuf.len = utflen + 2;
 		this.push(mbuf);
 		
-		if (utflen > MAX_STRING_SIZE)
+		if (utflen > 65535)
 			throw new MessageException("Error writing string to message.",new UTFDataFormatException());
 		
-		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 8) & MASK_FF);
-		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 0) & MASK_FF);
+		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 8) & 0xFF);
+		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 0) & 0xFF);
 		for (int i = 0; i < strlen; i++) {
 			c = charr[i];
-			if ((c >= 0x0001) && (c <= UTF8_CHAR_SINGLE_BYTE)) {
+			if ((c >= 0x0001) && (c <= 0x007F)) {
 				mbuf.data[mbuf.off + count++] = (byte) c;
-			} else if (c > UTF8_CHAR_3BYTES) {
-				mbuf.data[mbuf.off + count++] = (byte) (MASK_E0 | ((c >> 12) & MASK_0F));
-				mbuf.data[mbuf.off + count++] = (byte) (MASK_80 | ((c >> 6) & MASK_3F));
-				mbuf.data[mbuf.off + count++] = (byte) (MASK_80 | ((c >> 0) & MASK_3F));
+			} else if (c > 0x07FF) {
+				mbuf.data[mbuf.off + count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
+				mbuf.data[mbuf.off + count++] = (byte) (0x80 | ((c >> 6) & 0x3F));
+				mbuf.data[mbuf.off + count++] = (byte) (0x80 | ((c >> 0) & 0x3F));
 			} else {
-				mbuf.data[mbuf.off + count++] = (byte) (MASK_C0 | ((c >> 6) & MASK_1F));
-				mbuf.data[mbuf.off + count++] = (byte) (MASK_80 | ((c >> 0) & MASK_3F));
+				mbuf.data[mbuf.off + count++] = (byte) (0xC0 | ((c >> 6) & 0x1F));
+				mbuf.data[mbuf.off + count++] = (byte) (0x80 | ((c >> 0) & 0x3F));
 			}
 		}
 	}
@@ -1233,12 +1215,12 @@ public class Message implements Cloneable {
 	 * @param address the address to push
 	 */
 	private void pushInetSocketAddress(InetSocketAddress address){
-		final MsgBuffer mb = new MsgBuffer();
-		mb.len = INET_SOCKET_ADDR_SIZE;
-		push(mb);
-		mb.data[mb.off + 0] = (byte) ((address.getPort() >>> 8) & MASK_FF);
-		mb.data[mb.off + 1] = (byte) ((address.getPort() >>> 0) & MASK_FF);
-		System.arraycopy(address.getAddress().getAddress(), 0, mb.data, mb.off + 2, INTSIZE);
+		MsgBuffer mbuf = new MsgBuffer();
+		mbuf.len = 6;
+		push(mbuf);
+		mbuf.data[mbuf.off + 0] = (byte) ((address.getPort() >>> 8) & 0xFF);
+		mbuf.data[mbuf.off + 1] = (byte) ((address.getPort() >>> 0) & 0xFF);
+		System.arraycopy(address.getAddress().getAddress(), 0, mbuf.data, mbuf.off + 2, 4);
 	}
 	
 	/**
@@ -1251,7 +1233,7 @@ public class Message implements Cloneable {
 	 * @see org.continuent.appia.core.message.MessageException
 	 */
 	public Object popObject() {
-		final byte objectType = popByte();
+		byte objectType = popByte();
 		if(objectType == INET_SOCKET_ADDR){
 			return popInetSocketAddress();
 		}
@@ -1264,7 +1246,7 @@ public class Message implements Cloneable {
         
 		ais.setBuffer(mbuf.data, mbuf.off, mbuf.len);
 		try {
-		    final ObjectInputStream ois = new ObjectInputStream(ais);
+		    ObjectInputStream ois = new ObjectInputStream(ais);
 		    return ois.readObject();
 		} catch (IOException e) {
             throw new MessageException("IO error reading object from message.",e);
@@ -1288,14 +1270,14 @@ public class Message implements Cloneable {
 		mbuf.len = LONGSIZE;
 		popReadOnly(mbuf);
 		
-		final long ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final long ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
-		final long ch3 = mbuf.data[mbuf.off + 2] & MASK_FF;
-		final long ch4 = mbuf.data[mbuf.off + 3] & MASK_FF;
-		final long ch5 = mbuf.data[mbuf.off + 4] & MASK_FF;
-		final long ch6 = mbuf.data[mbuf.off + 5] & MASK_FF;
-		final long ch7 = mbuf.data[mbuf.off + 6] & MASK_FF;
-		final long ch8 = mbuf.data[mbuf.off + 7] & MASK_FF;
+		long ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		long ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
+		long ch3 = mbuf.data[mbuf.off + 2] & 0xFF;
+		long ch4 = mbuf.data[mbuf.off + 3] & 0xFF;
+		long ch5 = mbuf.data[mbuf.off + 4] & 0xFF;
+		long ch6 = mbuf.data[mbuf.off + 5] & 0xFF;
+		long ch7 = mbuf.data[mbuf.off + 6] & 0xFF;
+		long ch8 = mbuf.data[mbuf.off + 7] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4 | ch5 | ch6 | ch7 | ch8) < 0)
 			throw new MessageException("Error reading long value.", new EOFException());
 		return (
@@ -1323,10 +1305,10 @@ public class Message implements Cloneable {
 		mbuf.len = INTSIZE;
 		popReadOnly(mbuf);
 		
-		final int ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final int ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
-		final int ch3 = mbuf.data[mbuf.off + 2] & MASK_FF;
-		final int ch4 = mbuf.data[mbuf.off + 3] & MASK_FF;
+		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
+		int ch3 = mbuf.data[mbuf.off + 2] & 0xFF;
+		int ch4 = mbuf.data[mbuf.off + 3] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4) < 0)
 			throw new MessageException("Error reading integer from message.",new EOFException());
 		return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
@@ -1345,8 +1327,8 @@ public class Message implements Cloneable {
 		mbuf.len = SHORTSIZE;
 		popReadOnly(mbuf);
 		
-		final int ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final int ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
+		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2) < 0)
 			throw new MessageException("Error reading short value.",new EOFException());
 		return (short) ((ch1 << 8) + (ch2 << 0));
@@ -1365,7 +1347,7 @@ public class Message implements Cloneable {
 		mbuf.len = BOOLSIZE;
 		popReadOnly(mbuf);
 		
-		final int ch = mbuf.data[mbuf.off + 0] & MASK_FF;
+		int ch = mbuf.data[mbuf.off + 0] & 0xFF;
 		if (ch < 0)
 			throw new MessageException("Error reading boolean value.",new EOFException());
 		return (ch != 0);
@@ -1410,10 +1392,10 @@ public class Message implements Cloneable {
 		mbuf.len = INTSIZE;
 		popReadOnly(mbuf);
 		
-		final long ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final long ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
-		final long ch3 = mbuf.data[mbuf.off + 2] & MASK_FF;
-		final long ch4 = mbuf.data[mbuf.off + 3] & MASK_FF;
+		long ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		long ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
+		long ch3 = mbuf.data[mbuf.off + 2] & 0xFF;
+		long ch4 = mbuf.data[mbuf.off + 3] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4) < 0)
 			throw new MessageException("Error reading Unsigned int value.",new EOFException());
 		return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));      
@@ -1432,8 +1414,8 @@ public class Message implements Cloneable {
 		mbuf.len = SHORTSIZE;
 		popReadOnly(mbuf);
 		
-		final int ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final int ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
+		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2 ) < 0)
 			throw new MessageException("Error reading Unsigned short value.",new EOFException());
 		return ((ch1 << 8) + (ch2 << 0));      
@@ -1462,7 +1444,7 @@ public class Message implements Cloneable {
 		mbuf.len = 1;
 		popReadOnly(mbuf);
 		
-		return (mbuf.data[mbuf.off + 0] & MASK_FF);
+		return (mbuf.data[mbuf.off + 0] & 0xFF);
 	}
 	
 	/** Pops a string from the message.
@@ -1474,21 +1456,21 @@ public class Message implements Cloneable {
 		mbuf.len = 2;
 		popReadOnly(mbuf);
 		
-		final int ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final int ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
+		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2) < 0)
 			throw new MessageException("Error reading string from message.",new EOFException());
-		final int utflen = (ch1 << 8) + (ch2 << 0);
+		int utflen = (ch1 << 8) + (ch2 << 0);
 		
 		mbuf.len = utflen;
-		final char str[] = new char[utflen];
+		char str[] = new char[utflen];
 		popReadOnly(mbuf);
 		int c, char2, char3;
 		int count = 0;
 		int strlen = 0;
 		
 		while (count < utflen) {
-			c = (int) mbuf.data[mbuf.off + count] & MASK_FF;
+			c = (int) mbuf.data[mbuf.off + count] & 0xff;
 			switch (c >> 4) {
 			case 0 :
 			case 1 :
@@ -1507,7 +1489,7 @@ public class Message implements Cloneable {
 				/* 110x xxxx   10xx xxxx*/
 				count += 2;
 				char2 = (int) mbuf.data[mbuf.off + count - 1];
-				str[strlen++] = (char) (((c & MASK_1F) << 6) | (char2 & MASK_3F));
+				str[strlen++] = (char) (((c & 0x1F) << 6) | (char2 & 0x3F));
 				break;
 			case 14 :
 				/* 1110 xxxx  10xx xxxx  10xx xxxx */
@@ -1515,7 +1497,7 @@ public class Message implements Cloneable {
 				char2 = (int) mbuf.data[mbuf.off + count - 2];
 				char3 = (int) mbuf.data[mbuf.off + count - 1];
 				str[strlen++] =
-					(char) (((c & MASK_0F) << 12) | ((char2 & MASK_3F) << 6) | ((char3 & MASK_3F) << 0));
+					(char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
 				break;
 			}
 		}
@@ -1523,22 +1505,22 @@ public class Message implements Cloneable {
 	}
 	
 	private InetSocketAddress popInetSocketAddress() {
-		final MsgBuffer mb = new MsgBuffer();
-		mb.len = INET_SOCKET_ADDR_SIZE;
-		pop(mb);
+		MsgBuffer mbuf = new MsgBuffer();
+		mbuf.len = 6;
+		pop(mbuf);
 		String ip = new String();
 		for (int i = 0; i < 3; i++) {
-			ip += (mb.data[mb.off + i + 2] & MASK_FF) + ".";
+			ip += (mbuf.data[mbuf.off + i + 2] & 0xff) + ".";
 		}
-		ip += (int) mb.data[mb.off + 3 + 2] & MASK_FF;
+		ip += (int) mbuf.data[mbuf.off + 3 + 2] & 0xff;
 		InetAddress inet = null;
 		try {
 			inet = InetAddress.getByName(ip);
 		} catch (UnknownHostException ex) {
             throw new MessageException("Unable to retrieve the IP address \""+ip+"\" correctly.",ex);
         }
-		int port = (((int) mb.data[mb.off]) & MASK_FF) << 8;
-		port |= (((int) mb.data[mb.off + 1]) & MASK_FF) << 0;
+		int port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
+		port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
 		return new InetSocketAddress(inet,port);
 	}
 	
@@ -1555,9 +1537,9 @@ public class Message implements Cloneable {
 		if (size <= 0)
 			return null;
 		
-		final byte objectType = popByte();
+		byte objectType = popByte();
 		if(objectType == INET_SOCKET_ADDR){
-			final InetSocketAddress addr = peekInetSocketAddress();
+			InetSocketAddress addr = peekInetSocketAddress();
 			pushByte(objectType);
 			return addr;
 		}
@@ -1565,18 +1547,18 @@ public class Message implements Cloneable {
 		if (ais == null)
 			ais=new AuxInputStream();
 		
-		final int objectSize = popInt();
-		mbuf.len = objectSize;
+		int size = popInt();
+		mbuf.len = size;
 		peekReadOnly(mbuf);
 		ais.setBuffer(mbuf.data, mbuf.off, mbuf.len);
 		try {
-			final ObjectInputStream ois = new ObjectInputStream(ais);
-			final Object obj = ois.readObject();
-			pushInt(objectSize);
+			ObjectInputStream ois = new ObjectInputStream(ais);
+			Object obj = ois.readObject();
+			pushInt(size);
 			pushByte(objectType);
 			return obj;
 		} catch (Exception ex) {
-			pushInt(objectSize);
+			pushInt(size);
 			pushByte(objectType);
 			throw new MessageException("Error peeking object.",ex);
 		}
@@ -1595,14 +1577,14 @@ public class Message implements Cloneable {
 		mbuf.len = LONGSIZE;
 		peekReadOnly(mbuf);
 		
-		final int ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final int ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
-		final int ch3 = mbuf.data[mbuf.off + 2] & MASK_FF;
-		final int ch4 = mbuf.data[mbuf.off + 3] & MASK_FF;
-		final int ch5 = mbuf.data[mbuf.off + 4] & MASK_FF;
-		final int ch6 = mbuf.data[mbuf.off + 5] & MASK_FF;
-		final int ch7 = mbuf.data[mbuf.off + 6] & MASK_FF;
-		final int ch8 = mbuf.data[mbuf.off + 7] & MASK_FF;
+		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
+		int ch3 = mbuf.data[mbuf.off + 2] & 0xFF;
+		int ch4 = mbuf.data[mbuf.off + 3] & 0xFF;
+		int ch5 = mbuf.data[mbuf.off + 4] & 0xFF;
+		int ch6 = mbuf.data[mbuf.off + 5] & 0xFF;
+		int ch7 = mbuf.data[mbuf.off + 6] & 0xFF;
+		int ch8 = mbuf.data[mbuf.off + 7] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4 | ch5 | ch6 | ch7 | ch8) < 0)
 			throw new MessageException("Error peeking value.",new EOFException());
 		return (
@@ -1630,10 +1612,10 @@ public class Message implements Cloneable {
 		mbuf.len = INTSIZE;
 		peekReadOnly(mbuf);
 		
-		final int ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final int ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
-		final int ch3 = mbuf.data[mbuf.off + 2] & MASK_FF;
-		final int ch4 = mbuf.data[mbuf.off + 3] & MASK_FF;
+		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
+		int ch3 = mbuf.data[mbuf.off + 2] & 0xFF;
+		int ch4 = mbuf.data[mbuf.off + 3] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4) < 0)
 			throw new MessageException("Error peeking int value.",new EOFException());
 		return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
@@ -1652,8 +1634,8 @@ public class Message implements Cloneable {
 		mbuf.len = SHORTSIZE;
 		peekReadOnly(mbuf);
 		
-		final int ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final int ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
+		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2) < 0)
 			throw new MessageException("Error reading short value.", new EOFException());
 		return (short) ((ch1 << 8) + (ch2 << 0));
@@ -1672,7 +1654,7 @@ public class Message implements Cloneable {
 		mbuf.len = BOOLSIZE;
 		peekReadOnly(mbuf);
 		
-		final int ch = mbuf.data[mbuf.off + 0] & MASK_FF;
+		int ch = mbuf.data[mbuf.off + 0] & 0xFF;
 		if (ch < 0)
 			throw new MessageException("Error peeking boolean value.", new EOFException());
 		return (ch != 0);
@@ -1717,10 +1699,10 @@ public class Message implements Cloneable {
 		mbuf.len = INTSIZE;
 		peekReadOnly(mbuf);
 		
-		final long ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final long ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
-		final long ch3 = mbuf.data[mbuf.off + 2] & MASK_FF;
-		final long ch4 = mbuf.data[mbuf.off + 3] & MASK_FF;
+		long ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		long ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
+		long ch3 = mbuf.data[mbuf.off + 2] & 0xFF;
+		long ch4 = mbuf.data[mbuf.off + 3] & 0xFF;
 		if ((ch1 | ch2 | ch3 | ch4) < 0)
 			throw new MessageException("Error peeking unsigned integer value.",new EOFException());
 		return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));      
@@ -1739,8 +1721,8 @@ public class Message implements Cloneable {
 		mbuf.len = SHORTSIZE;
 		peekReadOnly(mbuf);
 		
-		final int ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final int ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
+		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2 ) < 0)
 			throw new MessageException("Error peeking unsigned short value.",new EOFException());
 		return ((ch1 << 8) + (ch2 << 0));      
@@ -1769,7 +1751,7 @@ public class Message implements Cloneable {
 		mbuf.len = 1;
 		peekReadOnly(mbuf);
 		
-		return (mbuf.data[mbuf.off + 0] & MASK_FF);
+		return (mbuf.data[mbuf.off + 0] & 0xFF);
 	}
 	
 	/** Get, without removing, a string from the message.
@@ -1781,21 +1763,21 @@ public class Message implements Cloneable {
 		mbuf.len = 2;
 		popReadOnly(mbuf);
 		
-		final int ch1 = mbuf.data[mbuf.off + 0] & MASK_FF;
-		final int ch2 = mbuf.data[mbuf.off + 1] & MASK_FF;
+		int ch1 = mbuf.data[mbuf.off + 0] & 0xFF;
+		int ch2 = mbuf.data[mbuf.off + 1] & 0xFF;
 		if ((ch1 | ch2) < 0)
 			throw new MessageException("Error peeking string from message.",new EOFException());
-		final int utflen = (ch1 << 8) + (ch2 << 0);
+		int utflen = (ch1 << 8) + (ch2 << 0);
 		
 		mbuf.len = utflen;
-		final char str[] = new char[utflen];
+		char str[] = new char[utflen];
 		peekReadOnly(mbuf);
 		int c, char2, char3;
 		int count = 0;
 		int strlen = 0;
 		
 		while (count < utflen) {
-			c = (int) mbuf.data[mbuf.off + count] & MASK_FF;
+			c = (int) mbuf.data[mbuf.off + count] & 0xff;
 			switch (c >> 4) {
 			case 0 :
 			case 1 :
@@ -1814,7 +1796,7 @@ public class Message implements Cloneable {
 				/* 110x xxxx   10xx xxxx*/
 				count += 2;
 				char2 = (int) mbuf.data[mbuf.off + count - 1];
-				str[strlen++] = (char) (((c & MASK_1F) << 6) | (char2 & MASK_3F));
+				str[strlen++] = (char) (((c & 0x1F) << 6) | (char2 & 0x3F));
 				break;
 			case 14 :
 				/* 1110 xxxx  10xx xxxx  10xx xxxx */
@@ -1822,34 +1804,34 @@ public class Message implements Cloneable {
 				char2 = (int) mbuf.data[mbuf.off + count - 2];
 				char3 = (int) mbuf.data[mbuf.off + count - 1];
 				str[strlen++] =
-					(char) (((c & MASK_0F) << 12) | ((char2 & MASK_3F) << 6) | ((char3 & MASK_3F) << 0));
+					(char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
 				break;
 			}
 		}
 		mbuf.len = 2;
 		this.push(mbuf);
-		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 8) & MASK_FF);
-		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 0) & MASK_FF);
+		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 8) & 0xFF);
+		mbuf.data[mbuf.off + count++] = (byte) ((utflen >>> 0) & 0xFF);
 		return new String(str, 0, strlen);
 	}
 	
 	private InetSocketAddress peekInetSocketAddress() {
-		final MsgBuffer mb = new MsgBuffer();
-		mb.len = INET_SOCKET_ADDR_SIZE;
-		peek(mb);
+		MsgBuffer mbuf = new MsgBuffer();
+		mbuf.len = 6;
+		peek(mbuf);
 		String ip = new String();
 		for (int i = 0; i < 3; i++) {
-			ip += (mb.data[mb.off + i + 2] & MASK_FF) + ".";
+			ip += (mbuf.data[mbuf.off + i + 2] & 0xff) + ".";
 		}
-		ip += (int) mb.data[mb.off + 3 + 2] & MASK_FF;
+		ip += (int) mbuf.data[mbuf.off + 3 + 2] & 0xff;
 		InetAddress inet = null;
 		try {
 			inet = InetAddress.getByName(ip);
 		} catch (UnknownHostException ex) {
             throw new MessageException("Unable to retrieve the IP address \""+ip+"\" correctly.",ex);
         }
-		int port = (((int) mb.data[mb.off]) & MASK_FF) << 8;
-		port |= (((int) mb.data[mb.off + 1]) & MASK_FF) << 0;
+		int port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
+		port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
 		return new InetSocketAddress(inet,port);
 	}
 	
