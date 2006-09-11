@@ -49,6 +49,7 @@ public class Timer extends ChannelEvent {
    */
   public String timerID;
   /**
+   * Non negative expiration time in milliseconds. The timer expires after this time.
    * <b>ATENTION: Changed sematic. 
    * It now stands for the time untill reception of the returning event</b>
    */
@@ -87,11 +88,11 @@ public class Timer extends ChannelEvent {
   /**
    * Creates a initialized Timer Event.
    * 
-   * @param when delta between now and the time that the timer will expire.
+   * @param when delta between now and the time that the timer will expire, in milliseconds.
    * @param timerID ID of the timer
    * @param channel channel of the timer
    * @param dir Direction of the timer
-   * @param source Session that creates the timer
+   * @param source Session that created the timer
    * @param qualifier Qualifier of the timer
    * @throws AppiaEventException
    * @throws AppiaException
@@ -113,21 +114,22 @@ public class Timer extends ChannelEvent {
   }
 
   /**
-   * Sets the time when the Timer event will be returned.
+   * Sets the time when the Timer event will be returned. The timer
+   * will expire after <code>time</code>milliseconds.
    *
-   * @param when The time in milliseconds.
+   * @param time The time in milliseconds.
    */
-  public void setTimeout(long when) throws AppiaException {
+  public void setTimeout(long time) throws AppiaException {
     if ( when < 0 )
-       throw new AppiaException("Timer: when is negative");
+       throw new AppiaException("Timer: Parameter is negative");
 
-    this.when=when;
+    this.when=time;
   }
 
   /**
    * Gets the time when the Timer event will be returned.
    *
-   * @return when The time in milliseconds.
+   * @return The time in milliseconds.
    */
   public long getTimeout() {
     return when;

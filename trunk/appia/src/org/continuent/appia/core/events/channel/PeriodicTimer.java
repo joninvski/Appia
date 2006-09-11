@@ -32,7 +32,7 @@ import org.continuent.appia.core.*;
 
 /**
  * Defines a PeriodicTimer class.
- * @author Nuno Carvalho
+ * @author Alexandre Pinto
  * @version 1.0
  *
  */
@@ -44,7 +44,7 @@ public class PeriodicTimer extends ChannelEvent implements Cloneable {
   public String timerID;
   
   /**
-   * The period between notifications.
+   * The period between notifications, in milliseconds.
    */
   protected long period=0;
 
@@ -57,6 +57,14 @@ public class PeriodicTimer extends ChannelEvent implements Cloneable {
 
   /**
    * Creates a initialized PeriodicTimer Event.
+   * @param timerID the timer ID
+   * @param period the period of the timer, in milliseconds.
+   * @param channel the channel
+   * @param dir the direction of the timer.
+   * @param source the session that created the event
+   * @param qualifier the event qualifier
+   * @throws AppiaEventException
+   * @throws AppiaException if the period is negative.
    */
   public PeriodicTimer(String timerID, long period,
                        Channel channel, int dir, Session source,
@@ -75,7 +83,7 @@ public class PeriodicTimer extends ChannelEvent implements Cloneable {
   }
 
   /**
-   * Sets the time between the periodic notifications.
+   * Sets the time between the periodic notifications, in milliseconds.
    * 
    * @param period The period in milliseconds.
    */
