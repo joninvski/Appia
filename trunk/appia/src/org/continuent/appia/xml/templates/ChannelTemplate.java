@@ -205,9 +205,14 @@ public class ChannelTemplate {
 				}
 				try {
                     cc.setSession(sessionInstance);
+                } catch (AppiaCursorException e) {
+                    throw new AppiaXMLException("Unable to set the session "+sessionInstance+
+                            " on channel " + channel.getChannelID()+": "+e.getMessage(),e);
+                }
+                try {
                     cc.up();
                 } catch (AppiaCursorException e) {
-                    throw new AppiaXMLException("Unable to the session.",e);
+                    throw new AppiaXMLException("Unable to move the cursor up, on channel " + channel.getChannelID()+".",e);
                 }
 			}
 			return channel;
