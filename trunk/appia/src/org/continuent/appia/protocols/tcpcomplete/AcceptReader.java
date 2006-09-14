@@ -36,6 +36,8 @@ import org.continuent.appia.core.Channel;
  */
 public class AcceptReader implements Runnable {
   
+    private static final int INT_SIZE = 4;
+    
   private ServerSocket socket;
   private TcpCompleteSession session;
   private Channel channel;
@@ -88,7 +90,7 @@ public class AcceptReader implements Runnable {
         try {
           remotePort = initProto(newSocket);
           
-          InetSocketAddress iwp = new InetSocketAddress(newSocket.getInetAddress(),remotePort);
+          final InetSocketAddress iwp = new InetSocketAddress(newSocket.getInetAddress(),remotePort);
           
           synchronized(lock){
             if(session.existsSocket(session.ourReaders,iwp))
@@ -111,9 +113,9 @@ public class AcceptReader implements Runnable {
   
   private int initProto(Socket socket) throws IOException{
     int port;
-    byte[] bufferPort = new byte[4];
+    final byte[] bufferPort = new byte[INT_SIZE];
     
-    receive_n(socket.getInputStream(),bufferPort, 4);
+    receiveNBytes(socket.getInputStream(),bufferPort, INT_SIZE);
     
     port = session.byteArrayToInt(bufferPort);
     
@@ -123,7 +125,7 @@ public class AcceptReader implements Runnable {
     return port;
   }
   
-  private int receive_n(InputStream is,byte[] b,int length) throws IOException {
+  private int receiveNBytes(InputStream is,byte[] b,int length) throws IOException {
     int n=0,i=0;
     while(n!=length && i!=-1) {
       i=is.read(b,n,length-n);
@@ -142,6 +144,10 @@ public class AcceptReader implements Runnable {
 		return running;
 	}
 
+    public int getPort(){
+        return socket.getLocalPort();
+    }
+    
   private void debug(String msg){
     //	System.out.println("[AcceptReader]:: "+msg);
   }

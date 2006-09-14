@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 
+import org.apache.log4j.Logger;
 import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.AppiaException;
 import org.continuent.appia.core.Channel;
@@ -55,6 +56,8 @@ import org.continuent.appia.xml.utils.SessionProperties;
  */
 public class TcpCompleteSession extends Session implements InitializableSession{
   
+    private static Logger log = Logger.getLogger(TcpCompleteSession.class);
+
   private static final int DEST_TIMEOUT=150000; // 2,5 minutes
   private static final int MAX_INACTIVITY=2;
   private static final int SOTIMEOUT=5000;
@@ -179,8 +182,8 @@ public void init(SessionProperties params) {
   }
   
   private void handleRegisterSocket(RegisterSocketEvent e){
-    if(TcpCompleteConfig.debugOn)
-      debug("received RSE with port: "+e.port);
+      if(log.isDebugEnabled())
+          log.debug("TCP Session received RegisterSocketEvent to register a socket in port "+e.port);
     ServerSocket ss= null;
     
     if(ourPort < 0){
@@ -188,8 +191,7 @@ public void init(SessionProperties params) {
             try {
                 ss = new ServerSocket(0);
             } catch (IOException ex) {
-                if (TcpCompleteConfig.debugOn)
-                    ex.printStackTrace();
+                log.debug("Exception when trying to create a server socket in First Available mode: "+ex);
             }
         }
         else if(e.port == RegisterSocketEvent.RANDOMLY_AVAILABLE){
@@ -204,7 +206,9 @@ public void init(SessionProperties params) {
                     ss = new ServerSocket(p);
                     done = true;
                 } catch(IllegalArgumentException ex){
+                    log.debug("Exception when trying to create a server socket in Randomly Available mode: "+ex);
                 } catch (IOException ex) {
+                    log.debug("Exception when trying to create a server socket in Randomly Available mode: "+ex);
                 }
             }
         }
@@ -212,15 +216,14 @@ public void init(SessionProperties params) {
             try {
                 ss = new ServerSocket(e.port);
             } catch (IOException ex) {
-                if (TcpCompleteConfig.debugOn)
-                    ex.printStackTrace();
+                log.debug("Exception when trying to create a server socket using the port: "+e.port+"\nException: "+ex);
             }
         }
     }
     if (ss != null) {
         ourPort = ss.getLocalPort();
-        if(TcpCompleteConfig.debugOn)
-            debug("Our port is "+ourPort);
+        if(log.isDebugEnabled())
+            log.debug("TCP Session registered a socket in port "+ourPort);
         
         //create accept thread int the request port.
       acceptThread = new AcceptReader(ss,this,e.getChannel(),socketLock);
@@ -232,6 +235,14 @@ public void init(SessionProperties params) {
       e.error=false;
     } else {
       e.error=true;
+      if(acceptThread != null && acceptThread.getPort() == e.port){
+          e.setErrorCode(RegisterSocketEvent.RESOURCE_ALREADY_BOUND_ERROR);
+          e.setErrorDescription("Socket already bound in port "+e.port);
+      }
+      else {
+          e.setErrorCode(RegisterSocketEvent.RESOURCE_BUSY_ERROR);
+          e.setErrorDescription("Could not create socket. Resource is busy.");
+      }
     }
     
     //		send RegisterSocketEvent
