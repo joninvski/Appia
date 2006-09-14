@@ -180,51 +180,51 @@ public void init(SessionProperties params) {
   
   private void handleRegisterSocket(RegisterSocketEvent e){
     if(TcpCompleteConfig.debugOn)
-      debug("received RSE");
+      debug("received RSE with port: "+e.port);
     ServerSocket ss= null;
     
     if(ourPort < 0){
-    	if(e.port == RegisterSocketEvent.FIRST_AVAILABLE){
-    		try {
-    			ss = new ServerSocket(0);
-    		} catch (IOException ex) {
-    			if (TcpCompleteConfig.debugOn)
-    				ex.printStackTrace();
-    		}
-    	}
-    	else if(e.port == RegisterSocketEvent.RANDOMLY_AVAILABLE){
-    		Random rand = new Random();
-    		int p;
-    		boolean done = false;
-    		
-    		while(!done){
-    			p = rand.nextInt(Short.MAX_VALUE);
-    			
-    			try {
-    				ss = new ServerSocket(p);
-    				done = true;
-    			} catch(IllegalArgumentException ex){
-    			} catch (IOException ex) {
-    			}
-    		}
-    	}
-    	else{
-    		try {
-    			ss = new ServerSocket(e.port);
-    		} catch (IOException ex) {
-    			if (TcpCompleteConfig.debugOn)
-    				ex.printStackTrace();
-    		}
-    	}
+        if(e.port == RegisterSocketEvent.FIRST_AVAILABLE){
+            try {
+                ss = new ServerSocket(0);
+            } catch (IOException ex) {
+                if (TcpCompleteConfig.debugOn)
+                    ex.printStackTrace();
+            }
+        }
+        else if(e.port == RegisterSocketEvent.RANDOMLY_AVAILABLE){
+            final Random rand = new Random();
+            int p;
+            boolean done = false;
+            
+            while(!done){
+                p = rand.nextInt(Short.MAX_VALUE);
+                
+                try {
+                    ss = new ServerSocket(p);
+                    done = true;
+                } catch(IllegalArgumentException ex){
+                } catch (IOException ex) {
+                }
+            }
+        }
+        else{
+            try {
+                ss = new ServerSocket(e.port);
+            } catch (IOException ex) {
+                if (TcpCompleteConfig.debugOn)
+                    ex.printStackTrace();
+            }
+        }
     }
     if (ss != null) {
-      ourPort = ss.getLocalPort();
-      if(TcpCompleteConfig.debugOn)
-        debug("Our port is "+ourPort);
-      
-      //create accept thread int the request port.
+        ourPort = ss.getLocalPort();
+        if(TcpCompleteConfig.debugOn)
+            debug("Our port is "+ourPort);
+        
+        //create accept thread int the request port.
       acceptThread = new AcceptReader(ss,this,e.getChannel(),socketLock);
-      Thread t = threadFactory.newThread(acceptThread,"TCP Accept thread from port "+ourPort);
+      final Thread t = threadFactory.newThread(acceptThread,"TCP Accept thread from port "+ourPort);
       t.start();
       
       e.localHost=HostUtils.getLocalAddress();
