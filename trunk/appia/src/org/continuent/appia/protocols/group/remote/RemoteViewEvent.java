@@ -33,8 +33,6 @@ import org.continuent.appia.core.*;
 import org.continuent.appia.protocols.group.*;
 import org.continuent.appia.protocols.group.heal.GossipOutEvent;
 
-
-
 /**
  * This event is used to request a list of addresses for a given group.
  * On reply, the message carried by this event contains the addresses of the
@@ -101,10 +99,10 @@ public class RemoteViewEvent extends GossipOutEvent {
 		return addresses;	
 	}
 	
-	/*
+	/**
 	 * @param a  An array with the addresses of the group members.
 	 */
-	public void setAddresses(InetSocketAddress a[]){
-		addresses=a;
+	public void setAddresses(InetSocketAddress addrs[]){
+		addresses=addrs;
 	}
 }

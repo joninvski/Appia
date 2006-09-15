@@ -27,16 +27,10 @@
  */
 package org.continuent.appia.protocols.group.remote;
 
-/*
- * Change Log:
- * Nuno Carvalho - 03/03/2003
- * Changed the push and pop of InetWithPort:
- * from om.push(addrs) -> InetWithPort.push(sddrs,om)
- */
-
-
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.text.ParseException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
@@ -88,7 +82,8 @@ public class RemoteViewSession extends Session implements InitializableSession {
     private PrintStream debug = null;
 
 	public static final int DEFAULT_GOSSIP_PORT = 10000;
-	
+	private static final int NUM_LAYERS_GOSSIP_CHANNEL = 3;
+    
 	private InetSocketAddress myAddress=null;
 	private InetSocketAddress gossipAddress;
 	private Hashtable addrTable = new Hashtable();
@@ -115,14 +110,15 @@ public class RemoteViewSession extends Session implements InitializableSession {
 	}
 	
 	public void init(SessionProperties params) {
-		if (params.containsKey("gossip")) {
-			try {
-				gossipAddress = ParseUtils.parseSocketAddress(params.getString("gossip"),null,DEFAULT_GOSSIP_PORT);
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				System.exit(1);
-			}
-		}
+	    if (params.containsKey("gossip")) {
+	        try {
+	            gossipAddress = ParseUtils.parseSocketAddress(params.getString("gossip"),null,DEFAULT_GOSSIP_PORT);
+	        } catch (UnknownHostException e) {
+	            log.warn("XML initialization failed due to the following exception: "+e);
+	        } catch (ParseException e) {
+	            log.warn("XML initialization failed due to the following exception: "+e);
+	        }
+	    }
 	}
 	
 	/**
@@ -132,7 +128,8 @@ public class RemoteViewSession extends Session implements InitializableSession {
 	 */
 	public void handle(Event event) {
 		
-		debug("received " + event + ", instanceof RemoteViewEvent=" + (event instanceof RemoteViewEvent));
+        if(FULL_DEBUG)
+            debug("received event on handle: " + event);
 		
 		if (event instanceof ChannelInit) {
 			handleChannelInit((ChannelInit) event);
@@ -155,7 +152,7 @@ public class RemoteViewSession extends Session implements InitializableSession {
 		}
 		
 		if (event instanceof Debug) {
-			Debug ev = (Debug) event;
+			final Debug ev = (Debug) event;
 			
 			if (ev.getQualifierMode() == EventQualifier.ON) {
 				if (ev.getOutput() instanceof PrintStream)
@@ -176,25 +173,30 @@ public class RemoteViewSession extends Session implements InitializableSession {
 				}
 			}
 			
-			try { ev.go(); } 
-			catch (AppiaEventException ex) { ex.printStackTrace(); }
+			try { 
+			    ev.go(); 
+			} catch (AppiaEventException ex) {
+                log.debug("error forwarding event of type "+ev.getClass().getName()+" : "+ex);
+			}
 			return;
-		}
+		} // end of debug event handling
 		
-		log.warn("Received unwanted event (" + event.getClass().getName() +
-		") received. Forwarding it.");
-		try { event.go(); } 
-		catch (AppiaEventException ex) { ex.printStackTrace(); }
+		log.warn("Received unwanted event (" + event.getClass().getName()+"). Forwarding it.");
+		try {
+		    event.go(); 
+		} catch (AppiaEventException ex) {
+            log.debug("error forwarding event of type "+event.getClass().getName()+" : "+ex);
+		}
 	}
 	
 	
 	private void handleChannelInit(ChannelInit event) {
 		
-		try { event.go(); }
-		catch (AppiaEventException ex) {
-			ex.printStackTrace();
-			log.debug("error forwarding ChannelInit event: "+ex);
-		}
+	    try { 
+	        event.go(); 
+	    } catch (AppiaEventException ex) {
+	        log.debug("error forwarding event of type "+event.getClass().getName()+" : "+ex);
+	    }
 		
 		if (myChannel == null) {
 			initChannel = event.getChannel();
@@ -202,33 +204,29 @@ public class RemoteViewSession extends Session implements InitializableSession {
 		} else {
 			if (needsRse) {
 				try {
-					RegisterSocketEvent rse =
-						new RegisterSocketEvent(myChannel,
-								Direction.DOWN,
-								this,
-								myAddress.getPort());
+					final RegisterSocketEvent rse =
+						new RegisterSocketEvent(myChannel, Direction.DOWN, this, myAddress.getPort());
 					rse.go();
 				} catch (AppiaEventException ex) {
-					log.debug("error registering socket: "+ex);
+                    log.debug("error forwarding event of type "+RegisterSocketEvent.class.getClass().getName()+" : "+ex);
 				}
 			}	    
 			
 			// send a GossipOutEvent to set things in motion immediatly
 			try {
 				
-				GossipOutEvent goe =
-					new GossipOutEvent(myChannel,Direction.DOWN,
-							this);
-				Message om = (Message) goe.getMessage();
-				om.pushObject(new ViewID(0, new Endpt()));
-				om.pushObject(new Group());
-				om.pushObject(myAddress);
+				final GossipOutEvent goe =
+					new GossipOutEvent(myChannel, Direction.DOWN, this);
+				final Message msg = (Message) goe.getMessage();
+				msg.pushObject(new ViewID(0, new Endpt()));
+				msg.pushObject(new Group());
+				msg.pushObject(myAddress);
 				goe.source = myAddress;
 				goe.dest = gossipAddress;
 				goe.init();
 				goe.go();
 			} catch (AppiaEventException ex) {
-				log.debug("error sending initial GossipOutEvent: "+ex);
+                log.debug("error forwarding event of type "+GossipOutEvent.class.getName()+" : "+ex);
 			}
 		}
 	}
@@ -236,46 +234,46 @@ public class RemoteViewSession extends Session implements InitializableSession {
 	
 	private void makeOutChannel(Channel t) {
 		
-		ChannelCursor cct = new ChannelCursor(t);
+		final ChannelCursor cursor = new ChannelCursor(t);
 		
-		Layer[] l = new Layer[3];
+		final Layer[] layers = new Layer[NUM_LAYERS_GOSSIP_CHANNEL];
 		
 		try {
-			cct.bottom();
-			if (cct.getLayer() instanceof UdpSimpleLayer) {
-				l[0] = cct.getLayer();
+			cursor.bottom();
+			if (cursor.getLayer() instanceof UdpSimpleLayer) {
+				layers[0] = cursor.getLayer();
 				needsRse = false;
 			} else {
-				l[0] = new UdpSimpleLayer();
+				layers[0] = new UdpSimpleLayer();
 				needsRse = true;
 			}
 			
-			while(cct.isPositioned() && !(cct.getLayer() instanceof FifoLayer))
-				cct.up();
-			if (cct.isPositioned())
-				l[1] = cct.getLayer();
+			while(cursor.isPositioned() && !(cursor.getLayer() instanceof FifoLayer))
+				cursor.up();
+			if (cursor.isPositioned())
+				layers[1] = cursor.getLayer();
 			else
-				l[1] = new FifoLayer();
+				layers[1] = new FifoLayer();
 			
-			l[2] = this.getLayer();
+			layers[2] = this.getLayer();
 
-			QoS qos = new QoS("Gossip Out QoS", l);
+			final QoS qos = new QoS("Gossip Out QoS", layers);
 			myChannel = qos.createUnboundChannel("Gossip Channel",t.getEventScheduler());
 			
-			ChannelCursor mycc = myChannel.getCursor();
+			final ChannelCursor mycc = myChannel.getCursor();
 			mycc.bottom();
-			cct.bottom();
+			cursor.bottom();
 			
-			if (cct.getSession() instanceof UdpSimpleSession)
-				mycc.setSession(cct.getSession());
+			if (cursor.getSession() instanceof UdpSimpleSession)
+				mycc.setSession(cursor.getSession());
 			
 			mycc.up();
 			
-			while (cct.isPositioned() && 
-					!(cct.getSession() instanceof FifoSession))
-				cct.up();
-			if (cct.isPositioned())
-				mycc.setSession(cct.getSession());
+			while (cursor.isPositioned() && 
+					!(cursor.getSession() instanceof FifoSession))
+				cursor.up();
+			if (cursor.isPositioned())
+				mycc.setSession(cursor.getSession());
 			
 			mycc.up();
 			mycc.setSession(this);
@@ -296,16 +294,14 @@ public class RemoteViewSession extends Session implements InitializableSession {
 			event.go();
 		}
 		catch(AppiaEventException e){
-			e.printStackTrace();
-			System.out.println("Error sending event");
+            log.debug("error forwarding event of type "+event.getClass().getName()+" : "+e);
 		}
 	}
 	
 	
 	private void handleRemoteView(RemoteViewEvent event) {
 		if (event.getDir() == Direction.DOWN) {
-			// we got a request
-			
+			// we got a request			
 			if (myAddress==null) {
 				rve=event;
 				return;
@@ -320,11 +316,11 @@ public class RemoteViewSession extends Session implements InitializableSession {
 				event.dest = gossipAddress;
 				event.source = myAddress;
 				
-				Message om = new Message();
-				Group.push(event.getGroup(),om);
-				om.pushObject(myAddress);
+				final Message msg = new Message();
+				Group.push(event.getGroup(),msg);
+				msg.pushObject(myAddress);
 				
-				event.setMessage(om);
+				event.setMessage(msg);
 				event.setChannel(myChannel);
 				event.setSource(this);
 				
@@ -333,19 +329,19 @@ public class RemoteViewSession extends Session implements InitializableSession {
 				
 				event = null;
 			} catch (AppiaEventException ex) {
-				log.debug("error sending down RemoteViewEvent");
+				log.debug("error sending down RemoteViewEvent: "+ex);
 			}
 		} else {
 			boolean appearsViewState = true;
-			Message om = (Message) event.getMessage();
+			final Message msg = (Message) event.getMessage();
 			try{
-				ViewState.peek(om);
+				ViewState.peek(msg);
 			}catch(Exception special){
 				appearsViewState = false;
 			}
 			//debug("Received remote view event!!!!!("+ViewState.peek(om)+")");
-			if (appearsViewState && ViewState.peek(om) instanceof ViewState) {
-				ViewState receivedVs = ViewState.pop(om);
+			if (appearsViewState && ViewState.peek(msg) instanceof ViewState) {
+				final ViewState receivedVs = ViewState.pop(msg);
 				event.setAddresses(receivedVs.addresses);	    
 				event.setGroup(receivedVs.group);
 				event.setSource(this);
@@ -355,8 +351,7 @@ public class RemoteViewSession extends Session implements InitializableSession {
 					event.init();
 					event.go();
 				} catch(AppiaEventException ex){
-					ex.printStackTrace();
-					System.out.println();
+                    log.debug("error forwarding event of type "+event.getClass().getName()+" : "+ex);
 				}
 			}
 		}
@@ -377,8 +372,7 @@ public class RemoteViewSession extends Session implements InitializableSession {
 			e.go();
 		}
 		catch(AppiaEventException ex){
-			ex.printStackTrace();
-			System.err.println("Exception when sending RegisterSocket event");
+            log.debug("error forwarding event of type "+e.getClass().getName()+" : "+e);
 		}
 	}
 	
@@ -391,9 +385,9 @@ public class RemoteViewSession extends Session implements InitializableSession {
 	 */
 	public void doDebug(int eq) { 
 		try {
-			java.io.OutputStream debugOut = System.out;
+			final java.io.OutputStream debugOut = System.out;
 			
-			Debug e = new Debug(debugOut);
+			final Debug e = new Debug(debugOut);
 			e.setChannel(myChannel);
 			e.setDir(Direction.DOWN);
 			e.setSource(this);
@@ -407,16 +401,21 @@ public class RemoteViewSession extends Session implements InitializableSession {
 	}
 		
 	private void debug(String s){
-		if(FULL_DEBUG && debug != null)
+		if(debug != null)
 			debug.println(this.getClass().getName()+"[FULL DEBUG] "+s);
 	}
 	
 	private void printAddrTable() {
-		debug("address Table:");
-		for (Enumeration e = addrTable.keys(); e.hasMoreElements(); ) {
-			String g = (String) e.nextElement();
-			InetSocketAddress ad = (InetSocketAddress) addrTable.get(g);
-			debug("{" + g + "=" + ad + "}");
-		}
+	    if(FULL_DEBUG){
+	        debug("address Table:");
+	        final Enumeration e = addrTable.keys();
+            String g = null;
+            InetSocketAddress ad = null;
+            while(e.hasMoreElements()) {
+	            g = (String) e.nextElement();
+	            ad = (InetSocketAddress) addrTable.get(g);
+	            debug("{" + g + "=" + ad + "}");
+	        }
+	    }
 	}
 }

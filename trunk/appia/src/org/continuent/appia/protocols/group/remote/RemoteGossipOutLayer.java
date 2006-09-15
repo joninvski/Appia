@@ -40,36 +40,20 @@ public class RemoteGossipOutLayer extends GossipOutLayer {
 	 * Standard constructor.
 	 */
 	public RemoteGossipOutLayer() {
-		Class init = org.continuent.appia.core.events.channel.ChannelInit.class;
-		Class close = org.continuent.appia.core.events.channel.ChannelClose.class;
-		Class gossipout = org.continuent.appia.protocols.group.heal.GossipOutEvent.class;
-		Class rse = org.continuent.appia.protocols.common.RegisterSocketEvent.class;
-		Class view = org.continuent.appia.protocols.group.intra.View.class;
-		Class debug = org.continuent.appia.core.events.channel.Debug.class;
-		Class groupinit =	org.continuent.appia.protocols.group.events.GroupInit.class;
-		Class undelivered = org.continuent.appia.protocols.common.FIFOUndeliveredEvent.class;
-		Class remote = org.continuent.appia.protocols.group.remote.RemoteViewEvent.class;
-		
-		evProvide=new Class[4];
-		evProvide[0] = gossipout;
-		evProvide[1] = rse;
-		evProvide[2] = remote;
-		evProvide[3] = debug;
-		
-		
-		evRequire=new Class[0];
-		
-		evAccept=new Class[8];
-		evAccept[0] = gossipout;
-		evAccept[1] = init;
-		evAccept[2] = close;
-		evAccept[3] = view;
-		evAccept[4] = groupinit;
-		evAccept[5] = remote;
-		evAccept[6] = debug;
-		evAccept[7] = undelivered;
+		super();
+        
+        final Class[] evProvideToReplace = new Class[evProvide.length+1];
+        for(int i=0; i<evProvide.length; i++)
+            evProvideToReplace[i] = evProvide[i];
+        evProvideToReplace[evProvideToReplace.length-1] = org.continuent.appia.protocols.group.remote.RemoteViewEvent.class;
+        evProvide = evProvideToReplace;
+        
+        final Class[] evAcceptToReplace = new Class[evAccept.length+1];
+        for(int i=0; i<evAccept.length; i++)
+            evAcceptToReplace[i] = evAccept[i];
+        evAcceptToReplace[evAcceptToReplace.length-1] = org.continuent.appia.protocols.group.remote.RemoteViewEvent.class;
+        evAccept = evAcceptToReplace;
 	}
-	
 	
 	/**
 	 * Creates a {@link RemoteGossipOutSession}

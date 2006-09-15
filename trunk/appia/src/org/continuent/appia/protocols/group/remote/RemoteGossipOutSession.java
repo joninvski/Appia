@@ -27,11 +27,6 @@
  */
  package org.continuent.appia.protocols.group.remote;
 
-/*
- * New version of this protocol that reuses the
- * methods implemented in the father of this session (GossipOutSession) 
- */
- 
 import java.net.InetSocketAddress;
 
 import org.apache.log4j.Logger;
@@ -71,6 +66,7 @@ public class RemoteGossipOutSession extends GossipOutSession {
 	 */
 	public void handle(Event event) {
 		if (event instanceof GroupInit) {
+            // gets the group and forward the event to the super class
 			group = ((GroupInit) event).vs.group;
 		} else if (event instanceof RemoteViewEvent) {
 			handleRemoteView((RemoteViewEvent) event);
@@ -82,9 +78,9 @@ public class RemoteGossipOutSession extends GossipOutSession {
 	private void handleRemoteView(RemoteViewEvent ev) {
 
 		try {
-			InetSocketAddress sourceAddr = (InetSocketAddress) ev.getMessage().popObject(); 
+			final InetSocketAddress sourceAddr = (InetSocketAddress) ev.getMessage().popObject(); 
 			//if this process is a member of the desired group
-			Group g = Group.pop((Message)ev.getMessage());
+			final Group g = Group.pop((Message)ev.getMessage());
 			if(log.isDebugEnabled())
 				log.debug("Received remote view event from "+sourceAddr+" with group "+g+" ("+group+")");
 			if (!group.equals(g)) {
@@ -94,13 +90,12 @@ public class RemoteGossipOutSession extends GossipOutSession {
 			ev.source = getOutAddress();
 			ev.dest = sourceAddr;
 
-			Message om = new Message();
-			ViewState.push(getViewState(),om);
-			//om.push(getViewState());
+			final Message msg = new Message();
+			ViewState.push(getViewState(),msg);
 
 			if(log.isDebugEnabled())
 				log.debug("Sendig RemoteView to "+sourceAddr+" : "+getViewState());
-			ev.setMessage(om);
+			ev.setMessage(msg);
 			ev.setChannel(getOutChannel());
 			ev.setDir(Direction.DOWN);
 			ev.setSource(this);
@@ -109,8 +104,7 @@ public class RemoteGossipOutSession extends GossipOutSession {
 			ev.go();
 
 		} catch (AppiaEventException ex) {
-			ex.printStackTrace();
-			System.out.println("ERROR sending event");
+            log.debug("Exception sending event: "+ex);
 		}
 	}
 }

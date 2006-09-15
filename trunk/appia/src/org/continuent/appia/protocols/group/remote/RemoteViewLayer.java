@@ -38,28 +38,21 @@ public class RemoteViewLayer extends Layer {
 	 * Standard constructor
 	 */
 	public RemoteViewLayer() {
-		Class init = org.continuent.appia.core.events.channel.ChannelInit.class;
-		Class gossipout = org.continuent.appia.protocols.group.heal.GossipOutEvent.class;
-		Class remoteview = org.continuent.appia.protocols.group.remote.RemoteViewEvent.class;
-		Class debug = org.continuent.appia.core.events.channel.Debug.class;
-		Class rse = org.continuent.appia.protocols.common.RegisterSocketEvent.class;
+	    evProvide = new Class[]{
+	            org.continuent.appia.protocols.group.remote.RemoteViewEvent.class,
+	            org.continuent.appia.protocols.common.RegisterSocketEvent.class,
+	            org.continuent.appia.core.events.channel.Debug.class,
+	            org.continuent.appia.protocols.group.heal.GossipOutEvent.class,
+	    };
+        
+		evRequire = new Class[] {};
 		
-		// events that we provide
-		evProvide = new Class[4];
-		evProvide[0] = remoteview;
-		evProvide[1] = rse;
-		evProvide[2] = debug;
-		evProvide[3] = gossipout;
-		
-		// events that we require
-		evRequire = new Class[0];
-		
-		// events that we accept
-		evAccept = new Class[4];
-		evAccept[0] = init;
-		evAccept[1] = remoteview;
-		evAccept[2] = debug;
-		evAccept[3]= rse;
+		evAccept = new Class[] {
+		        org.continuent.appia.core.events.channel.ChannelInit.class,
+		        org.continuent.appia.protocols.group.remote.RemoteViewEvent.class,
+		        org.continuent.appia.core.events.channel.Debug.class,
+		        org.continuent.appia.protocols.common.RegisterSocketEvent.class,
+		};
 	}
 	
 	
