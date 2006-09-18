@@ -55,6 +55,12 @@ import org.continuent.appia.protocols.utils.ParseUtils;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
 
+/**
+ * This class defines a GossipServerSession
+ * 
+ * @author Alexandre Pinto
+ * @version 1.0
+ */
 public class GossipServerSession extends Session implements InitializableSession {
 
   public static final int DEFAULT_PORT=10000;
@@ -221,7 +227,7 @@ public class GossipServerSession extends Session implements InitializableSession
   }
 
   private void handleUndelivered(FIFOUndeliveredEvent ev) {
-    aux.addr=((SendableEvent)ev.what).dest;
+    aux.addr=ev.getEvent().dest;
     clients.removeElement(aux);
     try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
   }

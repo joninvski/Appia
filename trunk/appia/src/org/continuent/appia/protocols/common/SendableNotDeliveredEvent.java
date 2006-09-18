@@ -53,29 +53,44 @@ import org.continuent.appia.core.events.SendableEvent;
  * @see org.continuent.appia.core.events.SendableEvent
  */
 
-public class SendableNotDeliveredEvent extends Event {
-	/**
+public class SendableNotDeliveredEvent extends NetworkUndeliveredEvent {
+	/*
 	 * The event received by UdpSimpleSession that could not be delivered.
 	 * @see org.continuent.appia.core.events.SendableEvent
 	 */
-    public SendableEvent event;
+    private SendableEvent event;
     
     /**
      * Events created using this constructor do not need to be explicitly initialized.
      *
      * @param channel The channel where the event will flow. This is the same channel
-     * of the event attribute.
+     * of the event attribute. The direction is set to UP.
      * @param source The session creating the event.
      * @param event The event that could not be delivered.
-     * @see Channel
-     * @see Session
-     * @see SendableEvent
+     * @see Channel the appia channel
+     * @see Session the source session
+     * @see SendableEvent the event not delivered
      */
     public SendableNotDeliveredEvent(Channel channel,Session source,
-				     SendableEvent event) throws
-	AppiaEventException {
+				     SendableEvent event) throws AppiaEventException {
 
 	super(channel,Direction.UP,source);
-	this.event=event;
+	    this.event=event;
+        this.setFailedAddress(event.dest);
+    }
+
+    /**
+     * @return Returns the event.
+     */
+    public SendableEvent getEvent() {
+        return event;
+    }
+
+    /**
+     * @param event The event to set.
+     */
+    public void setEvent(SendableEvent event) {
+        this.event = event;
+        this.setFailedAddress(event.dest);
     }
 }

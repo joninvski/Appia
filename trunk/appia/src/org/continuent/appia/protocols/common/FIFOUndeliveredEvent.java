@@ -44,12 +44,7 @@ import org.continuent.appia.core.events.SendableEvent;
  * @see SendableEvent
  * @author Hugo Miranda
  */
-public class FIFOUndeliveredEvent extends Event {
-  
-  /**
-   * The event that was not delivered
-   */
-  public SendableEvent what;
+public class FIFOUndeliveredEvent extends SendableNotDeliveredEvent {
   
   /**
    * Constructor avoiding explicit initialization. The event always goes up.
@@ -64,7 +59,6 @@ public class FIFOUndeliveredEvent extends Event {
   public FIFOUndeliveredEvent(Channel c, Session gen, SendableEvent what)
   throws AppiaEventException {
     
-    super(c,Direction.UP,gen);
-    this.what=what;
+    super(c,gen,what);
   }
 }

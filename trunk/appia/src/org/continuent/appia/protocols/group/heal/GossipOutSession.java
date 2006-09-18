@@ -327,7 +327,7 @@ public class GossipOutSession extends Session implements InitializableSession {
     if (server < 0)
       return;
     
-    if ((ev.getChannel() == out) && gossipAddrs[server].equals(ev.what.dest)) {
+    if ((ev.getChannel() == out) && gossipAddrs[server].equals(ev.getEvent().dest)) {
       if (server == gossipAddrs.length-1)
         server=0;
       else

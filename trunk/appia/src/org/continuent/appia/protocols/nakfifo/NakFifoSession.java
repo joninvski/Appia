@@ -204,7 +204,7 @@ public class NakFifoSession extends Session implements InitializableSession {
   
   private void handleSendableNotDelivered(SendableNotDeliveredEvent ev) {
     try {
-      FIFOUndeliveredEvent event=new FIFOUndeliveredEvent(ev.getChannel(),this,ev.event);
+      final FIFOUndeliveredEvent event=new FIFOUndeliveredEvent(ev.getChannel(),this,ev.getEvent());
       event.go();
     } catch (AppiaEventException ex) {
       ex.printStackTrace();

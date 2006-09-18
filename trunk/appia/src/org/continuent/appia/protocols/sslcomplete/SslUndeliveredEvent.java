@@ -27,7 +27,7 @@ import org.continuent.appia.protocols.tcpcomplete.TcpUndeliveredEvent;
 
 
 /**
- * (Async) Event used to sinalize upper layers that a connection was closed
+ * Event used to sinalize upper layers that a connection was closed
  */
 public class SslUndeliveredEvent extends TcpUndeliveredEvent {
 

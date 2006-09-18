@@ -49,6 +49,7 @@ import org.continuent.appia.core.events.SendableEvent;
  * Remains for compatibility reasons.
  * @see org.continuent.appia.protocols.common.SendableNotDeliveredEvent
  * @author Hugo Miranda
+ * @deprecated
  */
 
 public class SendableNotDeliveredEvent extends org.continuent.appia.protocols.common.SendableNotDeliveredEvent {
@@ -63,6 +64,7 @@ public class SendableNotDeliveredEvent extends org.continuent.appia.protocols.co
      * @see Channel
      * @see Session
      * @see SendableEvent
+     * @deprecated
      */
     public SendableNotDeliveredEvent(Channel channel,Session source,
 				     SendableEvent event) throws

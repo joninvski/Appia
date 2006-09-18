@@ -20,24 +20,22 @@
  package org.continuent.appia.protocols.tcpcomplete;
 
 import org.continuent.appia.core.*;
+import org.continuent.appia.protocols.common.NetworkUndeliveredEvent;
 
 
 /**
- * (Async) Event used to sinalize upper layers that a connection was closed
+ * Event used to sinalize upper layers that a connection was closed.
  */
-public class TcpUndeliveredEvent extends Event{
-
-    //stores an IWP
-    public Object who;
-
+public class TcpUndeliveredEvent extends NetworkUndeliveredEvent {
+    
     public TcpUndeliveredEvent (Channel channel, int dir, Session session, Object who) 
-	throws AppiaEventException {
-	super(channel, dir, session);
-	this.who = who;
+    throws AppiaEventException {
+        super(channel, dir, session);
+        setFailedAddress(who);
     }
-
+    
     public TcpUndeliveredEvent(Object who) {
-    super();
-    this.who = who;
+        super();
+        setFailedAddress(who);
     }  
 }

@@ -376,10 +376,10 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
     if (vs == null)
       return;
     
-    if (!(ev.what instanceof GroupSendableEvent))
+    if (!(ev.getEvent() instanceof GroupSendableEvent))
       return;
     
-    GroupSendableEvent event=(GroupSendableEvent)ev.what;
+    final GroupSendableEvent event=(GroupSendableEvent)ev.getEvent();
     
     if (!vs.group.equals(event.group)) {
       debug("Ignored FIFOUndelivered due to wrong group");
@@ -409,7 +409,7 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
     if (vs == null)
       return;
     
-    undelivered((InetSocketAddress)ev.who,ev.getChannel());
+    undelivered((InetSocketAddress)ev.getFailedAddress(),ev.getChannel());
   }
   
   private void undelivered(InetSocketAddress addr, Channel channel) {

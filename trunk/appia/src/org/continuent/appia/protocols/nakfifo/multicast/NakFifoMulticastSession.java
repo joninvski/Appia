@@ -244,7 +244,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
   
   private void handleSendableNotDelivered(SendableNotDeliveredEvent ev) {
     try {
-      FIFOUndeliveredEvent event=new FIFOUndeliveredEvent(ev.getChannel(),this,ev.event);
+      FIFOUndeliveredEvent event=new FIFOUndeliveredEvent(ev.getChannel(),this,ev.getEvent());
       event.go();
     } catch (AppiaEventException ex) {
       ex.printStackTrace();
