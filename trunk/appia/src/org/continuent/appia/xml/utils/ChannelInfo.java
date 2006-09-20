@@ -20,8 +20,6 @@
  /*
  * Created on 25/Jan/2005
  *
- * TODO To change the template for this generated file go to
- * Window - Preferences - Java - Code Style - Code Templates
  */
 package org.continuent.appia.xml.utils;
 
@@ -48,11 +46,13 @@ public class ChannelInfo {
 	private LinkedList dependencies;
 	
 	/**
-	 * @param name
-	 * @param templateName
-	 * @param label
-	 * @param params
-	 * @param initialized
+     * Builds a {@link ChannelInfo} object.
+     * 
+	 * @param  name            the name of the channel.
+	 * @param  templateName    the name of the template.
+	 * @param  label           the label of the channel.
+	 * @param  params          the parameters of the channel.
+	 * @param  initialized     whether or not the channel is to be initialized.
 	 */
 	public ChannelInfo(String name, String templateName, String label,
 			ChannelProperties params, boolean initialized) {
@@ -67,12 +67,14 @@ public class ChannelInfo {
 	}
 
 	/**
-	 * @param name
-	 * @param templateName
-	 * @param label
-	 * @param params
-	 * @param initialized
-	 * @param memoryManager
+     * Builds a {@link ChannelInfo} object.
+     * 
+	 * @param  name            the name of the channel.
+     * @param  templateName    the name of the template.
+     * @param  label           the label of the channel.
+     * @param  params          the parameters of the channel.
+     * @param  initialized     whether or not the channel is to be initialized.
+	 * @param  memoryManager    the memory manager associated with the channel.
 	 */
 	public ChannelInfo(String name, String templateName, String label,
 			ChannelProperties params, boolean initialized, MemoryManager memoryManager) {
@@ -87,97 +89,90 @@ public class ChannelInfo {
 	}
 
 	/**
-	 * @return Returns the initialized.
+	 * @return <i>true</i> if the channel is to be initialized.
+     * <i>false</i> otherwise.
 	 */
 	public boolean isInitialized() {
 		return initialized;
 	}
-	/**
-	 * @param initialized The initialized to set.
-	 */
-	public void setInitialized(boolean initialized) {
+	
+    public void setInitialized(boolean initialized) {
 		this.initialized = initialized;
 	}
-	/**
-	 * @return Returns the label.
+	
+    /**
+	 * @return the label of the channel.
 	 */
 	public String getLabel() {
 		return label;
 	}
-	/**
-	 * @param label The label to set.
-	 */
-	public void setLabel(String label) {
+	
+    public void setLabel(String label) {
 		this.label = label;
 	}
-	/**
-	 * @return Returns the name.
+	
+    /**
+	 * @return the name of the channel.
 	 */
 	public String getName() {
 		return name;
 	}
-	/**
-	 * @param name The name to set.
-	 */
-	public void setName(String name) {
+	
+    public void setName(String name) {
 		this.name = name;
 	}
-	/**
-	 * @return Returns the params.
+	
+    /**
+	 * @return the parameters of the channel.
 	 */
 	public ChannelProperties getParams() {
 		return params;
 	}
-	/**
-	 * @param params The params to set.
-	 */
-	public void setParams(ChannelProperties params) {
+	
+    public void setParams(ChannelProperties params) {
 		this.params = params;
 	}
-	/**
-	 * @return Returns the templateName.
+	
+    /**
+	 * @return the template name.
 	 */
 	public String getTemplateName() {
 		return templateName;
 	}
-	/**
-	 * @param templateName The templateName to set.
-	 */
-	public void setTemplateName(String templateName) {
+	
+    public void setTemplateName(String templateName) {
 		this.templateName = templateName;
 	}
 	
 	/**
-	 * @return Returns the eventScheduler.
+	 * @return the event scheduler instance associated with the channel.
 	 */
 	public EventScheduler getEventScheduler() {
 		return eventScheduler;
 	}
-	/**
-	 * @param eventScheduler The eventScheduler to set.
-	 */
-	public void setEventScheduler(EventScheduler eventScheduler) {
+	
+    public void setEventScheduler(EventScheduler eventScheduler) {
 		this.eventScheduler = eventScheduler;
 	}
 	
     /**
-     * Gets the memory manager instance.
-     * @return the memory manager instance.
+     * @return the memory manager instance associated with the channel.
      */
 	public MemoryManager getMemoryManager(){
 		return memoryManager;
 	}
 	
 	/**
-	 * @return Returns the dependencies.
+	 * @return the dependencies of the channel.
 	 */
 	public LinkedList getDependencies() {
 		return dependencies;
 	}
     
     /**
+     * Adds a dependency to the channel.
      * 
-     * @param channel
+     * @param channel the channel from which the current channel instance depends.
      */
 	public void addDependency(ChannelInfo channel) {
 		if (!dependencies.contains(channel))
@@ -185,7 +180,9 @@ public class ChannelInfo {
 	}
 	
     /**
-     * @param channel
+     * Checks if the current channel depends on another defined channel.
+     * 
+     * @param channel the channel to be checked against the current instance.
      */
 	public boolean depends(ChannelInfo channel) {
 		if (dependencies.contains(channel))
@@ -214,16 +211,16 @@ public class ChannelInfo {
 	}
 
     /**
-     * Gets the managed state.
-     * @return true if this channel is managed.
+     * Checks the managed state.
+     * 
+     * @return <i>true</i> if this channel is managed; <i>false</i> otherwise.
      */
     public boolean isManaged() {
         return managed;
     }
 
     /**
-     * Sets the managed state.
-     * @param managed
+     * @param managed <i>true</i> if the channel is to be managed; <i>false</i> otherwise.
      */
     public void setManaged(boolean managed) {
         this.managed = managed;
