@@ -62,7 +62,7 @@ import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
 public class FifoSession extends Session {
 
     /*
-	 * Keeps all addresses. hitch address is a PeerInfo
+	 * Keeps all addresses. each address is a PeerInfo
 	 * that has a reference to all sequence numbers
 	 * of Waiting messages on a HashMap.
 	 */
@@ -82,7 +82,6 @@ public class FifoSession extends Session {
 	private TimeProvider timeProvider = null;
 
 	private Object myAddr = null;
-//	private Object multicastAddr = null;
 	private boolean changeTimer = false;
 
 	private PrintStream debugOutput = System.out;
@@ -252,11 +251,17 @@ public class FifoSession extends Session {
 
 	private void handleSendableNotDelivered(SendableNotDeliveredEvent e) {
         // If the source of the event is null, this protocol cannot do nothing.
-        if(e.getEvent().source == null)
+        if(e.getEvent().dest == null)
             return;
-	    final PeerInfo p = findPeer(e.getEvent().source);
+	    final PeerInfo p = findPeer(e.getEvent().dest);
+        if(p == null){
+            if(FifoConfig.DEBUG_ON)
+                System.err.println("Sendable not delivered to a peer that was not found in the peers hash map. Ignoring it.");
+            return;
+        }
+            
 	    if (FifoConfig.DEBUG_ON)
-	        System.out.println("FifoSession: going to giveup sending some message because of NotDelivered!");
+	        System.out.println("FifoSession: going to giveup sending a message to peer: "+p);
 	    giveup(p, e.getEvent());
 	}
 

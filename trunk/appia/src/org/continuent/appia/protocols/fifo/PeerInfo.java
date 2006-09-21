@@ -60,7 +60,7 @@ public class PeerInfo {
     protected static final int DEFAULT_QUEUE_SIZE = 11;
 	public int nextOutgoing, firstUnconfirmed, nextIncoming, lastAckSent;
 	public int peerSyn;
-	private boolean isMySynSent, isHisSynSent, isMySynAck;
+	private boolean isMySynSent, isHisSynSent;
 	private PeerWaitingMessage[] waitQueue;
 	private int queueSize = DEFAULT_QUEUE_SIZE;
 
@@ -92,7 +92,7 @@ public class PeerInfo {
 		waitQueue = new PeerWaitingMessage[queueSize];
 		isMySynSent = false;
 		isHisSynSent = false;
-		isMySynAck = false;
+//		isMySynAck = false;
 		lastUsed = now;
 	}
 
@@ -242,8 +242,11 @@ public class PeerInfo {
 		isHisSynSent = true;
 	}
 
+    /**
+     * @deprecated
+     */
 	public void mySynAck() {
-		isMySynAck = true;
+//		isMySynAck = true;
 	}
 
 	public void forceAck() {
@@ -259,4 +262,9 @@ public class PeerInfo {
 		waitQueue = newQueue;
 		queueSize = newWindow;
 	}
+    
+
+    public String toString(){
+        return "[Fifo peer: "+peer+" hasFailed="+failed+"]";
+    }
 }
