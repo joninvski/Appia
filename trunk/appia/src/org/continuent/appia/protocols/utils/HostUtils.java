@@ -30,7 +30,7 @@ import java.util.Enumeration;
 /**
  * Class containing methods usefull for Host information retrieval.
  *  
- * @author alexp
+ * @author Alexandre Pinto
  */
 public final class HostUtils {
 	
@@ -138,7 +138,8 @@ public final class HostUtils {
     
     if (result_addr==null) {
       try {
-        result_addr=InetAddress.getLocalHost();
+          result_addr = InetAddress.getByName(null);
+//        result_addr=InetAddress.getLocalHost();
       } catch (UnknownHostException e) {
         e.printStackTrace();
       }
