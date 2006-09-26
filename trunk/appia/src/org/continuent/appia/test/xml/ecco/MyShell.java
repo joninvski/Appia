@@ -33,21 +33,28 @@ import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.Direction;
 
-
 /**
- * @author jmocito
- *
- * To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Generation - Code and Comments
+ * This class defines a MyShell
+ * 
+ * @author Jose Mocito
+ * @version 1.0
  */
 public class MyShell implements Runnable {
 	
-	Channel channel;
+	private Channel channel;
 	
+    /**
+     * Creates a new MyShell.
+     * @param ch
+     */
 	public MyShell(Channel ch) {
 		channel = ch;
 	}
 	
+    /**
+     * Execution of the thread.
+     * @see java.lang.Runnable#run()
+     */
 	public void run() {
 		boolean dontExit = true;
 		while(dontExit) {
@@ -59,7 +66,6 @@ public class MyShell implements Runnable {
 			try {
 				str = in.readLine();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
@@ -68,7 +74,6 @@ public class MyShell implements Runnable {
 			try {
 				event.asyncGo(channel,Direction.DOWN);
 			} catch (AppiaEventException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		}

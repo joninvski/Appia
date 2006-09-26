@@ -27,39 +27,44 @@ package org.continuent.appia.test.xml.ecco;
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
+import org.continuent.appia.core.events.channel.ChannelClose;
+import org.continuent.appia.core.events.channel.ChannelInit;
+import org.continuent.appia.protocols.common.RegisterSocketEvent;
 
 /**
- * @author jmocito
- *
- * To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Generation - Code and Comments
+ * This class defines a EccoLayer
+ * 
+ * @author Jose Mocito
+ * @version 1.0
  */
 public class EccoLayer extends Layer {
-	
+
+    /**
+     * Creates a new EccoLayer.
+     */
 	public EccoLayer() {
 		
-		Class crse=org.continuent.appia.protocols.common.RegisterSocketEvent.class;
-		Class cinit=org.continuent.appia.core.events.channel.ChannelInit.class;
-		Class cclose=org.continuent.appia.core.events.channel.ChannelClose.class;
-		Class cecho=org.continuent.appia.test.xml.ecco.MyEccoEvent.class;
+		evRequire = new Class[]{
+		        ChannelInit.class,
+		};
+        
+		evProvide = new Class[] {
+          RegisterSocketEvent.class,      
+        };
 		
-		evRequire = new Class[1];
-		evRequire[0] = cinit;
-		
-		evProvide = new Class[1];
-		evProvide[0] = crse;
-		
-		evAccept = new Class[3];
-		evAccept[0] = cinit;
-		evAccept[1] = cclose;
-		evAccept[2] = cecho;
+		evAccept = new Class[]{
+                ChannelInit.class,
+                ChannelClose.class,
+                RegisterSocketEvent.class,
+                MyEccoEvent.class,
+        };
 	}
 	
-	/* (non-Javadoc)
+	/**
+     * Creates the session for this protocol.
 	 * @see appia.Layer#createSession()
 	 */
 	public Session createSession() {
-		// TODO Auto-generated method stub
 		return new EccoSession(this);
 	}
 }

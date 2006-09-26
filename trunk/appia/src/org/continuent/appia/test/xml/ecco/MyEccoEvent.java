@@ -25,22 +25,72 @@
  */
 package org.continuent.appia.test.xml.ecco;
 
-import org.continuent.appia.protocols.group.events.GroupSendableEvent;
+import org.continuent.appia.core.AppiaEventException;
+import org.continuent.appia.core.Channel;
+import org.continuent.appia.core.Session;
+import org.continuent.appia.core.events.SendableEvent;
+import org.continuent.appia.core.message.Message;
 
 /**
- * @author jmocito
- *
- * To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Generation - Code and Comments
+ * This class defines a MyEccoEvent
+ * 
+ * @author Jose Mocito
+ * @version 1.0
  */
-public class MyEccoEvent extends GroupSendableEvent {
+public class MyEccoEvent extends SendableEvent {
 	
 	private String text;
-	
+
+    /**
+     * Creates a new MyEccoEvent.
+     */
+    public MyEccoEvent() {
+        super();
+    }
+
+    /**
+     * Creates a new MyEccoEvent.
+     * @param channel
+     * @param dir
+     * @param source
+     * @param msg
+     * @throws AppiaEventException
+     */
+    public MyEccoEvent(Channel channel, int dir, Session source, Message msg) throws AppiaEventException {
+        super(channel, dir, source, msg);
+    }
+
+    /**
+     * Creates a new MyEccoEvent.
+     * @param channel
+     * @param dir
+     * @param source
+     * @throws AppiaEventException
+     */
+    public MyEccoEvent(Channel channel, int dir, Session source) throws AppiaEventException {
+        super(channel, dir, source);
+    }
+
+    /**
+     * Creates a new MyEccoEvent.
+     * @param msg
+     */
+    public MyEccoEvent(Message msg) {
+        super(msg);
+    }
+
+    /**
+     * Gets the message text.
+     * @return the message text.
+     */
 	public String getText() {
 		return text;
 	}
 	
+    /**
+     * Sets the message text.
+     * @param text the message text
+     */
 	public void setText(String text) {
 		this.text = text;
 	}
