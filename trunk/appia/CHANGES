@@ -2,6 +2,26 @@
 15/09/2006 Version 3.2.2
 ========================
 
+Release Notes:
+
+** Bug
+    * [APPIA-29] - NullPointerException on FifoSession
+
+** New Feature
+    * [APPIA-48] - Create Remote View Protocol
+
+** Task
+    * [APPIA-26] - Create hierarchy between Undelivered events.
+    * [APPIA-40] - Remove deprecated class ExtendedMessage
+
+** Improvement
+    * [APPIA-50] - Improve the Ecco example in order to be compliant with the new Appia features.
+
+
+========================
+15/09/2006 Version 3.2.2
+========================
+
 This release contains some bug fixes in the Message class and in the protocol that makes the interface
 between the Appia protocols and UDP sockets, when using multicast.
 
@@ -21,7 +41,7 @@ Release Notes:
 06/09/2006 Version 3.2.1
 ========================
 
-This release that contains some important bug fixes in the message class and 
+This release contains some important bug fixes in the message class and 
 an optimization in the same class when deserializing objects. It contains also a bug fix in 
 the DTD specification.
 
