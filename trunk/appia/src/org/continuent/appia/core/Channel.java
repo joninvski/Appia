@@ -183,7 +183,7 @@ public class Channel {
    * {@link org.continuent.appia.core.AppiaEventException#UNWANTEDEVENT UNWANTEDEVENT}
    */
   public ChannelEventRoute getEventRoute(Event event) throws AppiaEventException {
-    if ( eventsRoutes == null )
+    if ((eventsRoutes == null) || !isStarted())
       throw new AppiaEventException(AppiaEventException.CLOSEDCHANNEL,"Channel Not Started");
     
     ChannelEventRoute channelRoute=(ChannelEventRoute)eventsRoutes.get(event.getClass());
@@ -373,7 +373,7 @@ public class Channel {
     	}
   }
   
-  public boolean isStarted() {
+  public synchronized boolean isStarted() {
 	  return started || alive;
   }
   

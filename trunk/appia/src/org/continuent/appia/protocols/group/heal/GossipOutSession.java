@@ -315,7 +315,8 @@ public class GossipOutSession extends Session implements InitializableSession {
         ev.init();
         ev.go();
       } catch (AppiaEventException ex) {
-        ex.printStackTrace();
+        if (debugFull)
+            ex.printStackTrace();
         debug("Impossible to send gossip in \"in\" channel");
       }
       
