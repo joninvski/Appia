@@ -349,10 +349,12 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     }
     
     /* Now that the packet is sent, event follows his way */
-    try {
-      e.go();
-    } catch (AppiaEventException ex) {
-      System.err.println("Event not initialized but tried to be " + "sent in UdpSimpleSession");
+    if (e.getChannel().isStarted()) {
+        try {
+            e.go();
+        } catch (AppiaEventException ex) {
+            System.err.println("Event not initialized but tried to be " + "sent in UdpSimpleSession");
+        }
     }
   }
   

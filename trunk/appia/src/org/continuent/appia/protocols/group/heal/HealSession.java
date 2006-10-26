@@ -189,7 +189,8 @@ public class HealSession extends Session implements InitializableSession {
       vs.group,vs.id);
       cve.go();
     } catch (AppiaEventException ex) {
-      ex.printStackTrace();
+        if (debugFull)
+            ex.printStackTrace();
       debug("Unable to send ConcurrentViewEvent");
     }
   }

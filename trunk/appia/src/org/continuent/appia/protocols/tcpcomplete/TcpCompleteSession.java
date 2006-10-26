@@ -147,11 +147,13 @@ public void init(SessionProperties params) {
   private void handleSendable(SendableEvent e){
     
 	  if(e.getDir() == Direction.UP){
-		  try {
-			e.go();
-		} catch (AppiaEventException e1) {
-			e1.printStackTrace();
-		}
+	      if (e.getChannel().isStarted()) {
+	          try {
+	              e.go();
+	          } catch (AppiaEventException e1) {
+	              e1.printStackTrace();
+	          }
+	      }
 		  return;
 	  }
 	  
