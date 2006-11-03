@@ -548,6 +548,8 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     peer.rounds_msg_sent=0;
     if (!(ev instanceof PingEvent))
       peer.rounds_appl_msg=0;
+    
+    peer.last_channel=ev.getChannel();
   }
   
   private void receive(Peer peer, SendableEvent ev, long seqfrom, long seqto) {    
@@ -555,6 +557,9 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     peer.rounds_msg_recv=0;
     if (!(ev instanceof PingEvent) && !(ev instanceof UpdateEvent))
       peer.rounds_appl_msg=0;
+    
+    // Channel
+    peer.last_channel=ev.getChannel();
         
     if (debugFull)
     	debug("Received event "+ev+" from "+peer.addr+" with seq "+seqfrom+" -> "+seqto);
