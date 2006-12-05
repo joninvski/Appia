@@ -65,6 +65,8 @@ public class GroupInit extends Event {
    * If there isn't a <i>Gossip Server</i> it is <b>null</b>.
    */
   public Object[] ip_gossip;
+  
+  private ViewState baseVS;
 
     /**
    * Creates an initialized <i>GroupInit</i>.
@@ -135,4 +137,13 @@ public class GroupInit extends Event {
     this.ip_multicast=ipMulticast;
     this.ip_gossip=ipGossip;
   }
+
+  public ViewState getBaseVS() {
+      return baseVS;
+  }
+
+  public void setBaseVS(ViewState baseVS) {
+      this.baseVS = baseVS;
+  }
+
 }

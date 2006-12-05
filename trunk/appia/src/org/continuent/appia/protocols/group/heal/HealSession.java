@@ -141,6 +141,7 @@ public class HealSession extends Session implements InitializableSession {
   private long last_gossip=0;
   private long last_hello=0;
   private Object multicast_addr=null;
+  private ViewState baseVS=null;
   
   private void handleGossipOrHello(SendableEvent ev) {
     
@@ -216,6 +217,7 @@ public class HealSession extends Session implements InitializableSession {
   
   private void handleGroupInit(GroupInit ev) {
     multicast_addr=ev.ip_multicast;
+    baseVS = ev.getBaseVS();
     try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
   }
   
@@ -231,7 +233,7 @@ public class HealSession extends Session implements InitializableSession {
       if (do_gossip)
         sendGossip(ev.getChannel());
       
-      if (vs.view.length == 1)
+//      if (vs.view.length == 1)
         sendHello(ev.getChannel(),null);
       
       if (debugFull)
@@ -258,7 +260,7 @@ public class HealSession extends Session implements InitializableSession {
       if (do_gossip)
         sendGossip(ev.getChannel());
       
-      if (vs.view.length == 1)
+//      if (vs.view.length == 1)
         sendHello(ev.getChannel(),null);
       
       if (debugFull)
@@ -268,10 +270,21 @@ public class HealSession extends Session implements InitializableSession {
 
   private void sendHello(Channel channel, Object addr) {
     if (addr == null) {
-      if (multicast_addr != null)
-        addr=multicast_addr;
-      else
-        return;
+      if (multicast_addr != null){
+          if(vs.view.length > 1)
+              return;
+          addr=multicast_addr;
+      } else if(baseVS != null){
+          for(int i=0; i<baseVS.view.length; i++){
+              if(vs.getRank(baseVS.view[i]) == -1){
+                  sendHello(channel, baseVS.addresses[i]);
+                  if(debugFull)
+                      debug("Sending hello to "+baseVS.addresses[i]);
+              }
+          }
+          return;
+      } else 
+          return;
     }
     
     try {
