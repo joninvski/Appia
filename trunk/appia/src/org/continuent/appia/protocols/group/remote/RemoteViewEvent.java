@@ -27,7 +27,7 @@
  */
 package org.continuent.appia.protocols.group.remote;
 
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.protocols.group.*;
@@ -42,7 +42,7 @@ import org.continuent.appia.protocols.group.heal.GossipOutEvent;
  */
 public class RemoteViewEvent extends GossipOutEvent {
 	private Group group;
-	private InetSocketAddress[] addresses;
+	private SocketAddress[] addresses;
 	
 	/**
 	 * The simple constructor.
@@ -95,14 +95,14 @@ public class RemoteViewEvent extends GossipOutEvent {
 	/**
 	 * @return An array with the addresses of the group members.
 	 */
-	public InetSocketAddress[] getAddresses(){
+	public SocketAddress[] getAddresses(){
 		return addresses;	
 	}
 	
 	/**
 	 * @param a  An array with the addresses of the group members.
 	 */
-	public void setAddresses(InetSocketAddress addrs[]){
+	public void setAddresses(SocketAddress addrs[]){
 		addresses=addrs;
 	}
 }

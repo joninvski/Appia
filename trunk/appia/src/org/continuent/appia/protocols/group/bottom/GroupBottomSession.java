@@ -22,6 +22,7 @@
 
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.AppiaMulticast;
@@ -306,7 +307,7 @@ public class GroupBottomSession extends Session {
     
     if (supportsAppiaMulticast) {
       //create addresses array to be used with AppiaMulticast
-      InetSocketAddress[] addrs = new InetSocketAddress[vs.view.length-1];
+      SocketAddress[] addrs = new InetSocketAddress[vs.view.length-1];
       for (i=0 ; i < addrs.length ; i++) {
         addrs[i]=vs.addresses[(i < ls.my_rank) ? i : i+1];
       }

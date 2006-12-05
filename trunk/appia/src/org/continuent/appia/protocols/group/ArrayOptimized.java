@@ -20,6 +20,7 @@
  package org.continuent.appia.protocols.group;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.core.message.MsgBuffer;
@@ -132,7 +133,7 @@ public class ArrayOptimized {
         return viewids;
     }
 
-    public static void pushArrayInetWithPort(InetSocketAddress[] inetp, Message message)
+    public static void pushArrayInetWithPort(SocketAddress[] inetp, Message message)
     {
         for(int i=inetp.length-1; i>-1; i--){
             message.pushObject(inetp[i]);

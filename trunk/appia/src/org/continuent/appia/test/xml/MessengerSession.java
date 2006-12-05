@@ -270,9 +270,9 @@ public class MessengerSession extends Session {
         for (int i = 0; i < vs.addresses.length; i++)
             out.println(
 			"{"
-			+ vs.addresses[i].getAddress().getHostAddress()
+			+ ((InetSocketAddress)vs.addresses[i]).getAddress().getHostAddress()
 			+ ":"
-			+ vs.addresses[i].getPort()
+			+ ((InetSocketAddress)vs.addresses[i]).getPort()
 			+ "} ");
                 
         try {

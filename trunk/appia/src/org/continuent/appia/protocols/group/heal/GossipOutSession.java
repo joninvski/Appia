@@ -23,6 +23,7 @@ package org.continuent.appia.protocols.group.heal;
 
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.HashMap;
 
 import org.continuent.appia.core.*;
@@ -191,7 +192,7 @@ public class GossipOutSession extends Session implements InitializableSession {
   private Channel out;
   
   private boolean requiresRSE;
-  private InetSocketAddress outAddr;
+  private SocketAddress outAddr;
   private InetSocketAddress[] gossipAddrs;
   private int server=-1;
   private boolean outCreated=false;
@@ -446,7 +447,7 @@ public class GossipOutSession extends Session implements InitializableSession {
    * Gets the outgoing address.
    * @return the outgoing address
    */
-  public InetSocketAddress getOutAddress() {
+  public SocketAddress getOutAddress() {
 	  return outAddr;
   }
 

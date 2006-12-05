@@ -27,6 +27,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -78,7 +79,7 @@ public class ViewState implements Externalizable {
 	/**
 	 * The addresses of the members.
 	 */
-	public InetSocketAddress[] addresses;
+	public SocketAddress[] addresses;
 	
 	/**
 	 * Calculates the rank of the given member
@@ -167,7 +168,7 @@ public class ViewState implements Externalizable {
             ViewID id,
             ViewID[] previous,
             Endpt[] view,
-            InetSocketAddress[] addresses) throws NullPointerException,AppiaGroupException {
+            SocketAddress[] addresses) throws NullPointerException,AppiaGroupException {
         
         if ( (group==null) || (id==null) || (view==null) || (addresses==null) )
             throw new NullPointerException("appia:group:ViewState: group or view_id or view or addresses");
@@ -248,7 +249,7 @@ public class ViewState implements Externalizable {
 		}
 		
 		Endpt[] new_view=new Endpt[size];
-		InetSocketAddress[] new_addrs=new InetSocketAddress[size];
+		SocketAddress[] new_addrs=new SocketAddress[size];
 		
 		j=0;
 		for(i=0 ; i < remove.length ; i++) {
@@ -490,10 +491,10 @@ public class ViewState implements Externalizable {
 //		public InetWithPort[] addresses;
 		out.writeInt(addresses.length);
 		for(int i=0; i<addresses.length; i++){
-			bytes = addresses[i].getAddress().getAddress();
+			bytes = ((InetSocketAddress)addresses[i]).getAddress().getAddress();
 			out.writeInt(bytes.length);
 			out.write(bytes);
-			out.writeInt(addresses[i].getPort());
+			out.writeInt(((InetSocketAddress)addresses[i]).getPort());
 		}
 	}
 

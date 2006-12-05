@@ -29,16 +29,41 @@ import org.continuent.appia.protocols.group.events.GroupEvent;
 
 
 
-
+/**
+ * 
+ * This class defines a PreView
+ * 
+ * @author Alexandre Pinto
+ * @version 1.0
+ */
 public class PreView extends GroupEvent {
 
+    /**
+     * The view state of this pre-view
+     */
   public ViewState vs;
 
+  /**
+   * Creates a new PreView event.
+   * @param vs the view state
+   * @param channel the channel
+   * @param dir direction
+   * @param source source session
+   * @param group the group
+   * @param view_id the view id
+   * @throws AppiaEventException
+   */
   public PreView(ViewState vs, Channel channel, int dir, Session source, Group group, ViewID view_id) throws AppiaEventException {
     super(channel,dir,source,group,view_id);
     this.vs=vs;
   }
 
+  /**
+   * Creates a new PreView event.
+   * @param vs the view state
+   * @param group the group
+   * @param view_id the view id
+   */
   public PreView(ViewState vs, Group group, ViewID view_id) {
     super(group,view_id);
     this.vs=vs;

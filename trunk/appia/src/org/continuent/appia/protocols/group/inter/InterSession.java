@@ -30,6 +30,7 @@ package org.continuent.appia.protocols.group.inter;
 
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
@@ -640,9 +641,9 @@ public class InterSession extends Session implements InitializableSession {
     public ViewState vs;
     public boolean proposed;
     public boolean decided;
-    public InetSocketAddress addr;
+    public SocketAddress addr;
     
-    public ViewInfo(ViewID id, InetSocketAddress addr) {
+    public ViewInfo(ViewID id, SocketAddress addr) {
       this.id=id;
       vs=null;
       proposed=false;
