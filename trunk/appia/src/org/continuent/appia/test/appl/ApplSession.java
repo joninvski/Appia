@@ -23,10 +23,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-import java.net.UnknownHostException;
 import java.util.StringTokenizer;
 
 import org.continuent.appia.core.*;
@@ -45,6 +43,7 @@ import org.continuent.appia.protocols.group.leave.LeaveEvent;
 import org.continuent.appia.protocols.group.sync.BlockOk;
 import org.continuent.appia.protocols.sslcomplete.SslRegisterSocketEvent;
 import org.continuent.appia.protocols.udpsimple.MulticastInitEvent;
+import org.continuent.appia.protocols.utils.HostUtils;
 
 // TESTING
 //import test.PrecisionTime;
@@ -489,7 +488,7 @@ public class ApplSession extends Session {
             // OR
             // header.popMySelf(m);
             
-            System.out.println(header);
+            System.out.println("("+header.number+") "+header.message);
         }
         try {
             e.go();
@@ -606,7 +605,7 @@ public class ApplSession extends Session {
       
     private void sendGroupInit() {
       try {
-        InetSocketAddress myAddr=new InetSocketAddress(InetAddress.getLocalHost(),myPort);
+        InetSocketAddress myAddr=new InetSocketAddress(HostUtils.getLocalAddress(),myPort);
         myEndpt=new Endpt("Appl@"+myAddr.getAddress().getHostAddress()+":"+myAddr.getPort());
         
         Endpt[] view=null;
@@ -638,14 +637,12 @@ public class ApplSession extends Session {
         new GroupInit(vs,myEndpt,multicast,gossips,channel,Direction.DOWN,this);
         gi.go();
       } catch (AppiaEventException ex) {
-        System.err.println("EventException while launching GroupInit");
+        System.err.println("EventException while launching GroupInit: "+ex.getMessage());
       } catch (NullPointerException ex) {
-        System.err.println("EventException while launching GroupInit");
+        System.err.println("EventException while launching GroupInit: "+ex.getMessage());
       } catch (AppiaGroupException ex) {
-        System.err.println("EventException while launching GroupInit");
-      } catch (UnknownHostException ex) {
-        ex.printStackTrace();
-        throw new AppiaError("!!!!!!!!!");
+        System.err.println("EventException while launching GroupInit: "+ex.getMessage());
+        
       }
     }
       

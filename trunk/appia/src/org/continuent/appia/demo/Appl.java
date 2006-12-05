@@ -137,7 +137,7 @@ public class Appl {
         if (++i >= args.length)
           argInvalid("missing view addresses list");
         try {
-          viewAddrs=ParseUtils.parseInetWithPortArray(args[i],null,-1);
+          viewAddrs=ParseUtils.parseSocketAddressArray(args[i],null,-1);
         } catch (UnknownHostException e) {
           System.err.println("Host unknown: "+e.getMessage());
           System.exit(1);
