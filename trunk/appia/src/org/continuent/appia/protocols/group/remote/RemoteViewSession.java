@@ -316,11 +316,11 @@ public class RemoteViewSession extends Session implements InitializableSession {
 				event.dest = gossipAddress;
 				event.source = myAddress;
 				
-				final Message msg = new Message();
+				final Message msg = event.getMessage();
 				Group.push(event.getGroup(),msg);
 				msg.pushObject(myAddress);
 				
-				event.setMessage(msg);
+//				event.setMessage(msg);
 				event.setChannel(myChannel);
 				event.setSource(this);
 				
