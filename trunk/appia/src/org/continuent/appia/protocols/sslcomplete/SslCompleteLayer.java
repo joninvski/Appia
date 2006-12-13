@@ -41,12 +41,7 @@ public class SslCompleteLayer extends TcpCompleteLayer {
     System.arraycopy(aux, 0, evProvide, 0, aux.length);
     evProvide[aux.length]=SslUndeliveredEvent.class;
     
-    for (i=0 ; i < evRequire.length ; i++) {
-      if (evRequire[i]==RegisterSocketEvent.class)
-        evRequire[i]=SslRegisterSocketEvent.class;
-    }
-    
-    // Adding SslRegiter to Accept
+    // Adding SslRegisterSocketEvent to evAccept
     aux=evAccept;
     evAccept=new Class[aux.length+1];
     System.arraycopy(aux, 0, evAccept, 0, aux.length);

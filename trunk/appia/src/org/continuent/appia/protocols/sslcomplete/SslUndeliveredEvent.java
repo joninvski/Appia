@@ -24,13 +24,19 @@ import java.net.InetSocketAddress;
 import org.continuent.appia.core.*;
 import org.continuent.appia.protocols.tcpcomplete.TcpUndeliveredEvent;
 
-
-
 /**
- * Event used to sinalize upper layers that a connection was closed
+ * Event used to notify upper layers that a connection was closed.
  */
 public class SslUndeliveredEvent extends TcpUndeliveredEvent {
 
+    /**
+     * Creates a new SslUndeliveredEvent.
+     * @param channel channel
+     * @param dir direction
+     * @param session source session
+     * @param iwp the failed address
+     * @throws AppiaEventException
+     */
 	public SslUndeliveredEvent(Channel channel, int dir, Session session, InetSocketAddress iwp) throws AppiaEventException {
 		super(channel, dir, session,iwp);
 	}

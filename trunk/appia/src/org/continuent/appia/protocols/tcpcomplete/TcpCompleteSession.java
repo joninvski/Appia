@@ -183,7 +183,7 @@ public void init(SessionProperties params) {
     }
   }
   
-  private void handleRegisterSocket(RegisterSocketEvent e){
+  protected void handleRegisterSocket(RegisterSocketEvent e){
       if(log.isDebugEnabled())
           log.debug("TCP Session received RegisterSocketEvent to register a socket in port "+e.port);
     ServerSocket ss= null;

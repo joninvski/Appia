@@ -35,6 +35,7 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.log4j.Logger;
 import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.Direction;
@@ -43,20 +44,64 @@ import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.events.AppiaMulticast;
 import org.continuent.appia.core.events.SendableEvent;
 import org.continuent.appia.protocols.common.AppiaThreadFactory;
+import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.tcpcomplete.AcceptReader;
 import org.continuent.appia.protocols.tcpcomplete.TcpCompleteSession;
 import org.continuent.appia.protocols.utils.HostUtils;
-
+import org.continuent.appia.xml.interfaces.InitializableSession;
+import org.continuent.appia.xml.utils.SessionProperties;
 
 /**
- * @author pedrofrv
- *
+ * This class defines a SslCompleteSession
+ * 
+ * @author Pedro Vicente and Nuno Carvalho
+ * @version 1.0
  */
-public class SslCompleteSession extends TcpCompleteSession {
+public class SslCompleteSession extends TcpCompleteSession implements InitializableSession {
   
   private SSLServerSocketFactory ssf=null;
   private SSLSocketFactory sf=null;
   
+    /*
+     * Protocol used in secure communication.
+     * Ex: "SSL", "TLS"
+     */
+    private String protocol = "SSL";
+    
+    /*
+     * Certificates implementation used in SSL authentication.<br>
+     * Used to create the KeyManagers and TrustManagers that determine, respectively,
+     * the certificate sent in authentication and if the certificate received is accepted.
+     */ 
+    private String certificateManagers = "SunX509";
+    
+    /*
+     * KeyStore, format  used to store the keys.
+     * Ex: "JKS"
+     */
+    private String keyStore = "JKS";
+    
+    /*
+     * Name of the file were the certificates are stored.
+     * The identity certificate sent in authentication, and the recognized/trusted certificates
+     * used to authenticate the peer must be in the file.
+     * <b>Required for peer authentication</b>.
+     */
+    private String keystoreFile=null;
+    
+    /*
+     * Passphrase to access the file where the certificate is stored.
+     */
+    private char[] passphrase=null;
+    
+    /*
+     * Enabled ciphers used in SSL.<br>
+     * See JSSE documentation
+     */
+    private String[] enabledCiphers=null;
+
+  private static Logger log = Logger.getLogger(SslCompleteSession.class);
+
   /**
    * Constructor for NewTcpSession.
    * @param layer
@@ -64,12 +109,61 @@ public class SslCompleteSession extends TcpCompleteSession {
   public SslCompleteSession(Layer layer) {
     super(layer);
   }
-  
+
+  /**
+   * Initializes the session using the parameters given in the XML configuration.
+   * Possible parameters:
+   * <ul>
+   * <li><b>protocol</b> Protocol used in secure communication.
+   * Ex: "SSL", "TLS". Default is SSL.
+   * <li><b>certificate_managers</b> Certificates implementation used in SSL authentication.<br>
+   * Used to create the KeyManagers and TrustManagers that determine, respectively,
+   * the certificate sent in authentication and if the certificate received is accepted. Default is "SunX509".
+   * <li><b>keystore</b> KeyStore is the format  used to store the keys. Default is "JKS".
+   * <li><b>keystore_file</b> Name of the file were the certificates are stored.
+   * The identity certificate sent in authentication, and the recognized/trusted certificates
+   * used to authenticate the peer must be in the file.
+   * <b>Required for peer authentication</b>.
+   * <li><b>passphrase</b> Passphrase to access the file where the certificate is stored.
+   * <li><b>enabled_ciphers</b> Enabled ciphers used in SSL. See JSSE documentation for more details.
+   * </ul>
+   * 
+   * @param props The parameters given in the XML configuration.
+   * @see org.continuent.appia.protocols.tcpcomplete.TcpCompleteSession#init(org.continuent.appia.xml.utils.SessionProperties)
+   */
+  public void init(SessionProperties props){
+      super.init(props);
+      
+      if(props.containsKey("protocol"))
+          protocol = props.getString("protocol");
+      if(props.containsKey("certificate_managers"))
+          certificateManagers = props.getString("certificate_managers");
+      if(props.containsKey("keystore"))
+          keyStore = props.getString("keystore");
+      if(props.containsKey("keystore_file"))
+          keystoreFile = props.getString("keystore_file");
+      if(props.containsKey("passphrase"))
+          passphrase = props.getCharArray("passphrase");
+      if(props.containsKey("enabled_ciphers"))
+          enabledCiphers = props.getString("enabled_ciphers").split(",");
+
+      if(log.isDebugEnabled())
+          log.debug("SSL parameters after XML init:\n"+
+                  "[protocol="+protocol+" certificate_managers="+certificateManagers+" key_store="+keyStore+
+                  " keystore_file"+keystoreFile+" passphrase="+new String(passphrase)+" enabled_ciphers="+enabledCiphers+"]");
+  }
+
+  /**
+   * 
+   * @see org.continuent.appia.protocols.tcpcomplete.TcpCompleteSession#handle(org.continuent.appia.core.Event)
+   */
   public void handle(Event e){
     if(e instanceof SendableEvent)
       handleSendable((SendableEvent)e);
     else if(e instanceof SslRegisterSocketEvent)
       handleSslRegisterSocket((SslRegisterSocketEvent)e);
+    else if(e instanceof RegisterSocketEvent)
+        handleRegisterSocket((RegisterSocketEvent) e);
     else
       super.handle(e);
   }
@@ -77,11 +171,11 @@ public class SslCompleteSession extends TcpCompleteSession {
   private void handleSendable(SendableEvent e){
     Object[] valids=null;
     
-    if(SslCompleteConfig.debugOn)
-      debug("preparing to send ::"+e);
+    if(log.isDebugEnabled())
+        log.debug("Preparing to send event "+e);
     
     if (e.dest instanceof AppiaMulticast) {
-      Object[] dests=((AppiaMulticast)e.dest).getDestinations();
+      final Object[] dests=((AppiaMulticast)e.dest).getDestinations();
       for (int i=0 ; i < dests.length ; i++) {
         if (dests[i] instanceof InetSocketAddress) {
           if (!validate((InetSocketAddress)dests[i], e.getChannel())) {
@@ -110,15 +204,14 @@ public class SslCompleteSession extends TcpCompleteSession {
       for (i=0 ; i < valids.length ; i++)
         if (valids[i] != null)
           tam++;
-      Object[] trimmed_dests=new Object[tam];
+      final Object[] trimmedDests=new Object[tam];
       for (i=0 ; i < valids.length ; i++) {
         if (valids[i] != null) {
-          trimmed_dests[j]=valids[i];
+          trimmedDests[j]=valids[i];
           j++;
         }
       }
-      AppiaMulticast dest=new AppiaMulticast(((AppiaMulticast)e.dest).getMulticastAddress(), trimmed_dests);
-      e.dest=dest;
+      e.dest = new AppiaMulticast(((AppiaMulticast)e.dest).getMulticastAddress(), trimmedDests);
     }
     
     super.handle(e);
@@ -129,140 +222,78 @@ public class SslCompleteSession extends TcpCompleteSession {
     try {
       //check if the socket exist int the opensockets created by us
       if(existsSocket(ourReaders,dest)){
-        if(SslCompleteConfig.debugOn)
-          debug("our sslsocket, sending...");
+        if(log.isDebugEnabled())
+            log.debug("recognized our ssl socket. sending...");
         return true;
       }
       else{//if not
         //check if socket exist in sockets created by the other
         if(existsSocket(otherReaders,dest)){
-          if(SslCompleteConfig.debugOn)
-            debug("other sslsocket, sending...");
+          if(log.isDebugEnabled())
+              log.debug("recognized other ssl socket. sending...");
           return true;
         }
         else{//if not
           //create new socket and put it opensockets created by us
           if(createSSLSocket(ourReaders,dest,channel) != null)
-            if(SslCompleteConfig.debugOn)
-              debug("created new sslsocket, sending...");
+            if(log.isDebugEnabled())
+                log.debug("created new ssl socket, sending...");
           return true;
         }
       }
     } catch (IOException ex) {
-      if(SslCompleteConfig.debugOn) {
+      if(log.isDebugEnabled()) {
         ex.printStackTrace();
-        debug("o no "+dest.toString()+" falhou");
+        log.debug("Member "+dest.toString()+" has failed.");
       }
       sendUndelivered(channel,dest);
       removeSocket(dest);
     }
-    
     return false;
   }
-  
+
+  /**
+   * 
+   * @see org.continuent.appia.protocols.tcpcomplete.TcpCompleteSession#handleRegisterSocket(org.continuent.appia.protocols.common.RegisterSocketEvent)
+   */
+  protected void handleRegisterSocket(RegisterSocketEvent e){
+      final int bindedPort = registerWithSSL(e.port, e.getChannel());
+
+      e.port = bindedPort;
+      e.localHost = HostUtils.getLocalAddress();
+      e.error = (bindedPort < 0);
+      
+      //        send RegisterSocketEvent
+      e.setDir(Direction.invert(e.getDir()));
+      e.setSource(this);
+      
+      try {
+        e.init();
+        e.go();
+      } catch (AppiaEventException ex) {
+          if(log.isDebugEnabled())
+              ex.printStackTrace();
+      }
+  }
+
+  /**
+   * 
+   * @param e
+   */
   private void handleSslRegisterSocket(SslRegisterSocketEvent e){
-    if(SslCompleteConfig.debugOn)
-      debug("received SRSE");
+    if(log.isDebugEnabled())
+        log.debug("Received SSL register socket event: "+e);
     
-    SSLServerSocket ss= null;
+    protocol = e.protocol;
+    certificateManagers = e.certificateManagers;
+    keyStore = e.keyStore;
+    keystoreFile = e.keystoreFile;
+    passphrase = e.passphrase;
+    enabledCiphers = e.enabledCiphers;
     
-    try{
-      SSLContext ctx = SSLContext.getInstance(e.protocol);
-      
-      if (e.keystoreFile != null) {
-        KeyStore ks = KeyStore.getInstance(e.keyStore);
-        ks.load(new FileInputStream(e.keystoreFile),e.passphrase);
-        
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(e.certificateManagers);
-        kmf.init(ks,e.passphrase);
-        TrustManagerFactory tmf=TrustManagerFactory.getInstance(e.certificateManagers);
-        tmf.init(ks);
-        
-        ctx.init(kmf.getKeyManagers(),tmf.getTrustManagers(),null);
-        ssf = ctx.getServerSocketFactory();
-        sf = ctx.getSocketFactory();
-        
-      } else {
-        
-        ctx.init(null,null,null);
-        ssf = new CustomSSLServerSocketFactory(ctx,true);
-        sf = new CustomSSLSocketFactory(ctx,true);
-      }
-      
-      if (SslCompleteConfig.debugOn) {
-        int i;
-        String[] suites;
-        debug("--> Server Supported cipher suites");
-        suites=ssf.getSupportedCipherSuites();
-        for (i=0 ; i < suites.length ; i++)
-          debug(suites[i]);
-        debug("--> Server Default cipher suites");
-        suites=ssf.getDefaultCipherSuites();
-        for (i=0 ; i < suites.length ; i++)
-          debug(suites[i]);
-        debug("--> Client Supported cipher suites");
-        suites=sf.getSupportedCipherSuites();
-        for (i=0 ; i < suites.length ; i++)
-          debug(suites[i]);
-        debug("--> Client Default cipher suites");
-        suites=sf.getDefaultCipherSuites();
-        for (i=0 ; i < suites.length ; i++)
-          debug(suites[i]);
-      }
-      
-    }
-    catch(Exception ex){
-      e.port=-1;
-      ex.printStackTrace();
-      return;
-    }
-    
-    if(e.port == SslRegisterSocketEvent.FIRST_AVAILABLE){
-      try {
-        ss = (SSLServerSocket)ssf.createServerSocket(0);
-        e.port = ss.getLocalPort();
-      } catch (IOException ex) {
-        e.port = -1;
-      }
-    }
-    else if(e.port == SslRegisterSocketEvent.RANDOMLY_AVAILABLE){
-      Random rand = new Random();
-      int p;
-      boolean done = false;
-      
-      while(!done){
-        p = rand.nextInt(Short.MAX_VALUE);
-        
-        try {
-          ss = (SSLServerSocket)ssf.createServerSocket(p);
-          done = true;
-          e.port = ss.getLocalPort();
-        } catch(IllegalArgumentException ex){
-        } catch (IOException ex) {
-        }
-      }
-    } else if (e.port > 0) {
-      try {
-        ss = (SSLServerSocket)ssf.createServerSocket(e.port);
-      } catch (IOException ex) {
-        e.port = -1;
-      }
-    }
-    
-    if (e.port > 0) {
-      //create accept thread int the request port.
-    	// FIXME: this is using class from tcpcomplete
-      acceptThread = new AcceptReader(ss,this,e.getChannel(),socketLock);
-      AppiaThreadFactory.getThreadFactory().newThread(acceptThread,"TCP SSL accept reader").start();
-      
-      ourPort = ss.getLocalPort();
-      if(SslCompleteConfig.debugOn)
-        debug("Our port is "+ourPort);
-      
-      e.localHost=HostUtils.getLocalAddress();
-      e.error=false;
-    } else
-      e.error=true;
+    final int bindedPort = registerWithSSL(e.port, e.getChannel());
+    e.port = bindedPort;
+    e.error = (bindedPort < 0);
     
     //		send RegisterSocketEvent
     e.setDir(Direction.invert(e.getDir()));
@@ -272,12 +303,137 @@ public class SslCompleteSession extends TcpCompleteSession {
       e.init();
       e.go();
     } catch (AppiaEventException ex) {
-      ex.printStackTrace();
+        if(log.isDebugEnabled())
+            ex.printStackTrace();
     }
   }
   
-  //create socket, put in hashmap and create thread
-  public Socket createSSLSocket(HashMap hm,InetSocketAddress iwp,Channel channel) throws IOException{
+  /**
+   * 
+   * @param port
+   * @param channel
+   * @return
+   */
+  private int registerWithSSL(int port, Channel channel){
+      SSLServerSocket ss= null;
+      
+      try{
+        final SSLContext ctx = SSLContext.getInstance(protocol);
+        
+        if (keystoreFile != null) {
+          final KeyStore ks = KeyStore.getInstance(keyStore);
+          ks.load(new FileInputStream(keystoreFile),passphrase);
+          
+          final KeyManagerFactory kmf = KeyManagerFactory.getInstance(certificateManagers);
+          kmf.init(ks,passphrase);
+          final TrustManagerFactory tmf=TrustManagerFactory.getInstance(certificateManagers);
+          tmf.init(ks);
+          
+          ctx.init(kmf.getKeyManagers(),tmf.getTrustManagers(),null);
+          ssf = ctx.getServerSocketFactory();
+          sf = ctx.getSocketFactory();
+          
+        } else {
+          
+          ctx.init(null,null,null);
+          ssf = new CustomSSLServerSocketFactory(ctx,true);
+          sf = new CustomSSLSocketFactory(ctx,true);
+        }
+        
+        if (log.isDebugEnabled()) {
+          int i;
+          String[] suites;
+          String output = "Configuration dump:\n";
+          output += "--> Server Supported cipher suites\n";
+          suites=ssf.getSupportedCipherSuites();
+          for (i=0 ; i < suites.length ; i++)
+            output += (suites[i]+"\n");
+          output += ("--> Server Default cipher suites\n");
+          suites=ssf.getDefaultCipherSuites();
+          for (i=0 ; i < suites.length ; i++)
+            output += (suites[i]+"\n");
+          output +=("--> Client Supported cipher suites\n");
+          suites=sf.getSupportedCipherSuites();
+          for (i=0 ; i < suites.length ; i++)
+            output += (suites[i]+"\n");
+          output += ("--> Client Default cipher suites\n");
+          suites=sf.getDefaultCipherSuites();
+          for (i=0 ; i < suites.length ; i++)
+            output += (suites[i]+"\n");
+          log.debug(output);
+        }
+        
+      }
+      catch(Exception ex){
+        if(log.isDebugEnabled())
+            ex.printStackTrace();
+        log.warn("An error ocurred when initializing SSL session though the SSL register socket event: "+ex.getMessage());
+        return -1;
+      }
+      
+      if(port == SslRegisterSocketEvent.FIRST_AVAILABLE){
+        try {
+          ss = (SSLServerSocket)ssf.createServerSocket(0);
+          port = ss.getLocalPort();
+        } catch (IOException ex) {
+            return -1;
+        }
+      }
+      else if(port == SslRegisterSocketEvent.RANDOMLY_AVAILABLE){
+        final Random rand = new Random();
+        int p;
+        boolean done = false;
+        
+        while(!done){
+          p = rand.nextInt(Short.MAX_VALUE);
+          
+          try {
+            ss = (SSLServerSocket)ssf.createServerSocket(p);
+            done = true;
+            port = ss.getLocalPort();
+          } catch(IllegalArgumentException ex){
+              if(log.isDebugEnabled())
+                  ex.printStackTrace();
+          } catch (IOException ex) {
+              if(log.isDebugEnabled())
+                  ex.printStackTrace();
+          }
+        }
+      } else if (port > 0) {
+        try {
+          ss = (SSLServerSocket)ssf.createServerSocket(port);
+        } catch (IOException ex) {
+            if(log.isDebugEnabled())
+                ex.printStackTrace();
+          port = -1;
+        }
+      }
+      
+      if (port > 0) {
+        //create accept thread with the requested port.
+        // FIXME: this is using class from tcpcomplete
+          // comment: it should be Ok because it extends the class anyway...
+        acceptThread = new AcceptReader(ss,this,channel,socketLock);
+        AppiaThreadFactory.getThreadFactory().newThread(acceptThread,"TCP SSL accept reader").start();
+        
+        ourPort = ss.getLocalPort();
+        if(log.isDebugEnabled())
+          log.debug("Local port is "+ourPort);
+      }
+      else
+          ourPort = -1;
+      return ourPort;
+  }
+  
+  /**
+   * Create the socket, put in hashmap and create thread
+   * @param hm
+   * @param iwp
+   * @param channel
+   * @return
+   * @throws IOException
+   */
+  protected Socket createSSLSocket(HashMap hm,InetSocketAddress iwp,Channel channel) throws IOException{
     synchronized(socketLock){
       Socket newSocket = null;
       
@@ -286,22 +442,17 @@ public class SslCompleteSession extends TcpCompleteSession {
       
       //Create SslSocket.
       newSocket  = (SSLSocket)sf.createSocket(iwp.getAddress(),iwp.getPort());
-      
+
       newSocket.setTcpNoDelay(true);
       
-      byte bPort[]= intToByteArray(ourPort);
+      final byte bPort[]= intToByteArray(ourPort);
       
       newSocket.getOutputStream().write(bPort);
-      if(SslCompleteConfig.debugOn)
-        debug("Sending our original port "+ourPort);
-      
+      if(log.isDebugEnabled())
+        log.debug("Sending our original port "+ourPort);
       addSocket(hm,iwp,newSocket,channel);
-      
       return newSocket;
     }
   }
 
-  private void debug(String msg){
-    System.out.println("[SslComplete] ::"+msg);
-  }
 }

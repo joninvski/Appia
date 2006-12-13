@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  *
- * Initial developer(s): Alexandre Pinto and Hugo Miranda.
+ * Initial developer(s): Pedro Vicente.
  * Contributor(s): See Appia web page for a list of contributors.
  */
 package org.continuent.appia.protocols.sslcomplete;
@@ -22,8 +22,12 @@ package org.continuent.appia.protocols.sslcomplete;
 import org.continuent.appia.core.*;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 
-
-
+/**
+ * This class defines a SslRegisterSocketEvent
+ * 
+ * @author Pedro Vicente
+ * @version 1.0
+ */
 public class SslRegisterSocketEvent extends RegisterSocketEvent {
 	
 	/**
@@ -40,7 +44,7 @@ public class SslRegisterSocketEvent extends RegisterSocketEvent {
 	public String certificateManagers = "SunX509";
 	
 	/**
-	 * KeyStore, format  used to store the keys :)
+	 * KeyStore, format  used to store the keys.
 	 * Ex: "JKS"
 	 */
 	public String keyStore = "JKS";
@@ -63,15 +67,6 @@ public class SslRegisterSocketEvent extends RegisterSocketEvent {
 	 * See JSSE documentation
 	 */
 	public String[] enabledCiphers=null;
-	
-	/**
-	 * Replaced with <b>certificateManagers</b>.
-	 * @see SslRegisterSocketEvent#certificateManagers
-	 * @deprecated
-	 * 
-	 */
-	public String keyManagerFactory = certificateManagers;
-	
 	
 	/**
 	 * Creates a SslRegisterSocketEvent with first available port.
