@@ -23,7 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import java.util.StringTokenizer;
 
@@ -77,16 +77,17 @@ public class ApplSession extends Session {
     
     /* Appia */
     public Channel channel = null;
-    private int myPort=-1;
-    private InetSocketAddress multicast=null;
-    private InetSocketAddress[] initAddrs=null;
+    private SocketAddress mySocketAddress = null;
+    private int myPort = -1;
+    private SocketAddress multicast=null;
+    private SocketAddress[] initAddrs=null;
     private ApplReader reader;
 
     
     /* Group */
     private Group myGroup=new Group("Appl Group");
     private Endpt myEndpt=null;
-    private InetSocketAddress[] gossips = null;
+    private SocketAddress[] gossips = null;
     private ViewState vs=null;
     private LocalState ls=null;
     private boolean isBlocked = true;
@@ -106,7 +107,7 @@ public class ApplSession extends Session {
         AppiaThreadFactory.getThreadFactory().newThread(new ApplReader(this),"Appl Reader Thread").start();
     }
     
-    public void init(int port, InetSocketAddress multicast, InetSocketAddress[] gossips, Group group, InetSocketAddress[] viewAddrs) {
+    public void init(int port, SocketAddress multicast, SocketAddress[] gossips, Group group, SocketAddress[] viewAddrs) {
       this.myPort=port;
       this.multicast=multicast;
       this.gossips=gossips;
@@ -115,7 +116,7 @@ public class ApplSession extends Session {
         myGroup=group;
     }
     
-    public void initWithSSL(int port, InetSocketAddress multicast, InetSocketAddress[] gossips, Group group, InetSocketAddress[] viewAddrs, String keystoreFile, String keystorePass) {
+    public void initWithSSL(int port, SocketAddress multicast, SocketAddress[] gossips, Group group, SocketAddress[] viewAddrs, String keystoreFile, String keystorePass) {
       init(port,multicast,gossips,group,viewAddrs);
       this.ssl=true;
       this.keystoreFile=keystoreFile;
@@ -556,10 +557,6 @@ public class ApplSession extends Session {
             }
         }
         
-        /* Lanca o evento de inicializacao do grupo */
-        if (myPort > 0)
-          sendGroupInit();
-        
         out.println("Open channel with name " + e.getChannel().getChannelID());
     }
 
@@ -599,27 +596,31 @@ public class ApplSession extends Session {
       
       if (myPort < 0) {
         myPort=ev.port;
-        sendGroupInit();
+        try {
+            mySocketAddress = ev.getLocalSocketAddress();
+            sendGroupInit();
+        } catch (AppiaException e) {
+            e.printStackTrace();
+        }
       }  
     }
       
     private void sendGroupInit() {
       try {
-        InetSocketAddress myAddr=new InetSocketAddress(HostUtils.getLocalAddress(),myPort);
-        myEndpt=new Endpt("Appl@"+myAddr.getAddress().getHostAddress()+":"+myAddr.getPort());
+        myEndpt=new Endpt("Appl@"+mySocketAddress);
         
         Endpt[] view=null;
-        InetSocketAddress[] addrs=null;
+        SocketAddress[] addrs=null;
         if (initAddrs == null) {
-          addrs=new InetSocketAddress[1];
-          addrs[0]=myAddr;
+          addrs=new SocketAddress[1];
+          addrs[0]=mySocketAddress;
           view=new Endpt[1];
           view[0]=myEndpt;
         } else {
           addrs=initAddrs;
           view=new Endpt[addrs.length];
           for (int i=0 ; i < view.length ; i++) {
-            view[i]=new Endpt("Appl@"+addrs[i].getAddress().getHostAddress()+":"+addrs[i].getPort());
+            view[i]=new Endpt("Appl@"+addrs[i]);
           }
         }
         

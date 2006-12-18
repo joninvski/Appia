@@ -20,20 +20,23 @@
 package org.continuent.appia.protocols.common;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import org.continuent.appia.core.*;
 
 
 /**
- * RegisterSocketEvent is the event that must be received by UdpSimpleSession
- * prior to any SendableEvent. It notifies the UdpSimpleSession of the UDP port number
- * to be used. If the port can not be used (it may be already bound), the same event
- * is sent in the opposite direction.
+ * RegisterSocketEvent is the event that must be received by UdpSimpleSession or TcpCompleteSession
+ * prior to any SendableEvent. It notifies the Session of the UDP ot TCP port number
+ * to be used. The event is sent back with an error message (in the case that there is an error),
+ * the local host and the port number to be used by other protocols.
  *
  * @see Event
  * @see org.continuent.appia.protocols.udpsimple.UdpSimpleSession
+ * @see org.continuent.appia.protocols.tcpcomplete.TcpCompleteSession
  * @see org.continuent.appia.core.events.SendableEvent
- * @author Hugo Miranda
+ * @author Hugo Miranda and Nuno Carvalho
  */
 
 public class RegisterSocketEvent extends Event {
@@ -101,8 +104,7 @@ public class RegisterSocketEvent extends Event {
      * @param source The session generating the event
      * @param port The port number that will be binded to the UdpSimpleSession
      * @see Event
-     */
-    
+     */    
     public RegisterSocketEvent(Channel channel,int dir, Session source, int port)
     throws AppiaEventException {
         super(channel,dir,source);
@@ -155,4 +157,19 @@ public class RegisterSocketEvent extends Event {
     public void setErrorDescription(String errorDescription) {
         this.errorDescription = errorDescription;
     }  
+    
+    /**
+     * Gets the local address.
+     * @return the local address.
+     * @throws AppiaException if there is no address (for instance, there was an error in the sockets layer.
+     */
+    public SocketAddress getLocalSocketAddress() throws AppiaException {
+        if(error)
+            throw new AppiaException("There was an error upon socket registration: Error Code = "+errorCode+
+                    " Description: "+errorDescription);
+        if(this.getDir() == Direction.DOWN)
+            throw new AppiaException("Event did not reach the socket session yet!");        
+        return new InetSocketAddress(localHost,port);
+    }
 }
+
