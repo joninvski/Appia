@@ -21,6 +21,7 @@
 package org.continuent.appia.protocols.group.events;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.protocols.common.InetWithPort;
@@ -121,8 +122,8 @@ public class GroupInit extends Event {
   public GroupInit(
           ViewState vs,
           Endpt endpt,
-          InetSocketAddress ipMulticast,
-          InetSocketAddress[] ipGossip,
+          SocketAddress ipMulticast,
+          SocketAddress[] ipGossip,
           Channel channel, int dir, Session source)
     throws AppiaEventException,NullPointerException,AppiaGroupException {
 
