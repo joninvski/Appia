@@ -150,7 +150,7 @@ public class SslCompleteSession extends TcpCompleteSession implements Initializa
       if(log.isDebugEnabled())
           log.debug("SSL parameters after XML init:\n"+
                   "[protocol="+protocol+" certificate_managers="+certificateManagers+" key_store="+keyStore+
-                  " keystore_file"+keystoreFile+" passphrase="+new String(passphrase)+" enabled_ciphers="+enabledCiphers+"]");
+                  " keystore_file="+keystoreFile+" passphrase="+new String(passphrase)+" enabled_ciphers="+enabledCiphers+"]");
   }
 
   /**
