@@ -20,13 +20,17 @@
  
 package org.continuent.appia.protocols.group.events;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.UnknownHostException;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.protocols.common.InetWithPort;
 import org.continuent.appia.protocols.group.AppiaGroupException;
 import org.continuent.appia.protocols.group.Endpt;
+import org.continuent.appia.protocols.group.Group;
+import org.continuent.appia.protocols.group.ViewID;
 import org.continuent.appia.protocols.group.ViewState;
 
 
@@ -46,28 +50,16 @@ import org.continuent.appia.protocols.group.ViewState;
  */
 public class GroupInit extends Event {
 
-  /**
-   * The initial <i>view</i>
-   */
-  public ViewState vs;
-  /**
-   * The initial <i>rank</i> of the member
-   */
-  public int rank;
-  /**
-   * The <i>IP multicast</i> address of the group.
-   * <br>
-   * If <i>IP multicast</i> is not supported then it is <b>null</b>.
-   */
-  public Object ip_multicast;
-  /**
-   * The IP addresses of a set of <i>Gossip Servers</i>.
-   * <br>
-   * If there isn't a <i>Gossip Server</i> it is <b>null</b>.
-   */
-  public Object[] ip_gossip;
+  private ViewState vs;
+  private int rank = -1;
+  private SocketAddress ip_multicast;
+  private SocketAddress[] gossip;
   
   private ViewState baseVS;
+  private Endpt endpt;
+  private Group group;
+  private boolean generateIPmulticast=false;
+  private SocketAddress localAddress;
 
     /**
    * Creates an initialized <i>GroupInit</i>.
@@ -90,19 +82,12 @@ public class GroupInit extends Event {
           InetWithPort[] ip_gossip,
           Channel channel, int dir, Session source)
     throws AppiaEventException,NullPointerException,AppiaGroupException {
-
-    super(channel,dir,source);
-
-    if ((vs == null) || (endpt == null))
-       throw new NullPointerException("appia:group:GroupInit: view state or endpoint not given");
-
-    this.vs=vs;
-    if ((rank=vs.getRank(endpt)) < 0)
-       throw new AppiaGroupException("GroupInit: endpoint given doesn't belong to view");
-    this.ip_multicast=new InetSocketAddress(ip_multicast.host, ip_multicast.port);
-    this.ip_gossip = new InetSocketAddress[ip_gossip.length];
-    for(int i=0; i<ip_gossip.length; i++)
-        this.ip_gossip[i] = new InetSocketAddress(ip_gossip[i].host, ip_gossip[i].port);
+  	this(vs,endpt,new InetSocketAddress(ip_multicast.host, ip_multicast.port),null,channel,dir,source);
+  	if (ip_gossip != null) {
+  		this.gossip = new InetSocketAddress[ip_gossip.length];
+  		for(int i=0; i<ip_gossip.length; i++)
+  			this.gossip[i] = new InetSocketAddress(ip_gossip[i].host, ip_gossip[i].port);
+  	}
   }
   
   /**
@@ -136,10 +121,152 @@ public class GroupInit extends Event {
     if ((rank=vs.getRank(endpt)) < 0)
        throw new AppiaGroupException("GroupInit: endpoint given doesn't belong to view");
     this.ip_multicast=ipMulticast;
-    this.ip_gossip=ipGossip;
+    this.gossip=ipGossip;
+  }
+  
+  
+  /**
+   * Creates a new GroupInit.
+   * 
+   * @param group_name the group name.
+   * @param localAddress the local address. 
+   * @param channel the {@link org.continuent.appia.core.Channel Channel} of the Event
+   * @param dir the {@link org.continuent.appia.core.Direction Direction} of the Event
+   * @param source the {@link org.continuent.appia.core.Session Session} that is generating the Event
+   * @throws AppiaEventException as the result of calling
+   * {@link org.continuent.appia.core.Event#Event(Channel,int,Session)
+   * Event(Channel,Direction,Session)}
+   */
+  public GroupInit(String group_name, SocketAddress localAddress, Channel channel, int dir, Session source) throws AppiaEventException {
+  	super(channel,dir,source);
+  	
+  	if ((group_name == null) || (group_name.length() == 0))
+  		throw new IllegalArgumentException("Illegal group name: "+group_name);
+  	this.group=new Group(group_name);
+  	
+  	if (localAddress == null)
+  		throw new IllegalArgumentException("Illegal local address: "+localAddress);
+  	this.localAddress=localAddress;
+  }
+  
+  /**
+   * Returns the initial view.<br>
+   * If none was given, a default view with a single member will be generated.
+   * 
+   * @return the initial view. 
+   */
+  public ViewState getVS() {
+  	if (vs == null)
+  		generateVS();
+  	return vs;
   }
 
-  public ViewState getBaseVS() {
+	/**
+	 * Sets the initial view.
+	 * 
+   * @param vs The initial view.
+   */
+  public void setVS(ViewState vs) {
+  	this.vs = vs;
+  	if (endpt != null) {
+  		rank=vs.getRank(endpt);
+  	} else if (rank >= 0) {
+  		endpt=vs.view[rank];
+  	}
+  }
+
+	/**
+	 * Returns the local endpoint identifier.<br>
+	 * If none was given, a new one will be generated.
+	 * 
+   * @return the local endpoint identifier.
+   */
+  public Endpt getEndpt() {
+  	if (endpt == null) {
+  		if (vs == null) {
+  			generateVS();
+  		} else if (rank >= 0) {
+  			endpt=vs.view[rank];
+  		}
+  	}
+  	return endpt;
+  }
+
+	/**
+	 * Sets the local endpoint identifier.
+	 * 
+   * @param endpt the local endpoint identifier.
+   */
+  public void setEndpt(Endpt endpt) {
+  	this.endpt = endpt;
+  	if (vs != null)
+  		rank=vs.getRank(endpt);
+  }
+
+  /**
+   * Returns the gossip servers addresses list.
+   * 
+   * @return the gossip servers addresses list.
+   */
+  public SocketAddress[] getGossip() {
+  	return gossip;
+  }
+
+	/**
+	 * Sets the gossip servers addresses list.
+	 * 
+   * @param gossip the gossip servers addresses list to set.
+   */
+  public void setGossip(SocketAddress[] gossip) {
+  	this.gossip = gossip;
+  }
+
+	/**
+	 * Returns the IP-Multicast address to use in group communication.
+	 * 
+   * @return the IP-Multicast address.
+   */
+  public SocketAddress getIPmulticast() {
+  	if ((ip_multicast == null) && generateIPmulticast) {
+  		if (vs == null)
+  			generateVS();
+  		generateMulticast();
+  	}
+  	return ip_multicast;
+  }
+
+	/**
+	 * Sets the IP-Multicast address to use in group communication.
+	 * 
+   * @param ip_multicast the IP-Multicast address
+   */
+  public void setIPmulticast(SocketAddress ip_multicast) {
+  	this.ip_multicast = ip_multicast;
+  	generateIPmulticast=false;
+  }
+  
+	/**
+	 * Returns true if an IP-Multicast address should be generated.<br>
+	 * The generated address is based on the group identification.<br>
+	 * <b>Default is false</b>.
+	 * 
+   * @return is an IP-Multicast address to be generated. 
+   */
+  public boolean isGenerateIPmulticast() {
+  	return generateIPmulticast;
+  }
+
+	/**
+	 * Sets whether an IP-Multicast address should be generated.<br>
+	 * The generated address is based on the group identification.
+	 * 
+   * @param generateIPmulticast is an IP-Multicast address to be generated.
+   */
+  public void setGenerateIPmulticast(boolean generateIPmulticast) {
+  	this.generateIPmulticast = generateIPmulticast;
+  }
+
+	public ViewState getBaseVS() {
       return baseVS;
   }
 
@@ -147,4 +274,44 @@ public class GroupInit extends Event {
       this.baseVS = baseVS;
   }
 
+	private void generateVS() {
+		if (endpt == null) {
+			if ((rank >= 0) && (vs != null))
+				endpt=vs.view[rank];
+			else {
+				InetSocketAddress addr=(InetSocketAddress) localAddress;
+				endpt=new Endpt("Endpt@"+addr.getAddress().getHostAddress()+":"+addr.getPort()+":"+System.currentTimeMillis());
+			}
+		}
+		try {
+	    vs=new ViewState(
+	    		"3",
+	    		group,
+	    		new ViewID(0,endpt),
+	    		new ViewID[0],
+	    		new Endpt[] {endpt}, 
+	    		new SocketAddress[] {localAddress});
+    } catch (NullPointerException e) {
+	    e.printStackTrace();
+    } catch (AppiaGroupException e) {
+	    e.printStackTrace();
+    }
+
+    rank=0;
+  }
+
+	private void generateMulticast() {
+		int groupHash=vs.group.hashCode();
+		byte[] addr=new byte [4];
+		addr[0]=(byte) 224;
+		addr[1]=(byte) ((groupHash >> 24) & 0xFF);
+		addr[2]=(byte) ((groupHash >> 16) & 0xFF);
+		addr[3]=(byte) ((groupHash >>  8) & 0xFF);
+		int port=1024+(groupHash & 0x7FFF);
+		try {
+      ip_multicast=new InetSocketAddress(InetAddress.getByAddress(addr),port);
+    } catch (UnknownHostException e) {
+      e.printStackTrace();
+    }
+  }
 }

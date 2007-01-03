@@ -21,7 +21,6 @@
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
-import org.continuent.appia.protocols.group.AppiaGroupError;
 
 
 /**

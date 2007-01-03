@@ -75,7 +75,7 @@ public class GroupBottomSession extends Session {
     
     // GroupInit
     if (event instanceof GroupInit) {
-      ip_multicast=(InetSocketAddress) ((GroupInit)event).ip_multicast;
+      ip_multicast=(InetSocketAddress) ((GroupInit)event).getIPmulticast();
       try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
       return;
     }

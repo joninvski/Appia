@@ -112,10 +112,10 @@ public class IntraSession extends Session {
   private boolean preparing;
 
   private void handleGroupInit(GroupInit ev) {
-    my_endpt=ev.vs.view[ev.rank];
+    my_endpt=ev.getEndpt();
 
     // values already tested by GroupInit
-    ViewState new_vs=ev.vs;
+    ViewState new_vs=ev.getVS();
     LocalState new_ls=new LocalState(new_vs,my_endpt);
 
     try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }

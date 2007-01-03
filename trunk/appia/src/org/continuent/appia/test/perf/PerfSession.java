@@ -209,11 +209,23 @@ public class PerfSession extends Session implements InitializableSession {
         System.exit(1);
       }
     }
-    if (params.containsKey("group")) {
-      group=new Group(params.getString("group"));
-    } else {
-      group=new Group("Perf Group");
+    if (params.containsKey("addrs")) {
+      try {
+        addresses=ParseUtils.parseSocketAddressArray(params.getString("addrs"),null,-1);
+      } catch (UnknownHostException ex) {
+        System.err.println("Unknown host \""+ex.getMessage()+"\"");
+        System.exit(1);
+      } catch (NumberFormatException ex) {
+        System.err.println("Number format error "+ex.getMessage());
+        System.exit(1);
+      } catch (Exception ex) {
+        //ex.printStackTrace();
+        System.err.println(ex.getMessage());
+        System.exit(1);
+      }
     }
+    if (params.containsKey("group"))
+      group_name=params.getString("group");
     if (params.containsKey("warmup"))
       warmup_time=params.getLong("warmup");
     if (params.containsKey("shutdown"))
@@ -272,14 +284,16 @@ public class PerfSession extends Session implements InitializableSession {
   private boolean warmingup=false;
   private boolean shuttingdown=false;
   private boolean receiveOwn=false;
+  
   /* Appia */
   private int myPort=RegisterSocketEvent.FIRST_AVAILABLE;
   private InetSocketAddress multicast=null;
   private TimeProvider clock;
   
   /* Group */
-  private Group group=null;
+  private String group_name="Perf Group";
   private InetSocketAddress[] gossips = null;
+  private InetSocketAddress[] addresses = null;
   private ViewState vs=null;
   private LocalState ls=null;
   private boolean isBlocked = true;
@@ -349,15 +363,30 @@ public class PerfSession extends Session implements InitializableSession {
     }
     
     try {
-      InetSocketAddress[] addrs=new InetSocketAddress[1];
-      addrs[0]=new InetSocketAddress(ev.localHost,ev.port);
-      Endpt[] view=new Endpt[1];
-      view[0]=new Endpt("Perf@"+addrs[0].toString());
-      
-      vs=new ViewState("1",group,new ViewID(0,view[0]),new ViewID[0], view, addrs);
-      
-      GroupInit ginit=new GroupInit(vs,view[0],multicast,gossips,ev.getChannel(),Direction.DOWN, this);
-      ginit.go();
+    	Endpt myEndpt = new Endpt("Perf@"+ev.localHost.getHostAddress()+":"+ev.port);
+    	/*
+    	InetSocketAddress[] addrs=new InetSocketAddress[] {new InetSocketAddress(ev.localHost,ev.port)};
+    	Endpt[] view=new Endpt[] {myEndpt};
+
+    	vs=new ViewState("1",new Group(group_name),new ViewID(0,view[0]),new ViewID[0], view, addrs);
+
+    	GroupInit ginit=new GroupInit(vs,view[0],multicast,gossips,ev.getChannel(),Direction.DOWN, this);
+    	*/
+    	GroupInit ginit=new GroupInit(group_name,new InetSocketAddress(ev.localHost,ev.port),ev.getChannel(),Direction.DOWN, this);
+    	ginit.setEndpt(myEndpt);
+    	if (gossips != null)
+    		ginit.setGossip(gossips);
+    	if (multicast != null)
+    		ginit.setIPmulticast(multicast);
+
+    	if (addresses != null) {
+      	Endpt[] vbase=new Endpt[addresses.length];
+    		for (int i=0 ; i < vbase.length ; i++)
+    			vbase[i]=new Endpt("Perf@"+addresses[i].getAddress().getHostAddress()+":"+addresses[i].getPort());
+    		ViewState vsbase=new ViewState("3",new Group(group_name),new ViewID(0,vbase[0]),new ViewID[0], vbase, addresses);
+    		ginit.setBaseVS(vsbase);
+    	}
+  		ginit.go();
     } catch (AppiaException ex) {
       ex.printStackTrace();
       System.err.println("Impossible to initiate group communication. Aborting.");

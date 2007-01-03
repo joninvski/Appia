@@ -62,7 +62,7 @@ public class Perf {
 
   // Parameters processed by PerfSession
   private static final String sessionParams="-test#1-n#1-r#1-k#1-m#1-i#1-gossip#1-multicast#1" +
-        "-warmup#1-shutdown#1-lo#0-inpayload#1-outpayload#1-fails#1-port#1";
+        "-warmup#1-shutdown#1-lo#0-inpayload#1-outpayload#1-fails#1-port#1-addrs#1";
   
   private static boolean debug=false;
   private static int instances=1; 

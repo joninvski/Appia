@@ -67,7 +67,7 @@ public class RemoteGossipOutSession extends GossipOutSession {
 	public void handle(Event event) {
 		if (event instanceof GroupInit) {
             // gets the group and forward the event to the super class
-			group = ((GroupInit) event).vs.group;
+			group = ((GroupInit) event).getVS().group;
 		} else if (event instanceof RemoteViewEvent) {
 			handleRemoteView((RemoteViewEvent) event);
 			return;
