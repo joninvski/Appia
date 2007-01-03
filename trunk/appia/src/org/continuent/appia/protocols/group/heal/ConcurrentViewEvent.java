@@ -25,7 +25,8 @@ import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.protocols.group.Group;
 import org.continuent.appia.protocols.group.ViewID;
-import org.continuent.appia.protocols.group.events.GroupEvent;
+import org.continuent.appia.protocols.group.events.GroupSendableEvent;
+import org.continuent.appia.protocols.group.events.Send;
 
 
 /**
@@ -43,32 +44,22 @@ import org.continuent.appia.protocols.group.events.GroupEvent;
  * @see org.continuent.appia.protocols.group.heal.HealLayer
  * @see org.continuent.appia.protocols.group.inter.InterLayer
  */
-public class ConcurrentViewEvent extends GroupEvent {
+public class ConcurrentViewEvent extends GroupSendableEvent implements Send {
 
   /**
    * The view id of the concurrent view.
    */
-  public ViewID id;
+  public ViewID id=null;
 
   /**
    * The concurrent view coordinator address.
    */
-  public Object addr;
+  public Object addr=null;
 
   /**
    * Constructs an uninitialized ConcurrentViewEvent.
-   *
-   * @param id the {@link org.continuent.appia.protocols.group.ViewID ViewID} of the concurrent view
-   * @param addr the {@link org.continuent.appia.protocols.common.InetWithPort address}
-   *             of the concurrent view coordinator
-   * @param g the {@link org.continuent.appia.protocols.group.Group Group} of the Event
-   * @param vid the {@link org.continuent.appia.protocols.group.ViewID ViewID} of the Event
    */
-  public ConcurrentViewEvent(ViewID id, Object addr, Group g, ViewID vid) {
-    super(g,vid);
-    this.id=id;
-    this.addr=addr;
-  }
+  public ConcurrentViewEvent() {}
 
   /**
    * Constructs an initialized ConcurrentViewEvent.
@@ -85,9 +76,7 @@ public class ConcurrentViewEvent extends GroupEvent {
    * {@link org.continuent.appia.core.Event#Event(Channel,int,Session)
    * Event(Channel,Direction,Session)}
    */
-  public ConcurrentViewEvent(ViewID id, Object addr, Channel c, int d, Session s, Group g, ViewID vid) throws AppiaEventException {
+  public ConcurrentViewEvent(Channel c, int d, Session s, Group g, ViewID vid) throws AppiaEventException {
     super(c,d,s,g,vid);
-    this.id=id;
-    this.addr=addr;
   }
 }

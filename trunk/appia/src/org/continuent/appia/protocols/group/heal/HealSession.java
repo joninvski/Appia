@@ -23,6 +23,7 @@ package org.continuent.appia.protocols.group.heal;
 
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
+import java.util.HashSet;
 
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.SendableEvent;
@@ -79,40 +80,32 @@ public class HealSession extends Session implements InitializableSession {
     
     // GossipOutEvent
     if (event instanceof GossipOutEvent) {
-      handleGossipOrHello((GossipOutEvent)event);
-      return;
+      handleGossipOrHello((GossipOutEvent)event); return;
     }
-    
     // HelloEvent
     if (event instanceof HelloEvent) {
-    	handleGossipOrHello((HelloEvent)event);
-    	return;
+    	handleGossipOrHello((HelloEvent)event); return;
     }
-    
+    // ConcurrentViewEvent
+    if (event instanceof ConcurrentViewEvent) {
+    	handleConcurrentView((ConcurrentViewEvent)event); return;
+    }
     // View
     if (event instanceof View) {
-      handleView((View)event);
-      return;
+      handleView((View)event); return;
     }
-    
     // PeriodicTimer
     if (event instanceof PeriodicTimer) {
-      handleTimer((PeriodicTimer)event);
-      return;
+      handleTimer((PeriodicTimer)event); return;
     }
-    
     // OtherViews
     if (event instanceof OtherViews) {
-      handleOtherViews((OtherViews)event);
-      return;
+      handleOtherViews((OtherViews)event); return;
     }
-    
     // GroupInit
     if (event instanceof GroupInit) {
-      handleGroupInit((GroupInit)event);
-      return;
+      handleGroupInit((GroupInit)event); return;
     }
-    
     // Debug
     if (event instanceof Debug) {
       Debug ev=(Debug)event;
@@ -136,12 +129,13 @@ public class HealSession extends Session implements InitializableSession {
     try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
   }
   
-  private ViewState vs;
+	private ViewState vs;
   private LocalState ls;
   private long last_gossip=0;
   private long last_hello=0;
   private Object multicast_addr=null;
-  private ViewState baseVS=null;
+  private Object[] other_addrs=null;
+  private HashSet detectedViews=new HashSet();
   
   private void handleGossipOrHello(SendableEvent ev) {
     
@@ -149,29 +143,25 @@ public class HealSession extends Session implements InitializableSession {
 		  debug("Received gossip or hello but didn't received first view.");
 		  return;
 	  }
-    if (!ls.am_coord) {
-      debug("Received gossip or hello but i am not the coordinator");
-      return;
-    }
     
     Message omsg=ev.getMessage();
     Group remote_group=Group.pop(omsg);
     ViewID remote_id=ViewID.pop(omsg);
     
     if (!vs.group.equals(remote_group)) {
-      debug("Received gossip hello of other group");
+      debug("Received gossip or hello of other group. Ignoring it.");
       return;
     }
     
     if (vs.id.equals(remote_id)) {
-      debug("Received my own gossip or hello !!!!!!!");
+      debug("Received gossip or hello from my current view. Ignoring it.");
       return;
     }
     
     int i;
     for (i=0 ; i < vs.previous.length ; i++) {
       if (vs.previous[i].equals(remote_id)) {
-        debug("Received my old gossip or hello");
+        debug("Received gossip or hello from my old view. Ignoring it.");
         return;
       }
     }
@@ -180,20 +170,64 @@ public class HealSession extends Session implements InitializableSession {
       debug("Received gossip of other alive member of my group (possibly an old one). Ignoring it.");
       return;
     }
-    
+
+    if (detectedViews.contains(remote_id)) {
+    	debug("Received gossip or hello from an already detected concurrent view. Ignoring it.");
+    	return;
+    }
+
     if (debugFull)
       debug("Detected valid concurrent view (id="+remote_id.toString()+" source="+((InetSocketAddress)ev.source).toString()+"). Sending warning.");
     
     try {
-      ConcurrentViewEvent cve=new ConcurrentViewEvent(remote_id,ev.source,
-      ev.getChannel(),Direction.DOWN,this,
-      vs.group,vs.id);
-      cve.go();
+    	ConcurrentViewEvent cve=new ConcurrentViewEvent(ev.getChannel(),Direction.DOWN,this,vs.group,vs.id);
+    	if (ls.am_coord) {
+    		cve.id=remote_id;
+    		cve.addr=ev.source;
+    	} else {
+    		cve.getMessage().pushObject(ev.source);
+    		ViewID.push(remote_id, cve.getMessage());
+    		cve.dest=new int [] {ls.coord};
+    	}
+    	cve.go();
+    	
+    	detectedViews.add(remote_id);
     } catch (AppiaEventException ex) {
-        if (debugFull)
-            ex.printStackTrace();
-      debug("Unable to send ConcurrentViewEvent");
+    	if (debugFull)
+    		ex.printStackTrace();
+    	debug("Unable to send ConcurrentViewEvent");
     }
+  }
+  
+  private void handleConcurrentView(ConcurrentViewEvent event) {
+  	event.id=ViewID.pop(event.getMessage());
+  	event.addr=event.getMessage().popObject();
+  	
+  	if (detectedViews.contains(event.id)) {
+  		debug("Received ConcurrentViewEvent of an already detected view. Ignoring it.");
+  		return;
+  	}
+  	
+  	if (!ls.am_coord) {
+      debug("Received ConcurrentViewEvent but i am not the coordinator.");
+      detectedViews.add(event.id);
+      return;
+    }
+  	
+    if (debugFull)
+      debug("Received valid concurrent view detection (id="+event.id+" source="+event.addr+"). Resending it.");
+    
+  	try {
+  		event.setDir(Direction.invert(event.getDir()));
+  		event.setSource(this);
+  		event.init();
+  		event.go();
+  		
+  		detectedViews.add(event.id);
+  	} catch (AppiaEventException ex) {
+  		ex.printStackTrace();
+  		debug("Impossible to reverse and resend a received ConcurrentViewEvent");
+  	}
   }
   
   private void handleOtherViews(OtherViews ev) {
@@ -216,8 +250,9 @@ public class HealSession extends Session implements InitializableSession {
   }
   
   private void handleGroupInit(GroupInit ev) {
-    multicast_addr=ev.ip_multicast;
-    baseVS = ev.getBaseVS();
+    multicast_addr=ev.getIPmulticast();
+    if (ev.getBaseVS() != null)
+    	other_addrs=ev.getBaseVS().addresses.clone();
     try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
   }
   
@@ -233,11 +268,7 @@ public class HealSession extends Session implements InitializableSession {
       if (do_gossip)
         sendGossip(ev.getChannel());
       
-//      if (vs.view.length == 1)
-        sendHello(ev.getChannel(),null);
-      
-      if (debugFull)
-        debug("Sending initial Gossip to Server ("+do_gossip+") and multicast ("+((multicast_addr != null) && (vs.view.length == 1))+")");
+      sendHello(ev.getChannel(),null);      
     } else {
       do_gossip=false;
     }
@@ -249,43 +280,42 @@ public class HealSession extends Session implements InitializableSession {
     if (ev.getQualifierMode() != EventQualifier.NOTIFY)
       return;
     
-    if ((ls == null) || !ls.am_coord)
+    if (vs == null)
       return;
     
-    long now=ev.getChannel().getTimeProvider().currentTimeMillis();
-    
-    if (now-last_gossip > gossip_time) {
-      last_gossip=now;
-      
-      if (do_gossip)
-        sendGossip(ev.getChannel());
-      
-//      if (vs.view.length == 1)
-        sendHello(ev.getChannel(),null);
-      
-      if (debugFull)
-        debug("Sending periodic Gossip to Server ("+do_gossip+") and multicast ("+((multicast_addr != null) && (vs.view.length == 1))+")");      
+    if (ls.am_coord) {
+    	long now=ev.getChannel().getTimeProvider().currentTimeMillis();
+
+    	if (now-last_gossip > gossip_time) {
+    		last_gossip=now;
+
+    		if (do_gossip)
+    			sendGossip(ev.getChannel());
+
+    		sendHello(ev.getChannel(),null);
+    	}
     }
   }
 
   private void sendHello(Channel channel, Object addr) {
-    if (addr == null) {
-      if (multicast_addr != null){
-          if(vs.view.length > 1)
-              return;
-          addr=multicast_addr;
-      } else if(baseVS != null){
-          for(int i=0; i<baseVS.view.length; i++){
-              if(vs.getRank(baseVS.view[i]) == -1){
-                  sendHello(channel, baseVS.addresses[i]);
-                  if(debugFull)
-                      debug("Sending hello to "+baseVS.addresses[i]);
-              }
-          }
-          return;
-      } else 
-          return;
-    }
+  	if (addr == null) {
+  		if (multicast_addr != null){
+  			if(vs.view.length > 1)
+  				return; // Hello unecessary because normal group messages will be detected by concurrent views
+  			addr=multicast_addr;
+  		} else {
+  			if(other_addrs != null){
+  				for(int i=0 ; i < other_addrs.length ; i++){
+  					if(vs.getRankByAddress((InetSocketAddress)other_addrs[i]) == -1){
+  						if(debugFull)
+  							debug("Sending hello to "+other_addrs[i]);
+  						sendHello(channel, other_addrs[i]);
+  					}
+  				}
+  			} 
+  			return;
+  		}
+  	}
     
     try {
       HelloEvent ev=new HelloEvent(channel,Direction.DOWN,this);
@@ -303,6 +333,9 @@ public class HealSession extends Session implements InitializableSession {
   }
 
   private void sendGossip(Channel channel) {
+    if (debugFull)
+      debug("Sending Gossip to Server");
+
     try {
       GossipOutEvent ev=new GossipOutEvent(channel,Direction.DOWN,this);
       

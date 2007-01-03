@@ -180,8 +180,12 @@ public class InterSession extends Session implements InitializableSession {
   }
   
   private void handleConcurrent(ConcurrentViewEvent ev) {
-    if (!ls.am_coord) {
-      debug("Concurrent view warning discarded because i am not the coordinator");
+    if (!ls.am_coord || (ev.id == null)) {
+      try {
+	      ev.go();
+      } catch (AppiaEventException e) {
+	      e.printStackTrace();
+      }
       return;
     }
         

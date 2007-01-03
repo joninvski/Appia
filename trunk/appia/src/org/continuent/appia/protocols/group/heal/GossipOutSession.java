@@ -249,7 +249,7 @@ public class GossipOutSession extends Session implements InitializableSession {
   }
   
   private void handleGroupInit(GroupInit ev) {
-    gossipAddrs=(InetSocketAddress[]) ev.ip_gossip;
+    gossipAddrs=(InetSocketAddress[]) ev.getGossip();
     if ((gossipAddrs != null) && (gossipAddrs.length > 0))
       server=0;
     try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }

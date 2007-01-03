@@ -47,24 +47,29 @@ public class HealLayer extends Layer {
     Class gossip=org.continuent.appia.protocols.group.heal.GossipOutEvent.class;
     Class periodic=PeriodicTimer.class;
     Class hello=HelloEvent.class;
+    Class concurrent=org.continuent.appia.protocols.group.heal.ConcurrentViewEvent.class;
     
-    evProvide=new Class[3];
-    evProvide[0]=org.continuent.appia.protocols.group.heal.ConcurrentViewEvent.class;
-    evProvide[1]=gossip;
-    evProvide[2]=hello;
+    evProvide=new Class[] {
+    		gossip,
+    		hello,
+    		concurrent
+    };
     
-    evRequire=new Class[2];
-    evRequire[0]=view;
-    evRequire[1]=periodic;
+    evRequire=new Class[] {
+    		view,
+    		periodic
+    };
     
-    evAccept=new Class[7];
-    evAccept[0]=view;
-    evAccept[1]=gossip;
-    evAccept[2]=Debug.class;
-    evAccept[3]=periodic;
-    evAccept[4]=OtherViews.class;
-    evAccept[5]=GroupInit.class;
-    evAccept[6]=hello;
+    evAccept=new Class[] {
+    		view,
+    		gossip,
+    		hello,
+    		concurrent,
+    		OtherViews.class,
+    		GroupInit.class,
+    		periodic,
+    		Debug.class,
+    };
   }
   
   public Session createSession() {
