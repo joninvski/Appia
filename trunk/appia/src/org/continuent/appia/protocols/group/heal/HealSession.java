@@ -252,7 +252,7 @@ public class HealSession extends Session implements InitializableSession {
   private void handleGroupInit(GroupInit ev) {
     multicast_addr=ev.getIPmulticast();
     if (ev.getBaseVS() != null)
-    	other_addrs=ev.getBaseVS().addresses.clone();
+    	other_addrs=(Object[]) ev.getBaseVS().addresses.clone();
     try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
   }
   
