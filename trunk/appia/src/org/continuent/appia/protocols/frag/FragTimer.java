@@ -31,7 +31,7 @@ import org.continuent.appia.core.events.channel.PeriodicTimer;
 
 /**
  *
- * @author  alexp
+ * @author Alexandre Pinto
  */
 public class FragTimer extends PeriodicTimer {
   

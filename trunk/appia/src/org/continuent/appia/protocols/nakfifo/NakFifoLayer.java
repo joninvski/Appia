@@ -36,7 +36,7 @@ import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
  * <br>
  * It offers <i>AppiaMulticast</i> support by sending a different message to each
  * destination.
- * @author alexp
+ * @author Alexandre Pinto
  */
 public class NakFifoLayer extends Layer implements AppiaMulticastSupport {
   

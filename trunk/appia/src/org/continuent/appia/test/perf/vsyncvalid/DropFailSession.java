@@ -38,7 +38,7 @@ import org.continuent.appia.xml.utils.SessionProperties;
 
 
 /**
- * @author alexp
+ * @author Alexandre Pinto
  *
  */
 public class DropFailSession extends Session implements InitializableSession {

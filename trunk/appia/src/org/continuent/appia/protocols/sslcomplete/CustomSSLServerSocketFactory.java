@@ -28,7 +28,7 @@ package org.continuent.appia.protocols.sslcomplete;
 import javax.net.ssl.*;
 /**
  *
- * @author  alexp
+ * @author  Alexandre Pinto
  */
 
 public class CustomSSLServerSocketFactory extends SSLServerSocketFactory {

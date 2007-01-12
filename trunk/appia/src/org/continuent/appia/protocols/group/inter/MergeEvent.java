@@ -30,7 +30,7 @@ import org.continuent.appia.core.message.Message;
 
 
 /**
- * @author alexp
+ * @author Alexandre Pinto
  *
  */
 public class MergeEvent extends SendableEvent {

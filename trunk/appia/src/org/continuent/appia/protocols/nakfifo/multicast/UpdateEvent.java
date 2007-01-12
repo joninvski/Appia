@@ -31,7 +31,7 @@ import org.continuent.appia.core.events.SendableEvent;
 
 /** Event used to compensate gaps in the seqence numbers of the messages
  * sent to a peer.
- * @author alexp
+ * @author Alexandre Pinto
  */
 public class UpdateEvent extends SendableEvent {
   

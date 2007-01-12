@@ -32,7 +32,7 @@ import org.continuent.appia.core.events.SendableEvent;
 /**
  * Event sent to initiate FIFO communication with a peer.
  *
- * @author  alexp
+ * @author  Alexandre Pinto
  */
 public class IgnoreEvent extends SendableEvent {
   

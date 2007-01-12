@@ -28,7 +28,7 @@ import org.continuent.appia.core.events.SendableEvent;
 
 
 /**
- * @author alexp
+ * @author Alexandre Pinto
  *
  */
 public class DropFailLayer extends Layer {

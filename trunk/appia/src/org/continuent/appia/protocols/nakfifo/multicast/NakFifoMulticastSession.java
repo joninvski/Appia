@@ -47,7 +47,7 @@ import org.continuent.appia.xml.utils.SessionProperties;
 /** Session of a protocol that provides reliable point-to-point communication.
  * This protocol operates better when using network multicast support.
  * <b>It only operates if destination is a <i>AppiaMulticast</i></b>.
- * @author alexp
+ * @author Alexandre Pinto
  * @see org.continuent.appia.core.events.AppiaMulticast
  */
 public class NakFifoMulticastSession extends Session implements InitializableSession {

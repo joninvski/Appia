@@ -27,7 +27,7 @@ import org.continuent.appia.core.events.channel.Timer;
 
 
 /**
- * @author alexp
+ * @author Alexandre Pinto
  */
 public class PerfTimer extends Timer {
 

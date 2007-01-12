@@ -32,7 +32,7 @@ import org.continuent.appia.core.TimeProvider;
 
 /**
  *
- * @author  alexp
+ * @author  Alexandre Pinto
  */
 public class Peer {
   

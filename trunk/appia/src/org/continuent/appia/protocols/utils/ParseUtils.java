@@ -33,7 +33,7 @@ import org.continuent.appia.protocols.group.Endpt;
 /**
  * Class containing some methods usefull for parsing strings.
  * 
- * @author alexp
+ * @author Alexandre Pinto
  */
 public final class ParseUtils {
   

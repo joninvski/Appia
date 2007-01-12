@@ -30,7 +30,7 @@ import org.continuent.appia.core.events.SendableEvent;
 
 
 /** Event used to request a retransmission from a peer.
- * @author alexp
+ * @author Alexandre Pinto
  */
 public class NackEvent extends SendableEvent {
   

@@ -29,7 +29,7 @@ import org.continuent.appia.core.events.SendableEvent;
 /** Event used to signal the last received message and therfore allow the
  * sender to clean the unconfirmed messages list.
  * 
- * @author alexp
+ * @author Alexandre Pinto
  */
 public class ConfirmEvent extends SendableEvent {
 

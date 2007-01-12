@@ -41,7 +41,7 @@ import org.continuent.appia.xml.utils.SessionProperties;
  * <br>
  * It offers <i>AppiaMulticast</i> support by sending a different message to each
  * destination.
- * @author alexp
+ * @author Alexandre Pinto
  */
 public class NakFifoSession extends Session implements InitializableSession {
   

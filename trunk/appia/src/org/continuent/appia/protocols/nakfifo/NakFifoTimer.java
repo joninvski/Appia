@@ -30,7 +30,7 @@ import org.continuent.appia.core.events.channel.PeriodicTimer;
 
 
 /** Timer used to define the rounds.
- * @author alexp
+ * @author Alexandre Pinto
  */
 public class NakFifoTimer extends PeriodicTimer {
   

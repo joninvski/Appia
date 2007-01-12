@@ -30,7 +30,7 @@ import org.continuent.appia.core.events.channel.Timer;
 
 
 /**
- * @author alexp
+ * @author Alexandre Pinto
  *
  */
 public class MergeTimer extends Timer {

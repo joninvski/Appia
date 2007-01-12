@@ -30,7 +30,7 @@ import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 /**
  * Event used to propagate clients between gossip group members.
  *  
- * @author alexp
+ * @author Alexandre Pinto
  */
 public class GossipGroupEvent extends GroupSendableEvent {
 

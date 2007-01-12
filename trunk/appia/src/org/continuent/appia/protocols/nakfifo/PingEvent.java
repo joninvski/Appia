@@ -30,7 +30,7 @@ import org.continuent.appia.core.events.SendableEvent;
 
 
 /** Event used to mantain peer communication.
- * @author alexp
+ * @author Alexandre Pinto
  */
 public class PingEvent extends SendableEvent {
   
