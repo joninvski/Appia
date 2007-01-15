@@ -59,9 +59,8 @@ public class LoopBackSession extends Session {
 	    myEndpt = ((View)e).vs.view[myRank];
 	}
 
-	if(e instanceof GroupSendableEvent)
+	if(e instanceof GroupSendableEvent && !(e instanceof Send) && e.getDir() == Direction.DOWN)
 	    handleGroupSendableEvent((GroupSendableEvent) e);
-
 	try {
 	    e.go();
 	}
@@ -71,30 +70,28 @@ public class LoopBackSession extends Session {
     }
     
     private void handleGroupSendableEvent(GroupSendableEvent e){
-	GroupSendableEvent cloned=null;
-       
-	if(e.getDir()==Direction.DOWN){
-	    //clones event, invert direction and send it upward.
-	    try{
-		cloned= (GroupSendableEvent)e.cloneEvent();
-	    }
-	    catch(CloneNotSupportedException ex){
-		 System.err.println("Error sending event");
-	    }
-	    cloned.setDir(Direction.invert(cloned.getDir()));
-	    cloned.setSource(this);
-	    cloned.dest=e.source;
-	    cloned.source=myEndpt;
-	    cloned.orig=myRank;
+        GroupSendableEvent cloned=null;
+
+        //clones event, invert direction and send it upward.
+        try{
+            cloned= (GroupSendableEvent)e.cloneEvent();
+        }
+        catch(CloneNotSupportedException ex){
+            System.err.println("Error sending event");
+        }
+        cloned.setDir(Direction.invert(cloned.getDir()));
+        cloned.setSource(this);
+        cloned.dest=e.source;
+        cloned.source=myEndpt;
+        cloned.orig=myRank;
         cloned.setChannel(e.getChannel());
-	    try{
-		cloned.init();
-		cloned.go();
-	    }
-	    catch(AppiaEventException ex){
-		 System.err.println("Error Sending event");
-	    }
-	}
+        try{
+            cloned.init();
+            cloned.go();
+        }
+        catch(AppiaEventException ex){
+            System.err.println("Error Sending event");
+        }
     }
 
     public void boundSessions(Channel channel) {
