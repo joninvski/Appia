@@ -62,7 +62,7 @@ public class EccoLayer extends Layer {
 	
 	/**
      * Creates the session for this protocol.
-	 * @see appia.Layer#createSession()
+	 * @see Layer#createSession()
 	 */
 	public Session createSession() {
 		return new EccoSession(this);

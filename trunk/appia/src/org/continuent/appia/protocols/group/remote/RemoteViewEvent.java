@@ -100,7 +100,7 @@ public class RemoteViewEvent extends GossipOutEvent {
 	}
 	
 	/**
-	 * @param a  An array with the addresses of the group members.
+	 * @param addrs  An array with the addresses of the group members.
 	 */
 	public void setAddresses(SocketAddress addrs[]){
 		addresses=addrs;

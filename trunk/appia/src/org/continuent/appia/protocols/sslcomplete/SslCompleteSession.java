@@ -430,7 +430,7 @@ public class SslCompleteSession extends TcpCompleteSession implements Initializa
    * @param hm
    * @param iwp
    * @param channel
-   * @return
+   * @return the new socket or null if an error ocurred.
    * @throws IOException
    */
   protected Socket createSSLSocket(HashMap hm,InetSocketAddress iwp,Channel channel) throws IOException{

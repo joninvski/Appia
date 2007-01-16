@@ -105,7 +105,7 @@ public class EccoSession extends Session implements InitializableSession {
 
     /**
      * Main event handler.
-     * @param the event to handle.
+     * @param ev the event to handle.
      * 
      * @see org.continuent.appia.core.Session#handle(org.continuent.appia.core.Event)
      */

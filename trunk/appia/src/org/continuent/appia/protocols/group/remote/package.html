@@ -10,9 +10,9 @@
     </p>   
     <p>
       The members of the group must have the 
-      {@link appia.protocols.remoteView.GossipOutExtLayer} in a
-      channel.
-      Also the {@link appia.protocols.remoteView.RemoteViewLayer} must
+      {@link org.continuent.appia.protocols.group.remote.RemoteGossipOutLayer} in a
+      channel, replacing the tipical {@link org.continuent.appia.protocols.group.heal.GossipOutLayer}.
+      Also the {@link org.continuent.appia.protocols.group.remote.RemoteViewLayer} must
       be in a channel of the application interested in knowing the 
       membership.
     </p>
@@ -21,8 +21,7 @@
       a gossip server must be running for the group.
     </p>
     <p>
-     The requests are sent trough a {@link appia.protocols.remoteView.RemoteViewEvent}
+     The requests are sent trough a {@link org.continuent.appia.protocols.group.remote.RemoteViewEvent}
     </p>
-  </dl>
   </body>
 </html>

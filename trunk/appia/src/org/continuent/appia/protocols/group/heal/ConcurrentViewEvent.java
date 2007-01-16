@@ -64,9 +64,6 @@ public class ConcurrentViewEvent extends GroupSendableEvent implements Send {
   /**
    * Constructs an initialized ConcurrentViewEvent.
    *
-   * @param id the {@link org.continuent.appia.protocols.group.ViewID ViewID} of the concurrent view
-   * @param addr the {@link org.continuent.appia.protocols.common.InetWithPort address}
-   *             of the concurrent view coordinator
    * @param c the {@link org.continuent.appia.core.Channel Channel} of the Event
    * @param d the {@link org.continuent.appia.core.Direction Direction} of the Event
    * @param s the {@link org.continuent.appia.core.Session Session} that is generating the Event
