@@ -16,6 +16,7 @@ Release Notes:
     * [APPIA-59] - Document better the register socket event class
     * [APPIA-60] - Add a getSocketAddress method in thr RegisterSocketEvent class.
     * [APPIA-62] - Fix javadoc issues introduced recently
+    * [APPIA-64] - Create a XML example for the SSL protocol in the config/demo directory.
 
 ** Improvement
     * [APPIA-52] - Scheduled events when closing channel.
