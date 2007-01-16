@@ -1,5 +1,30 @@
 ========================
-15/09/2006 Version 3.2.2
+16/01/2007 Version 3.2.4
+========================
+
+Release Notes:
+
+** Bug
+    * [APPIA-55] - In NakFifoMulticast, the last channel used must be saved.
+    * [APPIA-61] - LoopBack protocol should not clone messages that are not to all members of the group.
+
+** New Feature
+    * [APPIA-1] - Initial configuration of a group membership
+
+** Task
+    * [APPIA-36] - Complete javadoc on XML classes
+    * [APPIA-59] - Document better the register socket event class
+    * [APPIA-60] - Add a getSocketAddress method in thr RegisterSocketEvent class.
+    * [APPIA-62] - Fix javadoc issues introduced recently
+
+** Improvement
+    * [APPIA-52] - Scheduled events when closing channel.
+    * [APPIA-56] - Replace InetSocketAddress by SocketAddress where is possible.
+    * [APPIA-57] - Allow XML configuration on the SslComplete protocol for the possible parameters
+
+
+========================
+15/09/2006 Version 3.2.3
 ========================
 
 Release Notes:
