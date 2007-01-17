@@ -216,6 +216,8 @@ public class TotalTokenSession extends Session implements InitializableSession {
 				} catch (AppiaEventException e) {
 					e.printStackTrace();
 				}
+                if(localState.my_rank == 0)
+                    sentExplicitToken = false;
 			}
 			
 			if(log.isDebugEnabled())
