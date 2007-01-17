@@ -86,6 +86,8 @@ public class TotalTokenSession extends Session implements InitializableSession {
        * <ul>
        * <li><b>num_messages_per_token</b> number of messages (maximum) sent before releasing the token.
        * Default is 10.
+       * <li><b>silent_token_period</b> amount of time (miliseconds) to delay the token when there are no 
+       * messages being exchanged by the group members. The default is 500ms.
        * </ul>
        * 
        * @param params The parameters given in the XML configuration.
@@ -96,6 +98,10 @@ public class TotalTokenSession extends Session implements InitializableSession {
 			numMessagesPerToken = params.getInt("num_messages_per_token");
 		if(numMessagesPerToken <= 0)
 			numMessagesPerToken = DEFAULT_NUM_MESSAGES_PER_TOKEN;
+        if(params.containsKey("silent_token_period"))
+            silentPeriod = params.getLong("silent_token_period");
+        if(silentPeriod <= 0)
+            silentPeriod = DEFAULT_SILENT_PERIOD;
 	}
 
 	public void handle(Event event){
