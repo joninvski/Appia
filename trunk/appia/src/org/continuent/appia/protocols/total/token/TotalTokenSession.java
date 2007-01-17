@@ -26,9 +26,11 @@ import java.util.ListIterator;
 import org.apache.log4j.Logger;
 import org.continuent.appia.core.AppiaError;
 import org.continuent.appia.core.AppiaEventException;
+import org.continuent.appia.core.AppiaException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.Direction;
 import org.continuent.appia.core.Event;
+import org.continuent.appia.core.EventQualifier;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.SendableEvent;
@@ -55,6 +57,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 	private static Logger log = Logger.getLogger(TotalTokenSession.class);
 
 	private static final int DEFAULT_NUM_MESSAGES_PER_TOKEN = 10;
+    private static final long DEFAULT_SILENT_PERIOD = 500; // miliseconds
 	
 	private long globalSeqNumber;
 	private LinkedList pendingMessages, undeliveredMessages;
@@ -64,6 +67,8 @@ public class TotalTokenSession extends Session implements InitializableSession {
 	private ViewState viewState;
 	private boolean isBlocked;
 	
+    private boolean sentExplicitToken = false;
+    private long silentPeriod = DEFAULT_SILENT_PERIOD;
 	
 	public TotalTokenSession(Layer layer) {
 		super(layer);
@@ -96,6 +101,8 @@ public class TotalTokenSession extends Session implements InitializableSession {
 	public void handle(Event event){
 		if(event instanceof GroupSendableEvent)
 			handleGroupSendable((GroupSendableEvent) event);
+        else if (event instanceof TokenTimer)
+            handleTokenTimer((TokenTimer)event);
 		else if (event instanceof BlockOk)
 			handleBlock((BlockOk)event);
 		else if (event instanceof View)
@@ -112,7 +119,12 @@ public class TotalTokenSession extends Session implements InitializableSession {
 			}
 	}
 
-	private void handleChannelClose(ChannelClose close) {
+	private void handleTokenTimer(TokenTimer timer) {
+        if(iHaveToken() && ! isBlocked)
+            sendMessages(timer.getChannel());
+    }
+
+    private void handleChannelClose(ChannelClose close) {
 		isBlocked = true;
 		try {
 			close.go();
@@ -241,8 +253,12 @@ public class TotalTokenSession extends Session implements InitializableSession {
 					break;
 			}
 			
-			if(iHaveToken() && !isBlocked)
-				sendMessages(event.getChannel());
+			if(iHaveToken() && ! isBlocked)
+                if(sentExplicitToken && localState.my_rank == 0 && event instanceof TokenEvent
+                        && pendingMessages.size() == 0)
+                    insertTokenDelay(event.getChannel());
+                else
+                    sendMessages(event.getChannel());
 		}
 	}
 	
@@ -250,6 +266,27 @@ public class TotalTokenSession extends Session implements InitializableSession {
 	 * Support methods
 	 */
 	
+    private void insertTokenDelay(Channel channel){
+        if(log.isDebugEnabled())
+            log.debug("##### Inserting delay on the token.");
+        log.info("##### Inserting delay on the token.");
+
+        try {
+            new TokenTimer(this.silentPeriod,channel,Direction.DOWN,this,EventQualifier.ON).go();
+            sentExplicitToken = false;
+        } catch (AppiaEventException e) {
+            if(log.isDebugEnabled()){
+                log.debug("Exception when sending the TokenTimer: "+e);
+                e.printStackTrace();
+            }
+        } catch (AppiaException e) {
+            if(log.isDebugEnabled()){
+                log.debug("Exception when sending the TokenTimer: "+e);
+                e.printStackTrace();
+            }
+        }
+    }
+    
 	private boolean iHaveToken(){
 		return (rankWidthToken == localState.my_rank);
 	}
@@ -273,6 +310,8 @@ public class TotalTokenSession extends Session implements InitializableSession {
 		            final TokenEvent token = new TokenEvent(channel,Direction.DOWN,this,viewState.group,viewState.id);
 		            token.getMessage().pushBoolean(true);
 		            token.getMessage().pushLong(++globalSeqNumber);
+		            if(localState.my_rank == 0)
+		                sentExplicitToken = true;
 		            token.go();
 		            rotateToken();
 		        } catch (AppiaEventException e) {
@@ -281,7 +320,11 @@ public class TotalTokenSession extends Session implements InitializableSession {
 		    }
 		    return;
 		}
+        
+        if(localState.my_rank == 0)
+            sentExplicitToken = false;
 		boolean sendToken = false;
+        
 		for(int i=0; !sendToken; i++){
             // the list size variable should not be updated because this "if" needs always the initial value
             // this only sends the token if it is the last message or

@@ -42,6 +42,7 @@ public class TotalTokenLayer extends Layer {
 		super();
 		evProvide = new Class[]{
 				TokenEvent.class,
+                TokenTimer.class,
 		};
 		evRequire = new Class[]{
 		        GroupSendableEvent.class,
@@ -54,6 +55,7 @@ public class TotalTokenLayer extends Layer {
 				View.class,
 				ChannelInit.class,
 				ChannelClose.class,
+                TokenTimer.class,
 		};
 	}
 
