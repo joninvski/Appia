@@ -269,7 +269,6 @@ public class TotalTokenSession extends Session implements InitializableSession {
     private void insertTokenDelay(Channel channel){
         if(log.isDebugEnabled())
             log.debug("##### Inserting delay on the token.");
-        log.info("##### Inserting delay on the token.");
 
         try {
             new TokenTimer(this.silentPeriod,channel,Direction.DOWN,this,EventQualifier.ON).go();
