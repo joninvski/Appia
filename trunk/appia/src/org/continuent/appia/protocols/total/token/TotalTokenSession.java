@@ -94,7 +94,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 	}
 
 	public void handle(Event event){
-		if((event instanceof GroupSendableEvent) || (event instanceof TokenEvent))
+		if(event instanceof GroupSendableEvent)
 			handleGroupSendable((GroupSendableEvent) event);
 		else if (event instanceof BlockOk)
 			handleBlock((BlockOk)event);
@@ -167,7 +167,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 			}
 			return;
 		}
-			
+
 		if(log.isDebugEnabled())
 			log.debug("My rank = "+localState.my_rank+" hasToken = "+rankWidthToken);
 		// event from aplication
@@ -186,10 +186,6 @@ public class TotalTokenSession extends Session implements InitializableSession {
 			if(seq <= globalSeqNumber){
 				throw new AppiaError("Received message with seq = "+seq+" was expecting seq = "+(globalSeqNumber+1));
 			}
-			
-//			if(event.orig != rankWidthToken){
-//			throw new AppiaError("Received message from rank "+event.orig+" was expecting "+rankWidthToken);
-//			}
 			
 			if(seq > (globalSeqNumber + 1)){
 				storeUndelivered(event,seq);
@@ -260,7 +256,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 	
 	private void rotateToken(){
 		if(viewState.addresses.length > 1)
-			rankWidthToken = ((rankWidthToken+1) == viewState.addresses.length)? 0 : rankWidthToken+1;
+            rankWidthToken = ((rankWidthToken+1) == viewState.addresses.length)? 0 : rankWidthToken+1;
 	}
 
 	private void sendMessages(Channel channel) {
@@ -269,22 +265,29 @@ public class TotalTokenSession extends Session implements InitializableSession {
 
 		final int listSize = pendingMessages.size();
 		if(listSize == 0){
-			if(log.isDebugEnabled())
-				log.debug("I do not have any messages. Rotanting token. My rank is "+localState.my_rank);
-			try {
-				final TokenEvent token = new TokenEvent(channel,Direction.DOWN,this,viewState.group,viewState.id);
-				token.getMessage().pushBoolean(true);
-				token.getMessage().pushLong(++globalSeqNumber);
-				token.go();
-				rotateToken();
-			} catch (AppiaEventException e) {
-				e.printStackTrace();
-			}
-			return;
+		    // only rotates the token when there is more then one member in the group
+		    if(viewState.view.length > 1){
+		        if(log.isDebugEnabled())
+		            log.debug("I do not have any messages. Rotanting token. My rank is "+localState.my_rank);
+		        try {
+		            final TokenEvent token = new TokenEvent(channel,Direction.DOWN,this,viewState.group,viewState.id);
+		            token.getMessage().pushBoolean(true);
+		            token.getMessage().pushLong(++globalSeqNumber);
+		            token.go();
+		            rotateToken();
+		        } catch (AppiaEventException e) {
+		            e.printStackTrace();
+		        }
+		    }
+		    return;
 		}
 		boolean sendToken = false;
 		for(int i=0; !sendToken; i++){
-			if((i+1) == listSize || (i+1) ==  numMessagesPerToken)
+            // the list size variable should not be updated because this "if" needs always the initial value
+            // this only sends the token if it is the last message or
+            // if the max messages per token were reached with more then one member on the group
+            // With only one member, the messages are sent until the end of the buffer is reached.
+			if((i+1) == listSize || (viewState.view.length > 1 && (i+1) ==  numMessagesPerToken))
 				sendToken = true;
 			final GroupSendableEvent ev = (GroupSendableEvent) pendingMessages.removeFirst();
 			ev.orig = localState.my_rank;
@@ -304,6 +307,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 			if(log.isDebugEnabled())
 				log.debug("Sending message #"+(globalSeqNumber+1)+" with token = "+sendToken);
 
+            // send the message to the group.
 			final Message m = ev.getMessage();			
 			m.pushBoolean(sendToken);
 			m.pushLong(++globalSeqNumber);
