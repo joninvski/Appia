@@ -118,6 +118,8 @@ public class FifoSession extends Session {
 	 * parameters of the protocol.
 	 * <li>MulticastInitEvent: Used to learn wich multicast 
 	 * address will be used for communication
+     * <li>AckEvent
+     * <li>SendableNotDelivered
 	 * </ul>
 	 *
 	 * @param e event to be deliverd to this session

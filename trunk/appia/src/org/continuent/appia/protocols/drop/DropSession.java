@@ -77,12 +77,16 @@ public class DropSession extends Session {
     }
 
     /**
-     * Main Event handler function. Accepts SendableEvents. If the event
-     * is flowing down randomly checks if the event should be lost.
-     * @param e The incoming event
-     * @see Session
+     * This is the protocol's main event handler.
+     * It accepts the following events:
+     * <ul>
+     * <li>org.continuent.appia.core.events.SendableEvent
+     * <li>org.continuent.appia.protocols.group.intra.View
+     * </ul>
+     * 
+     * @param event the event to handle.
+     * @see org.continuent.appia.core.Session#handle(org.continuent.appia.core.Event)
      */
-
     public void handle(Event e) {
 	if(e instanceof SendableEvent) { 
           if(e.getDir()==Direction.UP || Math.random()>=dropRate) {

@@ -68,6 +68,17 @@ public class CausalWaitingSession extends Session {
 		super(layer);
 	}
 	
+	/**
+	 * This is the protocol's main event handler.
+	 * It accepts the following events:
+	 * <ul>
+	 * <li>org.continuent.appia.protocols.group.events.GroupSendableEvent
+	 * <li>org.continuent.appia.protocols.group.intra.View
+	 * </ul>
+	 * 
+     * @param event the event to handle.
+	 * @see org.continuent.appia.core.Session#handle(org.continuent.appia.core.Event)
+	 */
 	public void handle(Event event) {
 		if (event instanceof View)
 			handleView((View) event);

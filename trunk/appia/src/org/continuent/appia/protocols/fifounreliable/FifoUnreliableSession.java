@@ -54,11 +54,10 @@ import org.continuent.appia.core.events.channel.ChannelInit;
  * Class FifoUnreliableSession  
  *
  *
- * @author sandra Teixeira
+ * @author Sandra Teixeira
  * @see    FifoUnreliableLayer
  * @see    Session
  */
-
 public class FifoUnreliableSession extends Session {
 	
     private static final int CLEAN_TIME = 20000;
@@ -172,13 +171,16 @@ public class FifoUnreliableSession extends Session {
 		refresh=timeProvider.currentTimeMillis();
 	}
 	
-	/**
-	 * Main Event handler function. Accepts incoming  sendableEvent and
-	 * dispatches them to the appropriate functions
-	 * @param e The incoming event
-	 * @see Session
-	 */
-	
+    /**
+     * This is the protocol's main event handler.
+     * It accepts the following events:
+     * <ul>
+     * <li>org.continuent.appia.core.events.SendableEvent
+     * </ul>
+     * 
+     * @param event the event to handle.
+     * @see org.continuent.appia.core.Session#handle(org.continuent.appia.core.Event)
+     */
 	public void handle(Event e) {
 		
 		if(e instanceof SendableEvent)
