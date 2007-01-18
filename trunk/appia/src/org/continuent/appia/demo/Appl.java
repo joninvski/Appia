@@ -52,6 +52,8 @@ import org.continuent.appia.test.appl.ApplSession;
  */
 public class Appl {
   
+    private Appl(){}
+    
   public static final int DEFAULT_GOSSIP_PORT=10000;
   public static final int DEFAULT_MULTICAST_PORT=7000;
   
@@ -80,7 +82,7 @@ public class Appl {
     InetSocketAddress multicast=null;
     InetSocketAddress[] gossips=null;
     InetSocketAddress[] viewAddrs=null;
-    Group group=null;
+    final Group group=null;
     LineNumberReader file=null;
     
     boolean ssl=false;
@@ -161,7 +163,7 @@ public class Appl {
             s=s.trim();
             if (s.length() > 0) {
               if (j == qos.length-1) {
-                Layer[] aux=new Layer[qos.length*2];
+                final Layer[] aux=new Layer[qos.length*2];
                 System.arraycopy(qos,0,aux,0,j);
                 qos=aux;
               }
@@ -169,7 +171,7 @@ public class Appl {
             }
           }
           if (j < qos.length-1) {
-            Layer[] aux=new Layer[j+1];
+            final Layer[] aux=new Layer[j+1];
             System.arraycopy(qos,0,aux,0,j);
             qos=aux;
           }
@@ -227,20 +229,20 @@ public class Appl {
     }
     
     /* Create a channel. Uses default event scheduler. */
-    Channel myChannel=myQoS.createUnboundChannel("Appl Channel");
+    final Channel myChannel=myQoS.createUnboundChannel("Appl Channel");
     
     /* Application Session requires special arguments: qos and port.
        A session is created and binded to the stack. Remaining ones
        are created by default
      */
     
-    ApplSession as=(ApplSession)qos[qos.length-1].createSession();
+    final ApplSession as=(ApplSession)qos[qos.length-1].createSession();
     if (ssl)
       as.initWithSSL(port, multicast,gossips,group, viewAddrs, keystoreFile, keystorePass);
     else
       as.init(port,multicast,gossips,group,viewAddrs);
     
-    ChannelCursor cc=myChannel.getCursor();
+    final ChannelCursor cc=myChannel.getCursor();
     /* Application is the last session of the array. Positioning
        in it is simple */
     try {

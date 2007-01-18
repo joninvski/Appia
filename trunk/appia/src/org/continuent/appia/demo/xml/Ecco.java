@@ -50,15 +50,19 @@ import org.xml.sax.SAXException;
  */
 public class Ecco {
 	
+    private static final int NUMBER_OF_ARGS = 3;
+    
+    private Ecco() {}
+    
 	private static Layer[] qos={
 		    new org.continuent.appia.protocols.tcpcomplete.TcpCompleteLayer(),
-		    new EccoLayer()
+		    new EccoLayer(),
 	};
 	
 	public static void main(String[] args) {
 		
 		if (args.length == 1) {
-			File xmlfile = new File(args[0]);
+			final File xmlfile = new File(args[0]);
 			try {
 				AppiaXML.load(xmlfile);
 				Appia.run();
@@ -69,10 +73,10 @@ public class Ecco {
 				e.printStackTrace();
 			}
 		}
-		else if (args.length == 3) {
-			int localport = Integer.parseInt(args[0]);
-			String remotehost = args[1];
-			int remoteport = Integer.parseInt(args[2]);
+		else if (args.length == NUMBER_OF_ARGS) {
+			final int localport = Integer.parseInt(args[0]);
+			final String remotehost = args[1];
+			final int remoteport = Integer.parseInt(args[2]);
 			
 			/* Create a QoS */
 		    QoS myQoS=null;
@@ -85,24 +89,23 @@ public class Ecco {
 		    }
 		    
 		    /* Create a channel. Uses default event scheduler. */
-		    Channel myChannel=myQoS.createUnboundChannel("Appl Channel");
+		    final Channel myChannel=myQoS.createUnboundChannel("Appl Channel");
 		    
 		    /* Application Session requires special arguments: qos and port.
 		       A session is created and binded to the stack. Remaining ones
 		       are created by default
 		     */
 		    
-		    EccoSession es=(EccoSession)qos[qos.length-1].createSession();
+		    final EccoSession es=(EccoSession)qos[qos.length-1].createSession();
 		    try {
 				es.init(
 						localport,
 						new InetSocketAddress(InetAddress.getByName(remotehost),remoteport));
 			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		    
-		    ChannelCursor cc=myChannel.getCursor();
+		    final ChannelCursor cc=myChannel.getCursor();
 		    /* Application is the last session of the array. Positioning
 		       in it is simple */
 		    try {

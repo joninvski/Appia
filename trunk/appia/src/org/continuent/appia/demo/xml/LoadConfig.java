@@ -36,18 +36,21 @@ import org.xml.sax.SAXException;
  * putting all the channels in execution.
  * 
  * @author jmocito
+ * @deprecated
  */
 public class LoadConfig {
 
+    private LoadConfig() {}
+    
 	public static void main(String[] args) {
 		if (args.length == 1) {
-			File xmlfile = new File(args[0]);
+			final File xmlfile = new File(args[0]);
 			try {
 				//AppiaXML.load(xmlfile);
 				//Appia.run();
 				AppiaXML.loadAndRun(xmlfile);
 			} catch (SAXException e) {
-				Exception we = e.getException();
+				final Exception we = e.getException();
 				if (we != null )
 					we.printStackTrace();
 				else

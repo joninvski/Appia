@@ -51,34 +51,36 @@ import org.continuent.appia.xml.utils.SessionProperties;
  */ 
 public class GossipServer {
 
+    private GossipServer() {}
+    
   public static final String DEFAULT_UDP_LAYER=GossipOutSession.DEFAULT_UDP_LAYER;
   
-  private static String udp_layer=DEFAULT_UDP_LAYER;
+  private static String udpLayer=DEFAULT_UDP_LAYER;
   private static boolean solo=false;
   
   public static void main(String[] args) {
 
-    SessionProperties params=new SessionProperties();
+    final SessionProperties params=new SessionProperties();
 
     if (!parse(args,0,params))
        System.exit(1);
 
-    GossipServerLayer glayer=new GossipServerLayer();
-    GossipServerSession gsession=(GossipServerSession) glayer.createSession();
+    final GossipServerLayer glayer=new GossipServerLayer();
+    final GossipServerSession gsession=(GossipServerSession) glayer.createSession();
 
     gsession.init(params);
     
     try {
-      Layer[] l={
-          (Layer)Class.forName(udp_layer).newInstance(),
+      final Layer[] l={
+          (Layer)Class.forName(udpLayer).newInstance(),
           new FifoLayer(),
-          glayer
+          glayer,
       };
 
-      QoS qos=new QoS("Gossip Client QoS",l);
-      Channel channel=qos.createUnboundChannel("Gossip Channel");
+      final QoS qos=new QoS("Gossip Client QoS",l);
+      final Channel channel=qos.createUnboundChannel("Gossip Channel");
 
-      ChannelCursor cc=channel.getCursor();
+      final ChannelCursor cc=channel.getCursor();
       cc.top();
       cc.setSession(gsession);
       
@@ -107,7 +109,7 @@ public class GossipServer {
     }
     
     try {
-      Layer[] l={
+      final Layer[] l={
           new UdpSimpleLayer(), 
           new FifoLayer(),
           new GroupBottomLayer(),
@@ -119,13 +121,13 @@ public class GossipServer {
           new StableLayer(),
           new LeaveLayer(),
           new VSyncLayer(),
-          glayer
+          glayer,
       };
 
-      QoS qos=new QoS("Gossip Group QoS",l);
-      Channel channel=qos.createUnboundChannel("Gossip Group Channel");
+      final QoS qos=new QoS("Gossip Group QoS",l);
+      final Channel channel=qos.createUnboundChannel("Gossip Group Channel");
 
-      ChannelCursor cc=channel.getCursor();
+      final ChannelCursor cc=channel.getCursor();
       cc.top();
       cc.setSession(gsession);
       
@@ -140,14 +142,14 @@ public class GossipServer {
   }
 
   // Must end with a '-'
-  private static final String sessionParams="-port-gossip-remove_time-timer-";
+  private static final String SESSION_PARAMS="-port-gossip-remove_time-timer-";
     
   private static boolean parse(String[] args, int i, SessionProperties params) {
 
     if (i >= args.length)
       return true;
 
-    if (sessionParams.indexOf(args[i]+"-") >= 0) {
+    if (SESSION_PARAMS.indexOf(args[i]+"-") >= 0) {
       if (i+1 >= args.length) {
         System.err.println("Missing port value");
         printHelp();
@@ -175,7 +177,7 @@ public class GossipServer {
         return false;
       }
  
-      udp_layer=args[i+1];
+      udpLayer=args[i+1];
       return parse(args,i+2,params);
     }
     

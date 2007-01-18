@@ -28,7 +28,6 @@ package org.continuent.appia.demo;
 import java.io.File;
 import java.io.IOException;
 
-import org.continuent.appia.core.Appia;
 import org.continuent.appia.xml.AppiaXML;
 import org.xml.sax.SAXException;
 

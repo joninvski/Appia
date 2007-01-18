@@ -27,7 +27,6 @@ import java.io.LineNumberReader;
 import org.continuent.appia.core.*;
 import org.continuent.appia.protocols.common.AppiaThreadFactory;
 import org.continuent.appia.protocols.common.ThreadFactory;
-import org.continuent.appia.protocols.nakfifo.NakFifoLayer;
 import org.continuent.appia.test.perf.PerfLayer;
 import org.continuent.appia.test.perf.PerfSession;
 import org.continuent.appia.xml.utils.SessionProperties;
@@ -39,6 +38,8 @@ import org.continuent.appia.xml.utils.SessionProperties;
  * @author Hugo Miranda and Alexandre Pinto
  */
 public class Perf {
+    
+    private Perf() {}
   
   private static Layer[] qos={
       //new appia.protocols.udpsimple.UdpSimpleLayer(),
@@ -57,35 +58,36 @@ public class Perf {
       new org.continuent.appia.protocols.group.stable.StableLayer(),
       new org.continuent.appia.protocols.group.leave.LeaveLayer(),
       new org.continuent.appia.protocols.group.sync.VSyncLayer(),
-      new PerfLayer()
+      new PerfLayer(),
   };
 
   // Parameters processed by PerfSession
-  private static final String sessionParams="-test#1-n#1-r#1-k#1-m#1-i#1-gossip#1-multicast#1" +
+  private static final String SESSION_PARAMS="-test#1-n#1-r#1-k#1-m#1-i#1-gossip#1-multicast#1" +
         "-warmup#1-shutdown#1-lo#0-inpayload#1-outpayload#1-fails#1-port#1-addrs#1";
   
   private static boolean debug=false;
   private static int instances=1; 
   private static int groups=1;
+  // FIXME: This is never used?!?
   private static boolean lwg=false;
   
   public static void main(String args[]) {
     int i;
     LineNumberReader file=null;
-    SessionProperties params=new SessionProperties();
+    final SessionProperties params=new SessionProperties();
     
     for (i=0 ; i < args.length ; i++) {
       
       // SESSION PARAMS #1
-      if (sessionParams.indexOf(args[i]+"#1") >= 0) {
-        String key=args[i].substring(1);
+      if (SESSION_PARAMS.indexOf(args[i]+"#1") >= 0) {
+        final String key=args[i].substring(1);
         if (++i >= args.length)
           argInvalid("missing "+key+" value");
         params.put(key,args[i]);
         
       // SESSION PARAMS #0
-      } else if (sessionParams.indexOf(args[i]+"#0-") >= 0) {
-          String key=args[i].substring(1);
+      } else if (SESSION_PARAMS.indexOf(args[i]+"#0-") >= 0) {
+          final String key=args[i].substring(1);
           params.put(key,"true");
         
       // DEBUG 
@@ -105,7 +107,7 @@ public class Perf {
             s=s.trim();
             if (s.length() > 0) {
               if (j == qos.length-1) {
-                Layer[] aux=new Layer[qos.length*2];
+                final Layer[] aux=new Layer[qos.length*2];
                 System.arraycopy(qos,0,aux,0,j);
                 qos=aux;
               }
@@ -113,7 +115,7 @@ public class Perf {
             }
           }
           if (j < qos.length-1) {
-            Layer[] aux=new Layer[j+1];
+            final Layer[] aux=new Layer[j+1];
             System.arraycopy(qos,0,aux,0,j);
             qos=aux;
           }
@@ -184,26 +186,26 @@ public class Perf {
       System.exit(1);
     }
     
-    ThreadFactory threadFactory = AppiaThreadFactory.getThreadFactory();
+    final ThreadFactory threadFactory = AppiaThreadFactory.getThreadFactory();
     
-    for ( ; instances > 0 ; instances--) {
+    for (; instances > 0; instances--) {
       final Appia appiaInstance=new Appia();
       
       // TODO: test schedulers
-      EventScheduler es=new EventScheduler(appiaInstance);
+      final EventScheduler es=new EventScheduler(appiaInstance);
       
       if (debug)
         System.out.println("New Instance \""+appiaInstance+"\" with Scheduler \""+es+"\"");
       
-      Session lwg_session=null;
+      //Session lwg_session=null;
       for (int g=groups ; g > 0 ; g--) {
-        Channel myChannel=myQoS.createUnboundChannel("Perf Channel "+g,es);
+        final Channel myChannel=myQoS.createUnboundChannel("Perf Channel "+g,es);
         
-        PerfSession ps=(PerfSession)qos[qos.length-1].createSession();
+        final PerfSession ps=(PerfSession)qos[qos.length-1].createSession();
         params.put("group","Perf Group "+g);
         ps.init(params);
         
-        ChannelCursor cc=myChannel.getCursor();
+        final ChannelCursor cc=myChannel.getCursor();
         try {
           cc.top();
           cc.setSession(ps);
