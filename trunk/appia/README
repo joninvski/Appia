@@ -5,8 +5,8 @@ Last Updated: 2006/03/20
 Copyright (C) 2006 University of Lisbon
 
 Appia is a layered communication framework implemented in Java and
-providing extended configuration and programming possibilities. Appia
-contains protocols that provide group communication facilities.
+providing extended configuration and programming possibilities. 
+Appia contains protocols that provide group communication facilities.
 
 This file describes how to install and use the Appia framework.
 
