@@ -48,7 +48,7 @@ public class VSyncMultiplexerLayer extends Layer {
 			View.class,
 			BlockOk.class,
 			ChannelInit.class,
-			ChannelClose.class
+			ChannelClose.class,
 		};
 	}
 	
