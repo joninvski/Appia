@@ -33,7 +33,7 @@ import org.continuent.appia.protocols.group.intra.ViewChange;
 
 
 /**
- * Session that implementes a graceful exit from the group.
+ * Session that implements a graceful exit from the group.
  *
  * @author Alexandre Pinto
  * @version 0.1

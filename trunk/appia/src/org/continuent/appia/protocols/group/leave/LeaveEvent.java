@@ -35,7 +35,7 @@ import org.continuent.appia.protocols.group.events.GroupSendableEvent;
  * details.
  * <br>
  * If the group is {@link org.continuent.appia.protocols.group.sync.BlockOk blocked} there
- * isn't any guarantee that a leave wil succeed.
+ * isn't any guarantee that a leave will succeed.
  *
  * @author Alexandre Pinto
  * @version 0.1
