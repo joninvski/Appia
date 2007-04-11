@@ -255,7 +255,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     if (event.getDir() == Direction.UP) {
       byte flags=event.getMessage().popByte();
       if ((flags & MessageUtils.IGNORE_FLAG) != 0) {
-        debug("Received msg with ignore flag. Ignoring.");
+        debug("Received message with ignore flag. Ignoring.");
         try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
         return;
       }
@@ -820,7 +820,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       if (evaux instanceof UpdateEvent) {
         UpdateEvent update=(UpdateEvent)evaux;
         if (update.to <= peer.last_msg_delivered) {
-        	debug("Discarded unwated event from "+peer.addr+" with seq "+update.from+" -> "+update.to);
+        	debug("Discarded unwanted event from "+peer.addr+" with seq "+update.from+" -> "+update.to);
         	aux.remove();
         } else if (update.from == peer.last_msg_delivered+1) {
           peer.last_msg_delivered=update.to;
@@ -831,7 +831,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       } else { // Not UpdateEvent interface regular SendableEvent
         long seqaux=utils.popSeq(evaux.getMessage(),peer.last_msg_delivered,true);
         if (seqaux <= peer.last_msg_delivered) {
-        	debug("Discarded unwated event from "+peer.addr+" with seq "+seqaux);
+        	debug("Discarded unwanted event from "+peer.addr+" with seq "+seqaux);
         	aux.remove();        	
         } else if (seqaux == peer.last_msg_delivered+1) {
           if (!(evaux instanceof PingEvent)) {
