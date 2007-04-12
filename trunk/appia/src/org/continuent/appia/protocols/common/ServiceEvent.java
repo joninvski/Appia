@@ -26,13 +26,19 @@ import org.continuent.appia.core.Event;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.message.Message;
 
+/**
+ * This class defines a ServiceEvent.
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
+ */
 public class ServiceEvent extends Event {
 	
 	private Message message;
 
 	/**
-	 * basic Service event contructor. The agument passed should be used only to distinguish between several messages (as msgID).
-	 * @param m the message concering the notification service.
+	 * Basic Service event constructor. The argument passed should be used only to distinguish between several messages (as msgID).
+	 * @param m the message concerning the notification service.
 	 */
 	public ServiceEvent(Message m) {
 		super();
