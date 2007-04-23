@@ -30,7 +30,6 @@ package org.continuent.appia.protocols.group.heal;
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
-import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.events.channel.PeriodicTimer;
 import org.continuent.appia.protocols.group.bottom.OtherViews;
 import org.continuent.appia.protocols.group.events.GroupInit;
@@ -68,7 +67,6 @@ public class HealLayer extends Layer {
     		OtherViews.class,
     		GroupInit.class,
     		periodic,
-    		Debug.class,
     };
   }
   

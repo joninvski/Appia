@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- 
+
 /**
  * Title:        Apia<p>
  * Description:  Protocol development and composition framework<p>
@@ -34,39 +34,40 @@ import org.continuent.appia.core.Session;
 
 public class VSyncLayer extends Layer {
 
-  public VSyncLayer() {
-      Class block=org.continuent.appia.protocols.group.sync.Block.class;
-      Class blockok=org.continuent.appia.protocols.group.sync.BlockOk.class;
-      Class sync=org.continuent.appia.protocols.group.sync.Sync.class;
-      Class view=org.continuent.appia.protocols.group.intra.View.class;
-      Class newview=org.continuent.appia.protocols.group.intra.NewView.class;
-      Class echo=org.continuent.appia.core.events.channel.EchoEvent.class;
-      Class fail=org.continuent.appia.protocols.group.suspect.Fail.class;
-      Class gse=org.continuent.appia.protocols.group.events.GroupSendableEvent.class;
-      Class debug=org.continuent.appia.core.events.channel.Debug.class;
+    public VSyncLayer() {
+        Class block=org.continuent.appia.protocols.group.sync.Block.class;
+        Class blockok=org.continuent.appia.protocols.group.sync.BlockOk.class;
+        Class sync=org.continuent.appia.protocols.group.sync.Sync.class;
+        Class view=org.continuent.appia.protocols.group.intra.View.class;
+        Class newview=org.continuent.appia.protocols.group.intra.NewView.class;
+        Class echo=org.continuent.appia.core.events.channel.EchoEvent.class;
+        Class fail=org.continuent.appia.protocols.group.suspect.Fail.class;
+        Class gse=org.continuent.appia.protocols.group.events.GroupSendableEvent.class;
+        
+        evProvide=new Class[] {
+                block,
+                blockok,
+                sync,
+                echo,
+        };
 
-      evProvide=new Class[4];
-      evProvide[0]=block;
-      evProvide[1]=blockok;
-      evProvide[2]=sync;
-      evProvide[3]=echo;
+        evRequire=new Class[] {
+                view,
+                newview,
+        };
 
-      evRequire=new Class[2];
-      evRequire[0]=view;
-      evRequire[1]=newview;
+        evAccept=new Class[] {
+                block,
+                blockok,
+                sync,
+                view,
+                newview,
+                fail,
+                gse,
+        };
+    }
 
-      evAccept=new Class[8];
-      evAccept[0]=block;
-      evAccept[1]=blockok;
-      evAccept[2]=sync;
-      evAccept[3]=view;
-      evAccept[4]=newview;
-      evAccept[5]=fail;
-      evAccept[6]=gse;
-      evAccept[7]=debug;
-  }
-
-  public Session createSession() {
-    return new VSyncSession(this);
-  }
+    public Session createSession() {
+        return new VSyncSession(this);
+    }
 }

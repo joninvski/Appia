@@ -31,7 +31,6 @@ package org.continuent.appia.protocols.group.suspect;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.channel.ChannelInit;
-import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.events.channel.EchoEvent;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
@@ -73,7 +72,6 @@ public class SuspectLayer extends Layer {
         SuspectTimer.class,
         FIFOUndeliveredEvent.class,
         TcpUndeliveredEvent.class,
-        Debug.class,
         ChannelInit.class,
     };
   }

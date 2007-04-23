@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- 
+
 /**
  * Title:        Apia<p>
  * Description:  Protocol development and composition framework<p>
@@ -30,7 +30,6 @@ package org.continuent.appia.protocols.group.inter;
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
-import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.protocols.group.heal.ConcurrentViewEvent;
 import org.continuent.appia.protocols.group.intra.PreView;
 import org.continuent.appia.protocols.group.intra.View;
@@ -39,29 +38,28 @@ import org.continuent.appia.protocols.group.intra.ViewChange;
 
 public class InterLayer extends Layer {
 
-  public InterLayer() {
-    evProvide=new Class[] {
-        ViewChange.class,
-        MergeEvent.class,
-        MergeTimer.class
-    };
-    
-    evRequire=new Class[] {
-        View.class,
-        PreView.class
-    };
-    
-    evAccept=new Class[] {
-        View.class,
-        PreView.class,
-        MergeEvent.class,
-        MergeTimer.class,
-        ConcurrentViewEvent.class,
-        Debug.class
-    };
-  }
+    public InterLayer() {
+        evProvide=new Class[] {
+                ViewChange.class,
+                MergeEvent.class,
+                MergeTimer.class
+        };
 
-  public Session createSession() {
-    return new InterSession(this);
-  }
+        evRequire=new Class[] {
+                View.class,
+                PreView.class
+        };
+
+        evAccept=new Class[] {
+                View.class,
+                PreView.class,
+                MergeEvent.class,
+                MergeTimer.class,
+                ConcurrentViewEvent.class,
+        };
+    }
+
+    public Session createSession() {
+        return new InterSession(this);
+    }
 }

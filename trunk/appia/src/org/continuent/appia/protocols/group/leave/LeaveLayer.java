@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package org.continuent.appia.protocols.group.leave;
+package org.continuent.appia.protocols.group.leave;
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
@@ -45,61 +45,60 @@ import org.continuent.appia.core.Session;
  */
 public class LeaveLayer extends Layer {
 
-  /**
-   * Creates LeaveLayer.
-   * <br>
-   *
-   * <b>Events Provided</b><br>
-   * <ul>
-   * <li>appia.protocols.group.intra.ViewChange
-   * <li>appia.protocols.group.leave.ExitEvent
-   * </ul>
-   *
-   * <b>Events Required</b><br>
-   * <ul>
-   * <li>appia.protocols.group.intra.View
-   * <li>appia.protocols.group.intra.PreView
-   * </ul>
-   *
-   * <b>Events Accepted</b>
-   * <ul>
-   * <li>appia.protocols.group.intra.View
-   * <li>appia.protocols.group.intra.PreView
-   * <li>appia.protocols.group.leave.LeaveEvent
-   * <li>appia.protocols.group.leave.ExitEvent
-   * <li>appia.events.channel.Debug
-   * </ul>
-   */
-  public LeaveLayer() {
-	  
-      Class view=org.continuent.appia.protocols.group.intra.View.class;
-      Class debug=org.continuent.appia.core.events.channel.Debug.class;
-      Class change=org.continuent.appia.protocols.group.intra.ViewChange.class;
-      Class preview=org.continuent.appia.protocols.group.intra.PreView.class;
-      Class leave=org.continuent.appia.protocols.group.leave.LeaveEvent.class;
-      Class exit=org.continuent.appia.protocols.group.leave.ExitEvent.class;
+    /**
+     * Creates LeaveLayer.
+     * <br>
+     *
+     * <b>Events Provided</b><br>
+     * <ul>
+     * <li>appia.protocols.group.intra.ViewChange
+     * <li>appia.protocols.group.leave.ExitEvent
+     * </ul>
+     *
+     * <b>Events Required</b><br>
+     * <ul>
+     * <li>appia.protocols.group.intra.View
+     * <li>appia.protocols.group.intra.PreView
+     * </ul>
+     *
+     * <b>Events Accepted</b>
+     * <ul>
+     * <li>appia.protocols.group.intra.View
+     * <li>appia.protocols.group.intra.PreView
+     * <li>appia.protocols.group.leave.LeaveEvent
+     * <li>appia.protocols.group.leave.ExitEvent
+     * </ul>
+     */
+    public LeaveLayer() {
+        Class view=org.continuent.appia.protocols.group.intra.View.class;
+        Class change=org.continuent.appia.protocols.group.intra.ViewChange.class;
+        Class preview=org.continuent.appia.protocols.group.intra.PreView.class;
+        Class leave=org.continuent.appia.protocols.group.leave.LeaveEvent.class;
+        Class exit=org.continuent.appia.protocols.group.leave.ExitEvent.class;
 
-      evProvide=new Class[2];
-      evProvide[0]=change;
-      evProvide[1]=exit;
+        evProvide=new Class[] {
+                change,
+                exit,
+        };
 
-      evRequire=new Class[2];
-      evRequire[0]=view;
-      evRequire[1]=preview;
+        evRequire=new Class[] {
+                view,
+                preview,
+        };
 
-      evAccept=new Class[5];
-      evAccept[0]=view;
-      evAccept[1]=preview;
-      evAccept[2]=leave;
-      evAccept[3]=exit;
-      evAccept[4]=debug;
+        evAccept=new Class[] {
+                view,
+                preview,
+                leave,
+                exit,
+        };
 
-  }
+    }
 
-  /**
-   * Creates a new LeaveSession.
-   */
-  public Session createSession() {
-    return new LeaveSession(this);
-  }
+    /**
+     * Creates a new LeaveSession.
+     */
+    public Session createSession() {
+        return new LeaveSession(this);
+    }
 }

@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- 
+
 /**
  * Title:        Apia<p>
  * Description:  Protocol development and composition framework<p>
@@ -30,43 +30,44 @@ package org.continuent.appia.protocols.group.intra;
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
-import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.events.channel.EchoEvent;
 import org.continuent.appia.protocols.group.events.GroupInit;
 import org.continuent.appia.protocols.group.suspect.Fail;
 
 
 public class IntraLayer extends Layer {
-  
-  public IntraLayer() {
-    Class view=org.continuent.appia.protocols.group.intra.View.class;
-    Class install=org.continuent.appia.protocols.group.intra.InstallView.class;
-    Class init=GroupInit.class;
-    Class preview=org.continuent.appia.protocols.group.intra.PreView.class;
-    Class newview=org.continuent.appia.protocols.group.intra.NewView.class;
-    
-    evProvide=new Class[5];
-    evProvide[0]=view;
-    evProvide[1]=install;
-    evProvide[2]=EchoEvent.class;
-    evProvide[3]=preview;
-    evProvide[4]=newview;
-    
-    evRequire=new Class[1];
-    evRequire[0]=init;
-    
-    evAccept=new Class[8];
-    evAccept[0]=install;
-    evAccept[1]=Fail.class;
-    evAccept[2]=init;
-    evAccept[3]=view;
-    evAccept[4]=org.continuent.appia.protocols.group.intra.ViewChange.class;
-    evAccept[5]=preview;
-    evAccept[6]=newview;
-    evAccept[7]=Debug.class;
-  }
-  
-  public Session createSession() {
-    return new IntraSession(this);
-  }
+
+    public IntraLayer() {
+        Class view=org.continuent.appia.protocols.group.intra.View.class;
+        Class install=org.continuent.appia.protocols.group.intra.InstallView.class;
+        Class init=GroupInit.class;
+        Class preview=org.continuent.appia.protocols.group.intra.PreView.class;
+        Class newview=org.continuent.appia.protocols.group.intra.NewView.class;
+
+        evProvide=new Class[] {
+                view,
+                install,
+                EchoEvent.class,
+                preview,
+                newview,
+        };
+
+        evRequire=new Class[] {
+                init,
+        };
+
+        evAccept=new Class[] {
+                install,
+                Fail.class,
+                init,
+                view,
+                org.continuent.appia.protocols.group.intra.ViewChange.class,
+                preview,
+                newview,
+        };
+    }
+
+    public Session createSession() {
+        return new IntraSession(this);
+    }
 }

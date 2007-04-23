@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- 
+
 /**
  * Title:        Apia<p>
  * Description:  Protocol development and composition framework<p>
@@ -30,45 +30,45 @@ package org.continuent.appia.protocols.group.stable;
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
-import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.events.channel.PeriodicTimer;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 import org.continuent.appia.protocols.group.intra.View;
 import org.continuent.appia.protocols.group.suspect.Fail;
 import org.continuent.appia.protocols.group.suspect.Suspect;
 
-
 public class StableLayer extends Layer {
-  
-  public StableLayer() {
-    Class gossip=org.continuent.appia.protocols.group.stable.StableGossip.class;
-    Class view=View.class;
-    Class retransmit=org.continuent.appia.protocols.group.stable.Retransmit.class;
-    Class retransmission=org.continuent.appia.protocols.group.stable.Retransmission.class;
-    Class periodic=PeriodicTimer.class;
-    
-    evProvide=new Class[4];
-    evProvide[0]=gossip;
-    evProvide[1]=retransmit;
-    evProvide[2]=retransmission;
-    evProvide[3]=Suspect.class;
-    
-    evRequire=new Class[2];
-    evRequire[0]=view;
-    evRequire[1]=periodic;
-    
-    evAccept=new Class[8];
-    evAccept[0]=gossip;
-    evAccept[1]=view;
-    evAccept[2]=retransmit;
-    evAccept[3]=retransmission;
-    evAccept[4]=Fail.class;
-    evAccept[5]=periodic;
-    evAccept[6]=GroupSendableEvent.class;
-    evAccept[7]=Debug.class;
-  }
 
-  public Session createSession() {
-    return new StableSession(this);
-  }
+    public StableLayer() {
+        Class gossip=org.continuent.appia.protocols.group.stable.StableGossip.class;
+        Class view=View.class;
+        Class retransmit=org.continuent.appia.protocols.group.stable.Retransmit.class;
+        Class retransmission=org.continuent.appia.protocols.group.stable.Retransmission.class;
+        Class periodic=PeriodicTimer.class;
+
+        evProvide=new Class[] {
+                gossip,
+                retransmit,
+                retransmission,
+                Suspect.class,
+        };
+
+        evRequire=new Class[] {
+                view,
+                periodic,
+        };
+
+        evAccept=new Class[] {
+                gossip,
+                view,
+                retransmit,
+                retransmission,
+                Fail.class,
+                periodic,
+                GroupSendableEvent.class,
+        };
+    }
+
+    public Session createSession() {
+        return new StableSession(this);
+    }
 }

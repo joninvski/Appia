@@ -29,10 +29,13 @@
 package org.continuent.appia.protocols.group.intra;
 
 
-import java.io.PrintStream;
-
-import org.continuent.appia.core.*;
-import org.continuent.appia.core.events.channel.Debug;
+import org.apache.log4j.Logger;
+import org.continuent.appia.core.AppiaEventException;
+import org.continuent.appia.core.Channel;
+import org.continuent.appia.core.Direction;
+import org.continuent.appia.core.Event;
+import org.continuent.appia.core.Layer;
+import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.channel.EchoEvent;
 import org.continuent.appia.protocols.group.AppiaGroupError;
 import org.continuent.appia.protocols.group.Endpt;
@@ -43,7 +46,8 @@ import org.continuent.appia.protocols.group.suspect.Fail;
 
 
 public class IntraSession extends Session {
-
+    private static Logger log = Logger.getLogger(IntraSession.class);
+    
 	/**
 	 * Number of members that retransmit InstallView event. <br>
 	 * InstallView isn't reliably broadcasted, but if a member doesn't receive it 
@@ -81,26 +85,9 @@ public class IntraSession extends Session {
     // View
     } else if (event instanceof View) {
       handleView((View)event); return;
-    // Debug
-    } else if (event instanceof Debug) {
-      Debug ev=(Debug)event;
-
-      if (ev.getQualifierMode() == EventQualifier.ON) {
-        if (ev.getOutput() instanceof PrintStream)
-          debug=(PrintStream)ev.getOutput();
-        else
-          debug=new PrintStream(ev.getOutput());
-        debugOn=true;
-      } else {
-        if (ev.getQualifierMode() == EventQualifier.OFF)
-          debugOn=false;
-      }
-
-      try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
-      return;
     }
 
-    debug("Unwanted event (\""+event.getClass().getName()+"\") received. Continued...");
+    log.warn("Unwanted event (\""+event.getClass().getName()+"\") received. Continued...");
     try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
   }
 
@@ -148,7 +135,7 @@ public class IntraSession extends Session {
        return;
 
     if (ls.failed[ev.orig]) {
-      debug("discarded InstallView because it came from a failed member");
+      log.debug("discarded InstallView because it came from a failed member");
       return;
     }
 
@@ -158,7 +145,7 @@ public class IntraSession extends Session {
 
     // see if i am not a member of the new view
     if (new_vs.getRank(my_endpt) < 0) {
-      debug("discarded InstallView because i don't belong to view");
+      log.debug("discarded InstallView because i don't belong to view");
       return;
     }
 
@@ -175,7 +162,7 @@ public class IntraSession extends Session {
         ev.go();
       } catch (AppiaEventException ex) {
         ex.printStackTrace();
-        debug("impossible to resend InstallView");
+        log.warn("impossible to resend InstallView");
       }
     }
 
@@ -187,7 +174,7 @@ public class IntraSession extends Session {
 
     if (ls.am_coord && !new_view) {
       if (debugFull)
-        debug("Started view change due to Fail");
+        log.debug("Started view change due to Fail");
       
       sendNewView(ev.getChannel());
     }
@@ -210,7 +197,7 @@ public class IntraSession extends Session {
   private void handleViewChange(ViewChange ev) {
     if (ls.am_coord && !new_view) {
       if (debugFull)
-        debug("Started view change due to ViewChange");
+        log.debug("Started view change due to ViewChange");
       
       sendNewView(ev.getChannel());
     }
@@ -260,19 +247,10 @@ public class IntraSession extends Session {
       ev.go();
     } catch (AppiaEventException ex) {
       ex.printStackTrace();
-      debug("impossible to send InstallView");
+      log.warn("impossible to send InstallView");
     }
   }
 
   // DEBUG
-  public static final boolean debugFull=false;
-  
-  private boolean debugOn=false;
-  private PrintStream debug=System.out;
-
-  private void debug(String s) {
-    
-    if ((debugOn || debugFull) && (debug != null))
-       debug.println("appia:group:IntraSession: "+s);
-  }
+  public static final boolean debugFull=true;
 }

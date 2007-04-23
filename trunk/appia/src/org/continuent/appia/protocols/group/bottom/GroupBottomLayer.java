@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package org.continuent.appia.protocols.group.bottom;
+package org.continuent.appia.protocols.group.bottom;
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
@@ -26,8 +26,6 @@ import org.continuent.appia.protocols.group.events.GroupEvent;
 import org.continuent.appia.protocols.group.events.GroupInit;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 import org.continuent.appia.protocols.group.intra.View;
-
-
 
 /**
  * The <i>group communication</i> bottom layer.
@@ -39,50 +37,51 @@ import org.continuent.appia.protocols.group.intra.View;
  * @author Alexandre Pinto
  */
 public class GroupBottomLayer extends Layer {
-  
-  /**
-   * Creates GroupBottomLayer.
-   * <br>
-   *
-   * <b>Events Provided</b><br>
-   * <i>none</i>
-   *
-   * <b>Events Required</b><br>
-   * <ul>
-   * <li>appia.protocols.group.intra.View
-   * </ul>
-   *
-   * <b>Events Accepted</b>
-   * <ul>
-   * <li>appia.protocols.group.events.GroupSendableEvent
-   * <li>appia.protocols.group.intra.View
-   * <li>appia.protocols.group.events.GroupInit
-   * <li>appia.events.channel.Debug
-   * <li>appia.protocols.group.events.GroupEvent
-   * </ul>
-   */
-  public GroupBottomLayer() {
-    Class view=View.class;
-    Class other=org.continuent.appia.protocols.group.bottom.OtherViews.class;
-    
-    evProvide=new Class[1];
-    evProvide[0]=other;
-    
-    evRequire=new Class[1];
-    evRequire[0]=view;
-    
-    evAccept=new Class[5];
-    evAccept[0]=GroupSendableEvent.class;
-    evAccept[1]=view;
-    evAccept[2]=GroupInit.class;
-    evAccept[3]=Debug.class;
-    evAccept[4]=GroupEvent.class;
-  }
-  
-  /**
-   * Creates a new GroupBottomSession.
-   */
-  public Session createSession() {
-    return new GroupBottomSession(this);
-  }
+
+    /**
+     * Creates GroupBottomLayer.
+     * <br>
+     *
+     * <b>Events Provided</b><br>
+     * <i>none</i>
+     *
+     * <b>Events Required</b><br>
+     * <ul>
+     * <li>appia.protocols.group.intra.View
+     * </ul>
+     *
+     * <b>Events Accepted</b>
+     * <ul>
+     * <li>appia.protocols.group.events.GroupSendableEvent
+     * <li>appia.protocols.group.intra.View
+     * <li>appia.protocols.group.events.GroupInit
+     * <li>appia.protocols.group.events.GroupEvent
+     * </ul>
+     */
+    public GroupBottomLayer() {
+        Class view=View.class;
+        Class other=org.continuent.appia.protocols.group.bottom.OtherViews.class;
+
+        evProvide=new Class[] {
+                other
+        };
+
+        evRequire=new Class[] {
+                view
+        };
+
+        evAccept=new Class[] {
+                GroupSendableEvent.class,
+                view,
+                GroupInit.class,
+                GroupEvent.class,
+        };
+    }
+
+    /**
+     * Creates a new GroupBottomSession.
+     */
+    public Session createSession() {
+        return new GroupBottomSession(this);
+    }
 }

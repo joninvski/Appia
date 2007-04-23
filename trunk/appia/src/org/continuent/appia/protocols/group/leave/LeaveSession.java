@@ -19,11 +19,15 @@
  */
  package org.continuent.appia.protocols.group.leave;
 
-import java.io.PrintStream;
 import java.util.Arrays;
 
-import org.continuent.appia.core.*;
-import org.continuent.appia.core.events.channel.Debug;
+import org.apache.log4j.Logger;
+import org.continuent.appia.core.AppiaEventException;
+import org.continuent.appia.core.Channel;
+import org.continuent.appia.core.Direction;
+import org.continuent.appia.core.Event;
+import org.continuent.appia.core.Layer;
+import org.continuent.appia.core.Session;
 import org.continuent.appia.protocols.group.LocalState;
 import org.continuent.appia.protocols.group.ViewState;
 import org.continuent.appia.protocols.group.intra.PreView;
@@ -40,7 +44,8 @@ import org.continuent.appia.protocols.group.intra.ViewChange;
  * @see org.continuent.appia.protocols.group.leave.LeaveLayer
  */
 public class LeaveSession extends Session {
-  
+    private static Logger log = Logger.getLogger(LeaveSession.class);
+    
   public LeaveSession(Layer layer) {
     super(layer);
   }
@@ -76,25 +81,7 @@ public class LeaveSession extends Session {
       return;
     }
     
-    // Debug
-    if (event instanceof Debug) {
-      Debug ev=(Debug)event;
-      
-      if (ev.getQualifierMode() == EventQualifier.ON) {
-        if (ev.getOutput() instanceof PrintStream)
-          debug=(PrintStream)ev.getOutput();
-        else
-          debug=new PrintStream(ev.getOutput());
-      } else {
-        if (ev.getQualifierMode() == EventQualifier.OFF)
-          debug=null;
-      }
-      
-      try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
-      return;
-    }
-    
-    debug("Unwanted event (\""+event.getClass().getName()+"\") received. Continued...");
+    log.warn("Unwanted event (\""+event.getClass().getName()+"\") received. Continued...");
     try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
     
   }
@@ -164,12 +151,12 @@ public class LeaveSession extends Session {
   private void handleExitEvent(ExitEvent ev) {
     if ((ev.getMessage().popInt() != vs.group.hashCode()) ||
         (ev.getMessage().popInt() != vs.id.hashCode()) ) {
-      debug("Exit discarded due to bad Group and/or ViewID");
+      log.debug("Exit discarded due to bad Group and/or ViewID");
       return;
     }
     
     if (!to_leave[ls.my_rank]) {
-      debug("Exit discarded because i didn't request to leave.");
+      log.debug("Exit discarded because i didn't request to leave.");
       return;
     }
     
@@ -216,13 +203,5 @@ public class LeaveSession extends Session {
         ex.printStackTrace();
       }
     }
-  }
-  
-  // DEBUG
-  private PrintStream debug=null;
-  
-  private void debug(String s) {
-    if (debug != null)
-      debug.println("appia:group:leave:LeaveSession: "+s);
   }
 }

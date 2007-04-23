@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- 
+
 /**
  * Title:        Apia<p>
  * Description:  Protocol development and composition framework<p>
@@ -28,12 +28,12 @@
  */
 package org.continuent.appia.protocols.group.inter;
 
-import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
+import org.apache.log4j.Logger;
 import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.AppiaException;
 import org.continuent.appia.core.Channel;
@@ -43,7 +43,6 @@ import org.continuent.appia.core.EventQualifier;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.AppiaMulticast;
-import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.protocols.group.AppiaGroupException;
 import org.continuent.appia.protocols.group.LocalState;
@@ -59,608 +58,592 @@ import org.continuent.appia.xml.utils.SessionProperties;
 
 
 public class InterSession extends Session implements InitializableSession {
+    private static Logger log = Logger.getLogger(InterSession.class);
 
-  // TODO new values
-  public static final long DEFAULT_TERMINATION_TIME=15000; // 15 seconds
-  public static final long DEFAULT_WAITING_TIME=1500; // 1,5 seconds
-  
-  public InterSession(Layer layer) {
-    super(layer);
-  }
+    // TODO new values
+    public static final long DEFAULT_TERMINATION_TIME=15000; // 15 seconds
+    public static final long DEFAULT_WAITING_TIME=1500; // 1,5 seconds
 
-  /**
-   * Initializes the session using the parameters given in the XML configuration.
-   * Possible parameters:
-   * <ul>
-   * <li><b>termination</b> maximum time duration of a view merge. (in milliseconds)
-   * <li><b>waiting</b> time to wait for additional concurrent views, to allow the merging of several views in a single step. (in milliseconds) 
-   * </ul>
-   * 
-   * @param params The parameters given in the XML configuration.
-   */
-  public void init(SessionProperties params) {
-    if (params.containsKey("termination"))
-      termination_time=params.getLong("termination");
-    if (params.containsKey("waiting"))
-      waiting_time=params.getLong("waiting");
-  }
-
-  public void handle(Event event) {
-    
-    // MergeEvent
-    if (event instanceof MergeEvent) {
-      handleMergeEvent((MergeEvent)event); return;
-    } else if (event instanceof MergeTimer) {
-      handleMergeTimer((MergeTimer)event); return;
-      // ConcurrentViewEvent
-    } else if (event instanceof ConcurrentViewEvent) {
-      handleConcurrent((ConcurrentViewEvent)event); return;
-    // PreView
-    } else if (event instanceof PreView) {
-      handlePreView((PreView)event); return;
-    // View
-    } else if (event instanceof View) {
-      handleView((View)event); return;
-    // Debug
-    } else if (event instanceof Debug) {
-      Debug ev=(Debug)event;
-      
-      if (ev.getQualifierMode() == EventQualifier.ON) {
-        if (ev.getOutput() instanceof PrintStream)
-          debug=(PrintStream)ev.getOutput();
-        else
-          debug=new PrintStream(ev.getOutput());
-        debugOn=true;
-      } else {
-        if (ev.getQualifierMode() == EventQualifier.OFF)
-          debugOn=false;
-      }
-      
-      try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
-      return;
-    }
-    
-    debug("Unwanted event (\""+event.getClass().getName()+"\") received. Continued...");
-    try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
-  }
-  
-  private long termination_time=DEFAULT_TERMINATION_TIME;
-  private long waiting_time=DEFAULT_WAITING_TIME;
-  private ViewState vs=null;
-  private LocalState ls;
-  private int round;
-  private ArrayList views=new ArrayList();
-  private boolean waited;
-  private ViewInfo myInfo;
-  private boolean sent_viewchange;
-  private boolean sent_preview;
-  private PreView preview;
-  private long timerID=0;
-  
-  private void reset() {
-    round=0;
-    views.clear();
-    waited=false;
-    myInfo=null;
-    
-    if (preview != null) {
-      try {
-        preview.go();
-      } catch (AppiaEventException ex) {
-        ex.printStackTrace();
-      }
-      preview=null;
-      sent_preview=true;
-    }
-  }
-
-  private void handleView(View ev) {
-    vs=ev.vs;
-    ls=ev.ls;
-    
-    try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
-
-    sent_viewchange=false;
-    sent_preview=false;
-    preview=null;
-    reset();
-  }
-
-  private void handlePreView(PreView ev) {
-    if (views.size() == 0) {
-      try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
-      sent_preview=true;
-      return;
+    public InterSession(Layer layer) {
+        super(layer);
     }
 
-    myInfo.vs=ev.vs;
-    preview=ev;
-    
-    decide(ev.getChannel());
-  }
-  
-  private void handleConcurrent(ConcurrentViewEvent ev) {
-    if (!ls.am_coord || (ev.id == null)) {
-      try {
-	      ev.go();
-      } catch (AppiaEventException e) {
-	      e.printStackTrace();
-      }
-      return;
+    /**
+     * Initializes the session using the parameters given in the XML configuration.
+     * Possible parameters:
+     * <ul>
+     * <li><b>termination</b> maximum time duration of a view merge. (in milliseconds)
+     * <li><b>waiting</b> time to wait for additional concurrent views, to allow the merging of several views in a single step. (in milliseconds) 
+     * </ul>
+     * 
+     * @param params The parameters given in the XML configuration.
+     */
+    public void init(SessionProperties params) {
+        if (params.containsKey("termination"))
+            termination_time=params.getLong("termination");
+        if (params.containsKey("waiting"))
+            waiting_time=params.getLong("waiting");
     }
-        
-    if (sent_preview) {
-      debug("Concurrent view warning discarded because i already sent PreView"+
-      ". Wait for next view.");
-      return;
-    }
-    
-    if ((myInfo != null) && myInfo.decided) {
-      debug("Concurrent view warning discarded because i have already decided.");
-      return;
-    }
-    
-    if (find(ev.id) >= 0) {
-      debug("Received duplicate concurrent view warning. Ignoring it.");
-      return;
-    }
-    
-    round++;
-    
-    if (views.size() == 0) {
-      myInfo=new ViewInfo(vs.id,vs.addresses[ls.my_rank]);
-      addSorted(myInfo);
-      sendTimers(ev.getChannel(),true);
-    }
-    
-    addSorted(new ViewInfo(ev.id,(InetSocketAddress)ev.addr));
-    if (debugFull)
-      debugViews("created new proposal");
 
-    if (!validateProposal()) {
-    	debug("Generated invalid proposal. Aborting merge.");
-    	sendAbort(ev.getChannel());
-    	reset();
-    	return;
+    public void handle(Event event) {
+
+        // MergeEvent
+        if (event instanceof MergeEvent) {
+            handleMergeEvent((MergeEvent)event); return;
+        } else if (event instanceof MergeTimer) {
+            handleMergeTimer((MergeTimer)event); return;
+            // ConcurrentViewEvent
+        } else if (event instanceof ConcurrentViewEvent) {
+            handleConcurrent((ConcurrentViewEvent)event); return;
+            // PreView
+        } else if (event instanceof PreView) {
+            handlePreView((PreView)event); return;
+            // View
+        } else if (event instanceof View) {
+            handleView((View)event); return;
+        }
+
+        log.warn("Unwanted event (\""+event.getClass().getName()+"\") received. Continued...");
+        try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
     }
-    	
-    sendPropose(ev.getChannel());
-    myInfo.proposed=true;
-    decide(ev.getChannel());
-  }
-  
-  private void handleMergeTimer(MergeTimer ev) {
-    if (ev.timerID.equals("WAIT "+timerID+" "+this)) {
-      debug("Wait timer expired.");
-      waited=true;
-      decide(ev.getChannel());
-    } else if (ev.timerID.equals("TERMINATE "+timerID+" "+this)) {
-      debug("Terminate timer expired.");
-      if (views.size() > 0) {
-        sendAbort(ev.getChannel());
+
+    private long termination_time=DEFAULT_TERMINATION_TIME;
+    private long waiting_time=DEFAULT_WAITING_TIME;
+    private ViewState vs=null;
+    private LocalState ls;
+    private int round;
+    private ArrayList views=new ArrayList();
+    private boolean waited;
+    private ViewInfo myInfo;
+    private boolean sent_viewchange;
+    private boolean sent_preview;
+    private PreView preview;
+    private long timerID=0;
+
+    private void reset() {
+        round=0;
+        views.clear();
+        waited=false;
+        myInfo=null;
+
+        if (preview != null) {
+            try {
+                preview.go();
+            } catch (AppiaEventException ex) {
+                ex.printStackTrace();
+            }
+            preview=null;
+            sent_preview=true;
+        }
+    }
+
+    private void handleView(View ev) {
+        vs=ev.vs;
+        ls=ev.ls;
+
+        try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
+
+        sent_viewchange=false;
+        sent_preview=false;
+        preview=null;
         reset();
-      }
     }
-  }
-  
-  private void handleMergeEvent(MergeEvent ev) {
-    int r,n,sender;
-    ViewID[] vids;
-    InetSocketAddress[] addrs;
-    boolean same;
-    
-    int type=ev.getMessage().popInt();
-    switch (type) {
-      case MergeEvent.PROPOSE:
-        r=ev.getMessage().popInt();
-        n=ev.getMessage().popInt();
-        vids=new ViewID[n];
-        addrs=new InetSocketAddress[n];
-        same=readProposal(ev.getMessage(),n,vids,addrs);
-        sender=ev.getMessage().popInt();
-        if (same && (r == round)) {
-          debug("Received identical proposal from "+vids[sender]+"("+addrs[sender]+") with address "+ev.source);
-          receiveIdenticalProposal(sender, ev.getChannel());
-        } else {
-          debug("Received new proposal from "+vids[sender]+"("+addrs[sender]+") with address "+ev.source);
-          if (debugFull)
-            debugProposal("New proposal", r, n, vids, addrs);
-          receiveNewProposal(sender, r, vids, addrs, ev.getChannel());
+
+    private void handlePreView(PreView ev) {
+        if (views.size() == 0) {
+            try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
+            sent_preview=true;
+            return;
         }
-        break;
-      case MergeEvent.DECIDE:
-        r=ev.getMessage().popInt();
-        n=ev.getMessage().popInt();
-        vids=new ViewID[n];
-        addrs=new InetSocketAddress[n];
-        same=readProposal(ev.getMessage(),n,vids,addrs);
-        sender=ev.getMessage().popInt();
-        ViewState sender_vs=ViewState.pop(ev.getMessage());
-        if (same && (r == round)) {
-          debug("Received identical decide from "+vids[sender]+"("+addrs[sender]+") with address "+ev.source);
-          receiveIdenticalDecide(sender,sender_vs);
-        } else {
-          debug("Received new decide from "+vids[sender]+"("+addrs[sender]+") with address "+ev.source);
-          if (debugFull)
-            debugProposal("New decide", r, n, vids, addrs);
-          receiveNewDecide(sender,r,vids,addrs,sender_vs,ev.getChannel());
-        }
-        break;
-      case MergeEvent.ABORT:
-        ViewID sender_id=ViewID.pop(ev.getMessage());
-        if (find(sender_id) < 0) {
-          debug("Received abort from "+sender_id+" with address "+ev.source);
-          sendAbort(ev.getChannel());
-          reset();
-        } else {
-          debug("Received abort from unknown sender ("+sender_id+"). Ignoring it.");
-        }
-        break;
+
+        myInfo.vs=ev.vs;
+        preview=ev;
+
+        decide(ev.getChannel());
     }
-  }
-  
-  private void receiveIdenticalProposal(int sender, Channel channel) {
-    ViewInfo info=(ViewInfo)views.get(sender);
-    info.proposed=true;
-    // If received at least one Proposal then we can request the view change
-    if (!sent_viewchange)
-      sendViewChange(channel);
-  }
-  
-  private boolean receiveNewProposal(int sender, int r, ViewID[] vids, InetSocketAddress[] addrs, Channel channel) {
-    if (sent_preview) {
-      debug("Received new proposal but already sent PreView");
-      sendAbort(channel,addrs[sender]);
-      return false;
-    }
-    
-    if (views.size() == 0) {
-      int i, myIndex;
-      for(i=0 ; i < vids.length ; i++)
-        views.add(new ViewInfo(vids[i],addrs[i]));
-      round=r;
-      if ((myIndex=find(vs.id)) < 0) {
-        debug("Received new proposal but i don't belong. Ignoring it.");
-        reset();
-        return false;
-      } 
-      myInfo=(ViewInfo)views.get(myIndex);
-      sendTimers(channel, true);
-    } else {
-      int i;
-      int originalSize=views.size();
-      int newElements=0;
-      int commonElements=0;
-      
-      for (i=0 ; i < vids.length ; i++) {
-        if (find(vids[i]) < 0) {
-          addSorted(new ViewInfo(vids[i],addrs[i]));
-          newElements++;
-        } else {
-          commonElements++;
+
+    private void handleConcurrent(ConcurrentViewEvent ev) {
+        if (!ls.am_coord || (ev.id == null)) {
+            try {
+                ev.go();
+            } catch (AppiaEventException e) {
+                e.printStackTrace();
+            }
+            return;
         }
-      }
-      
-      if ((newElements > 0) || (round > r)) {
+
+        if (sent_preview) {
+            log.debug("Concurrent view warning discarded because i already sent PreView"+
+            ". Wait for next view.");
+            return;
+        }
+
+        if ((myInfo != null) && myInfo.decided) {
+            log.debug("Concurrent view warning discarded because i have already decided.");
+            return;
+        }
+
+        if (find(ev.id) >= 0) {
+            log.debug("Received duplicate concurrent view warning. Ignoring it.");
+            return;
+        }
+
+        round++;
+
+        if (views.size() == 0) {
+            myInfo=new ViewInfo(vs.id,vs.addresses[ls.my_rank]);
+            addSorted(myInfo);
+            sendTimers(ev.getChannel(),true);
+        }
+
+        addSorted(new ViewInfo(ev.id,(InetSocketAddress)ev.addr));
+        if (debugFull)
+            debugViews("created new proposal");
+
+        if (!validateProposal()) {
+            log.debug("Generated invalid proposal. Aborting merge.");
+            sendAbort(ev.getChannel());
+            reset();
+            return;
+        }
+
+        sendPropose(ev.getChannel());
+        myInfo.proposed=true;
+        decide(ev.getChannel());
+    }
+
+    private void handleMergeTimer(MergeTimer ev) {
+        if (ev.timerID.equals("WAIT "+timerID+" "+this)) {
+            log.debug("Wait timer expired.");
+            waited=true;
+            decide(ev.getChannel());
+        } else if (ev.timerID.equals("TERMINATE "+timerID+" "+this)) {
+            log.debug("Terminate timer expired.");
+            if (views.size() > 0) {
+                sendAbort(ev.getChannel());
+                reset();
+            }
+        }
+    }
+
+    private void handleMergeEvent(MergeEvent ev) {
+        int r,n,sender;
+        ViewID[] vids;
+        InetSocketAddress[] addrs;
+        boolean same;
+
+        int type=ev.getMessage().popInt();
+        switch (type) {
+        case MergeEvent.PROPOSE:
+            r=ev.getMessage().popInt();
+            n=ev.getMessage().popInt();
+            vids=new ViewID[n];
+            addrs=new InetSocketAddress[n];
+            same=readProposal(ev.getMessage(),n,vids,addrs);
+            sender=ev.getMessage().popInt();
+            if (same && (r == round)) {
+                log.debug("Received identical proposal from "+vids[sender]+"("+addrs[sender]+") with address "+ev.source);
+                receiveIdenticalProposal(sender, ev.getChannel());
+            } else {
+                log.debug("Received new proposal from "+vids[sender]+"("+addrs[sender]+") with address "+ev.source);
+                if (debugFull)
+                    debugProposal("New proposal", r, n, vids, addrs);
+                receiveNewProposal(sender, r, vids, addrs, ev.getChannel());
+            }
+            break;
+        case MergeEvent.DECIDE:
+            r=ev.getMessage().popInt();
+            n=ev.getMessage().popInt();
+            vids=new ViewID[n];
+            addrs=new InetSocketAddress[n];
+            same=readProposal(ev.getMessage(),n,vids,addrs);
+            sender=ev.getMessage().popInt();
+            ViewState sender_vs=ViewState.pop(ev.getMessage());
+            if (same && (r == round)) {
+                log.debug("Received identical decide from "+vids[sender]+"("+addrs[sender]+") with address "+ev.source);
+                receiveIdenticalDecide(sender,sender_vs);
+            } else {
+                log.debug("Received new decide from "+vids[sender]+"("+addrs[sender]+") with address "+ev.source);
+                if (debugFull)
+                    debugProposal("New decide", r, n, vids, addrs);
+                receiveNewDecide(sender,r,vids,addrs,sender_vs,ev.getChannel());
+            }
+            break;
+        case MergeEvent.ABORT:
+            ViewID sender_id=ViewID.pop(ev.getMessage());
+            if (find(sender_id) < 0) {
+                log.debug("Received abort from "+sender_id+" with address "+ev.source);
+                sendAbort(ev.getChannel());
+                reset();
+            } else {
+                log.debug("Received abort from unknown sender ("+sender_id+"). Ignoring it.");
+            }
+            break;
+        }
+    }
+
+    private void receiveIdenticalProposal(int sender, Channel channel) {
+        ViewInfo info=(ViewInfo)views.get(sender);
+        info.proposed=true;
+        // If received at least one Proposal then we can request the view change
+        if (!sent_viewchange)
+            sendViewChange(channel);
+    }
+
+    private boolean receiveNewProposal(int sender, int r, ViewID[] vids, InetSocketAddress[] addrs, Channel channel) {
+        if (sent_preview) {
+            log.debug("Received new proposal but already sent PreView");
+            sendAbort(channel,addrs[sender]);
+            return false;
+        }
+
+        if (views.size() == 0) {
+            int i, myIndex;
+            for(i=0 ; i < vids.length ; i++)
+                views.add(new ViewInfo(vids[i],addrs[i]));
+            round=r;
+            if ((myIndex=find(vs.id)) < 0) {
+                log.debug("Received new proposal but i don't belong. Ignoring it.");
+                reset();
+                return false;
+            } 
+            myInfo=(ViewInfo)views.get(myIndex);
+            sendTimers(channel, true);
+        } else {
+            int i;
+            int originalSize=views.size();
+            int newElements=0;
+            int commonElements=0;
+
+            for (i=0 ; i < vids.length ; i++) {
+                if (find(vids[i]) < 0) {
+                    addSorted(new ViewInfo(vids[i],addrs[i]));
+                    newElements++;
+                } else {
+                    commonElements++;
+                }
+            }
+
+            if ((newElements > 0) || (round > r)) {
+                for (i=0 ; i < views.size() ; i++) {
+                    ViewInfo info=(ViewInfo)views.get(i);
+                    info.decided=false;
+                }
+                if (commonElements == originalSize) {
+                    round=r;
+                    log.debug("Received new updated proposal.");
+                } else {
+                    round=(r > round ? r : round)+1;
+                    myInfo.proposed=false;
+                    log.debug("Created new proposal round.");
+                } 
+            } else {
+                log.debug("Received old proposal. Ignoring it.");
+                return false;
+            }
+        }
+
+        if (debugFull)
+            debugViews("new proposal");
+
+        if (!validateProposal()) {
+            log.debug("Generated invalid proposal. Aborting merge.");
+            sendAbort(channel);
+            reset();
+            return false;
+        }
+
+        if (!myInfo.proposed) {
+            sendPropose(channel);
+            myInfo.proposed=true;
+        }
+        receiveIdenticalProposal(sender, channel);
+        decide(channel);
+        return true;
+    }
+
+    private void decide(Channel channel) {
+        if (!waited)
+            return;
+        if (preview == null)
+            return;
+
+        myInfo.decided=true;
+        myInfo.vs=preview.vs;
+
+        if (debugFull)
+            debugViews("decided");
+
+        sendDecide(channel);
+        conclude();
+    }
+
+    private void receiveIdenticalDecide(int sender, ViewState sender_vs) {
+        ViewInfo info=(ViewInfo)views.get(sender);
+        info.vs=sender_vs;
+        info.decided=true;
+        conclude();
+    }
+
+    private void receiveNewDecide(int sender, int r, ViewID[] vids, InetSocketAddress[] addrs, ViewState sender_vs, Channel channel) {
+        if (receiveNewProposal(sender, r, vids, addrs, channel))
+            receiveIdenticalDecide(sender, sender_vs);
+    }
+
+    private void conclude() {
+        int i;
+        for(i=0 ; i < views.size() ; i++) {
+            ViewInfo info=(ViewInfo)views.get(i);
+            if (!info.decided)
+                return;
+        }
+
+        ViewState backupvs=preview.vs;
+        try {
+            preview.vs=mergeViews();
+            preview.go();
+            preview=null;
+            sent_preview=true;
+        } catch (AppiaEventException ex) {
+            ex.printStackTrace();
+            preview.vs=backupvs;
+        }
+    }
+
+    private int find(ViewID id) {
+        int i;
         for (i=0 ; i < views.size() ; i++) {
-          ViewInfo info=(ViewInfo)views.get(i);
-          info.decided=false;
+            ViewInfo no=(ViewInfo)views.get(i);
+            if (no.id.equals(id))
+                return i;
         }
-        if (commonElements == originalSize) {
-          round=r;
-          debug("Received new updated proposal.");
-        } else {
-        	round=(r > round ? r : round)+1;
-          myInfo.proposed=false;
-          debug("Created new proposal round.");
-        } 
-      } else {
-        debug("Received old proposal. Ignoring it.");
-        return false;
-      }
+        return -1;
     }
-    
-    if (debugFull)
-      debugViews("new proposal");
 
-    if (!validateProposal()) {
-    	debug("Generated invalid proposal. Aborting merge.");
-    	sendAbort(channel);
-    	reset();
-    	return false;
+    private void addSorted(ViewInfo info) {
+        int i;
+        for (i=0 ; i < views.size() ; i++) {
+            ViewInfo no=(ViewInfo)views.get(i);
+            if (info.id.ltime > no.id.ltime || 
+                    ((info.id.ltime == no.id.ltime) && (info.id.coord.id.compareTo(no.id.coord.id) < 0))) {
+                views.add(i, info);
+                return;
+            }
+        }
+        views.add(info);
     }
-    
-    if (!myInfo.proposed) {
-      sendPropose(channel);
-      myInfo.proposed=true;
-    }
-    receiveIdenticalProposal(sender, channel);
-    decide(channel);
-    return true;
-  }
 
-  private void decide(Channel channel) {
-    if (!waited)
-      return;
-    if (preview == null)
-      return;
-    
-    myInfo.decided=true;
-    myInfo.vs=preview.vs;
+    private boolean validateProposal() {
+        int i,j,k;
+        for (i=0 ; i < views.size() ; i++) {
+            ViewInfo info=(ViewInfo)views.get(i);
+            for (k=0 ; k < vs.previous.length ; k++) {
+                if (info.id.equals(vs.previous[k])) {
+                    if (debugFull)
+                        log.debug("validateProposal: has previous.");
+                    return false;
+                }
+            }
+            for (j=i+1 ; j < views.size() ; j++) {
+                ViewInfo aux=(ViewInfo)views.get(j);
+                if (info.addr.equals(aux.addr)) {
+                    if (debugFull)
+                        log.debug("validateProposal: duplicate address.");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
-    if (debugFull)
-      debugViews("decided");
+    private ViewState mergeViews() {
+        ArrayList vss=new ArrayList(views.size());
+        int i;
+        for (i=0 ; i < views.size() ; i++) {
+            ViewInfo info=(ViewInfo)views.get(i);
+            vss.add(info.vs);
+        }
 
-    sendDecide(channel);
-    conclude();
-  }
-  
-  private void receiveIdenticalDecide(int sender, ViewState sender_vs) {
-    ViewInfo info=(ViewInfo)views.get(sender);
-    info.vs=sender_vs;
-    info.decided=true;
-    conclude();
-  }
-  
-  private void receiveNewDecide(int sender, int r, ViewID[] vids, InetSocketAddress[] addrs, ViewState sender_vs, Channel channel) {
-    if (receiveNewProposal(sender, r, vids, addrs, channel))
-      receiveIdenticalDecide(sender, sender_vs);
-  }
+        ViewState newVS=null;
+        try {
+            newVS=ViewState.merge(vss);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        } catch (AppiaGroupException e) {
+            e.printStackTrace();
+        }
+        return newVS;
+    }
 
-  private void conclude() {
-    int i;
-    for(i=0 ; i < views.size() ; i++) {
-      ViewInfo info=(ViewInfo)views.get(i);
-      if (!info.decided)
-        return;
+    private void sendViewChange(Channel channel) {
+        try {
+            ViewChange ev=new ViewChange(channel,Direction.DOWN,this,vs.group,vs.id);
+            ev.go();
+            sent_viewchange=true;
+        } catch (AppiaEventException ex) {
+            ex.printStackTrace();
+            log.debug("Impossible to send \"ViewChange\"");
+        }
     }
-    
-    ViewState backupvs=preview.vs;
-    try {
-      preview.vs=mergeViews();
-      preview.go();
-      preview=null;
-      sent_preview=true;
-    } catch (AppiaEventException ex) {
-      ex.printStackTrace();
-      preview.vs=backupvs;
-    }
-  }
-  
-  private int find(ViewID id) {
-    int i;
-    for (i=0 ; i < views.size() ; i++) {
-      ViewInfo no=(ViewInfo)views.get(i);
-      if (no.id.equals(id))
-        return i;
-    }
-    return -1;
-  }
-  
-  private void addSorted(ViewInfo info) {
-    int i;
-    for (i=0 ; i < views.size() ; i++) {
-      ViewInfo no=(ViewInfo)views.get(i);
-      if (info.id.ltime > no.id.ltime || 
-          ((info.id.ltime == no.id.ltime) && (info.id.coord.id.compareTo(no.id.coord.id) < 0))) {
-        views.add(i, info);
-        return;
-      }
-    }
-    views.add(info);
-  }
 
-  private boolean validateProposal() {
-    int i,j,k;
-    for (i=0 ; i < views.size() ; i++) {
-      ViewInfo info=(ViewInfo)views.get(i);
-      for (k=0 ; k < vs.previous.length ; k++) {
-      	if (info.id.equals(vs.previous[k])) {
-      		if (debugFull)
-      			debug("validateProposal: has previous.");
-      		return false;
-      	}
-      }
-      for (j=i+1 ; j < views.size() ; j++) {
-      	ViewInfo aux=(ViewInfo)views.get(j);
-      	if (info.addr.equals(aux.addr)) {
-      		if (debugFull)
-      			debug("validateProposal: duplicate address.");
-      		return false;
-      	}
-      }
+    private void sendTimers(Channel channel, boolean on) {
+        ++timerID;
+        try {
+            MergeTimer ev=new MergeTimer(waiting_time,"WAIT "+timerID+" "+this,channel,Direction.DOWN,this,(on ? EventQualifier.ON : EventQualifier.OFF));
+            ev.go();
+        } catch (AppiaEventException ex) {
+            ex.printStackTrace();
+            waited=true;
+        } catch (AppiaException e) {
+            e.printStackTrace();
+            waited=true;
+        }
+        try {
+            MergeTimer ev=new MergeTimer(termination_time+waiting_time,"TERMINATE "+timerID+" "+this,channel,Direction.DOWN,this,(on ? EventQualifier.ON : EventQualifier.OFF));
+            ev.go();
+        } catch (AppiaEventException ex) {
+            ex.printStackTrace();
+        } catch (AppiaException e) {
+            e.printStackTrace();
+        }
     }
-    return true;
-  }
 
-  private ViewState mergeViews() {
-    ArrayList vss=new ArrayList(views.size());
-    int i;
-    for (i=0 ; i < views.size() ; i++) {
-      ViewInfo info=(ViewInfo)views.get(i);
-      vss.add(info.vs);
-    }
-    
-    ViewState newVS=null;
-    try {
-      newVS=ViewState.merge(vss);
-    } catch (NullPointerException e) {
-      e.printStackTrace();
-    } catch (AppiaGroupException e) {
-      e.printStackTrace();
-    }
-    return newVS;
-  }
-  
-  private void sendViewChange(Channel channel) {
-    try {
-      ViewChange ev=new ViewChange(channel,Direction.DOWN,this,vs.group,vs.id);
-      ev.go();
-      sent_viewchange=true;
-    } catch (AppiaEventException ex) {
-      ex.printStackTrace();
-      debug("Impossible to send \"ViewChange\"");
-    }
-  }
-  
-  private void sendTimers(Channel channel, boolean on) {
-    ++timerID;
-    try {
-      MergeTimer ev=new MergeTimer(waiting_time,"WAIT "+timerID+" "+this,channel,Direction.DOWN,this,(on ? EventQualifier.ON : EventQualifier.OFF));
-      ev.go();
-    } catch (AppiaEventException ex) {
-      ex.printStackTrace();
-      waited=true;
-    } catch (AppiaException e) {
-      e.printStackTrace();
-      waited=true;
-    }
-    try {
-      MergeTimer ev=new MergeTimer(termination_time+waiting_time,"TERMINATE "+timerID+" "+this,channel,Direction.DOWN,this,(on ? EventQualifier.ON : EventQualifier.OFF));
-      ev.go();
-    } catch (AppiaEventException ex) {
-      ex.printStackTrace();
-    } catch (AppiaException e) {
-      e.printStackTrace();
-    }
-  }
-    
-  private void sendPropose(Channel channel) {
-    int j,i;
-    int n=views.size();
-    int sender=find(vs.id);
-    
-    i=0;
-    Object[] dests=new Object[n-1];
-    for (j=0 ; j < n ; j++) {
-      if (j != sender) {
-        ViewInfo dest=(ViewInfo)views.get(j);
-        dests[i++]=dest.addr;
-      }
-    }
-    
-    try {
-      MergeEvent ev=new MergeEvent(channel,Direction.DOWN,this);
-      ev.dest=new AppiaMulticast(null,dests);
-      
-      ev.getMessage().pushInt(sender);
-      writeProposal(ev.getMessage());
-      ev.getMessage().pushInt(n);
-      ev.getMessage().pushInt(round);
-      ev.getMessage().pushInt(MergeEvent.PROPOSE);
-      
-      ev.go();
-    } catch (AppiaEventException ex) {
-      ex.printStackTrace();
-    }
-  }
+    private void sendPropose(Channel channel) {
+        int j,i;
+        int n=views.size();
+        int sender=find(vs.id);
 
-  private void sendDecide(Channel channel) {
-    int j,i;
-    int n=views.size();
-    int sender=find(vs.id);
-    
-    i=0;
-    Object[] dests=new Object[n-1];    
-    for (j=0 ; j < n ; j++) {
-      if (j != sender) {
-        ViewInfo dest=(ViewInfo)views.get(j);
-        dests[i++]=dest.addr;
-      }
-    }
-        
-    try {
-      MergeEvent ev=new MergeEvent(channel,Direction.DOWN,this);
-      ev.dest=new AppiaMulticast(null,dests);
-      
-      ViewState.push(preview.vs,ev.getMessage());
-      ev.getMessage().pushInt(sender);
-      writeProposal(ev.getMessage());
-      ev.getMessage().pushInt(n);
-      ev.getMessage().pushInt(round);
-      ev.getMessage().pushInt(MergeEvent.DECIDE);
-      
-      ev.go();
-    } catch (AppiaEventException ex) {
-      ex.printStackTrace();
-    }
-  }
-  
-  private void sendAbort(Channel channel) {
-    int j;
-    int n=views.size();
-    
-    for (j=0 ; j < n ; j++) {
-      ViewInfo dest=(ViewInfo)views.get(j);
-      if (!dest.id.equals(vs.id)) {
-        sendAbort(channel,(InetSocketAddress)dest.addr);
-      }
-    }    
-  }
-  
-  private void sendAbort(Channel channel, InetSocketAddress dest) {
-    try {
-      MergeEvent ev=new MergeEvent(channel,Direction.DOWN,this);
-      ev.dest=dest;
-      
-      ViewID.push(vs.id, ev.getMessage());
-      ev.getMessage().pushInt(MergeEvent.ABORT);
-      
-      ev.go();
-    } catch (AppiaEventException ex) {
-      ex.printStackTrace();
-    }    
-  }
+        i=0;
+        Object[] dests=new Object[n-1];
+        for (j=0 ; j < n ; j++) {
+            if (j != sender) {
+                ViewInfo dest=(ViewInfo)views.get(j);
+                dests[i++]=dest.addr;
+            }
+        }
 
-  private void writeProposal(Message msg) {
-    int i;
-    int n=views.size();
+        try {
+            MergeEvent ev=new MergeEvent(channel,Direction.DOWN,this);
+            ev.dest=new AppiaMulticast(null,dests);
 
-    for (i=n-1 ; i >= 0 ; i--) {
-      ViewInfo info=(ViewInfo)views.get(i);
-      msg.pushObject(info.addr);
-      ViewID.push(info.id, msg);
-    }
-  }
-  
-  private boolean readProposal(Message msg, int n, ViewID[] vids, InetSocketAddress[] addrs) {
-    boolean equal=(n == views.size());
-    
-    for (int i=0 ; i < n ; i++) {
-      vids[i]=ViewID.pop(msg);
-      addrs[i]=(InetSocketAddress) msg.popObject();
-      
-      if (equal) {
-        ViewInfo info=(ViewInfo)views.get(i);
-        if (!info.id.equals(vids[i]))
-          equal=false;
-      }
-    }
-    
-    return equal;
-  }
+            ev.getMessage().pushInt(sender);
+            writeProposal(ev.getMessage());
+            ev.getMessage().pushInt(n);
+            ev.getMessage().pushInt(round);
+            ev.getMessage().pushInt(MergeEvent.PROPOSE);
 
-  private class ViewInfo {
-    public ViewID id;
-    public ViewState vs;
-    public boolean proposed;
-    public boolean decided;
-    public SocketAddress addr;
-    
-    public ViewInfo(ViewID id, SocketAddress addr) {
-      this.id=id;
-      vs=null;
-      proposed=false;
-      decided=false;
-      this.addr=addr;
+            ev.go();
+        } catch (AppiaEventException ex) {
+            ex.printStackTrace();
+        }
     }
-  }
 
-  /*
+    private void sendDecide(Channel channel) {
+        int j,i;
+        int n=views.size();
+        int sender=find(vs.id);
+
+        i=0;
+        Object[] dests=new Object[n-1];    
+        for (j=0 ; j < n ; j++) {
+            if (j != sender) {
+                ViewInfo dest=(ViewInfo)views.get(j);
+                dests[i++]=dest.addr;
+            }
+        }
+
+        try {
+            MergeEvent ev=new MergeEvent(channel,Direction.DOWN,this);
+            ev.dest=new AppiaMulticast(null,dests);
+
+            ViewState.push(preview.vs,ev.getMessage());
+            ev.getMessage().pushInt(sender);
+            writeProposal(ev.getMessage());
+            ev.getMessage().pushInt(n);
+            ev.getMessage().pushInt(round);
+            ev.getMessage().pushInt(MergeEvent.DECIDE);
+
+            ev.go();
+        } catch (AppiaEventException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void sendAbort(Channel channel) {
+        int j;
+        int n=views.size();
+
+        for (j=0 ; j < n ; j++) {
+            ViewInfo dest=(ViewInfo)views.get(j);
+            if (!dest.id.equals(vs.id)) {
+                sendAbort(channel,(InetSocketAddress)dest.addr);
+            }
+        }    
+    }
+
+    private void sendAbort(Channel channel, InetSocketAddress dest) {
+        try {
+            MergeEvent ev=new MergeEvent(channel,Direction.DOWN,this);
+            ev.dest=dest;
+
+            ViewID.push(vs.id, ev.getMessage());
+            ev.getMessage().pushInt(MergeEvent.ABORT);
+
+            ev.go();
+        } catch (AppiaEventException ex) {
+            ex.printStackTrace();
+        }    
+    }
+
+    private void writeProposal(Message msg) {
+        int i;
+        int n=views.size();
+
+        for (i=n-1 ; i >= 0 ; i--) {
+            ViewInfo info=(ViewInfo)views.get(i);
+            msg.pushObject(info.addr);
+            ViewID.push(info.id, msg);
+        }
+    }
+
+    private boolean readProposal(Message msg, int n, ViewID[] vids, InetSocketAddress[] addrs) {
+        boolean equal=(n == views.size());
+
+        for (int i=0 ; i < n ; i++) {
+            vids[i]=ViewID.pop(msg);
+            addrs[i]=(InetSocketAddress) msg.popObject();
+
+            if (equal) {
+                ViewInfo info=(ViewInfo)views.get(i);
+                if (!info.id.equals(vids[i]))
+                    equal=false;
+            }
+        }
+
+        return equal;
+    }
+
+    private class ViewInfo {
+        public ViewID id;
+        public ViewState vs;
+        public boolean proposed;
+        public boolean decided;
+        public SocketAddress addr;
+
+        public ViewInfo(ViewID id, SocketAddress addr) {
+            this.id=id;
+            vs=null;
+            proposed=false;
+            decided=false;
+            this.addr=addr;
+        }
+    }
+
+    /*
   public static void main(String[] args) {
     InterSession session=(InterSession)new InterLayer().createSession();
     ViewInfo info;
-    
+
     try {
       info=session.new ViewInfo(new ViewID(1,new Endpt("g")),null);
       info.vs=new ViewState("1",new Group("G"),info.id,new ViewID[] {new ViewID(5,new Endpt("v1"))}, new Endpt[] {new Endpt("eg")},new InetWithPort[] {new InetWithPort()});
@@ -696,53 +679,45 @@ public class InterSession extends Session implements InitializableSession {
     } catch (Exception ex) {
       ex.printStackTrace();
     }
-    
+
     int i;
     for (i=0 ; i < session.views.size() ; i++) {
       info=(ViewInfo)session.views.get(i);
       System.out.println("views["+i+"]: "+info.id+" "+info.addr);
     }
     System.out.println(session.mergeViews().toString());
-    
+
   }
-  */
-  
-  // DEBUG
-  public static final boolean debugFull=false;
-  
-  private boolean debugOn=false;
-  private PrintStream debug=System.out;
-  
-  private void debug(String s) {
-    if ((debug != null) && (debugFull || debugOn))
-      debug.println("appia:group:InterSession: "+s);
-  }
-  
-  private void debugViews(String s) {
-    if ((debug != null) && (debugFull || debugOn)) {
-      ListIterator iter=views.listIterator();
-      debug.println("appia:group:InterSession:VIEWS("+round+"): "+s);
-      while (iter.hasNext()) {
-        ViewInfo info=(ViewInfo)iter.next();
-        debug.println("\t-> "+info.id);
-        debug.println("\t\tproposed = "+info.proposed);
-        debug.println("\t\tdecided = "+info.decided);
-        debug.println("\t\tvs = "+(info.vs != null ? "filled" : "null"));
-        debug.println("\t\taddress = "+info.addr);
-      }
+     */
+
+    // DEBUG
+    public static final boolean debugFull=true;
+
+    private void debugViews(String s) {
+        if (log.isDebugEnabled()) {
+            ListIterator iter=views.listIterator();
+            log.debug("appia:group:InterSession:VIEWS("+round+"): "+s);
+            while (iter.hasNext()) {
+                ViewInfo info=(ViewInfo)iter.next();
+                log.debug("\t-> "+info.id);
+                log.debug("\t\tproposed = "+info.proposed);
+                log.debug("\t\tdecided = "+info.decided);
+                log.debug("\t\tvs = "+(info.vs != null ? "filled" : "null"));
+                log.debug("\t\taddress = "+info.addr);
+            }
+        }
     }
-  }
-  
-  private void debugProposal(String s, int r, int n, ViewID[] vids, InetSocketAddress[] addrs) {
-    if ((debug != null) && (debugFull || debugOn)) {
-      s+=" round="+r+"("+round+") size="+n+"("+views.size()+") vids={";
-      for (int x=0 ; x < vids.length ; x++)
-        s+=vids[x]+",";
-      s+="} addrs={";
-      for (int x=0 ; x < addrs.length ; x++)
-        s+=addrs[x]+",";
-      s+="}";
-      debug.println("appia:group:InterSession: "+s);
+
+    private void debugProposal(String s, int r, int n, ViewID[] vids, InetSocketAddress[] addrs) {
+        if (log.isDebugEnabled()) {
+            s+=" round="+r+"("+round+") size="+n+"("+views.size()+") vids={";
+            for (int x=0 ; x < vids.length ; x++)
+                s+=vids[x]+",";
+            s+="} addrs={";
+            for (int x=0 ; x < addrs.length ; x++)
+                s+=addrs[x]+",";
+            s+="}";
+            log.debug("appia:group:InterSession: "+s);
+        }
     }
-  }
 }
