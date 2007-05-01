@@ -1,3 +1,22 @@
+/**
+ * Appia: Group communication and protocol composition framework library
+ * Copyright 2006 University of Lisbon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License. 
+ *
+ * Initial developer(s): Alexandre Pinto and Hugo Miranda.
+ * Contributor(s): See Appia web page for a list of contributors.
+ */
 package org.continuent.appia.protocols.group.primary;
 
 import org.apache.log4j.Logger;
@@ -7,6 +26,7 @@ import org.continuent.appia.core.Direction;
 import org.continuent.appia.core.Event;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
+import org.continuent.appia.core.events.channel.EchoEvent;
 import org.continuent.appia.protocols.group.Endpt;
 import org.continuent.appia.protocols.group.LocalState;
 import org.continuent.appia.protocols.group.ViewState;
@@ -24,7 +44,7 @@ import org.continuent.appia.xml.utils.SessionProperties;
  * processes can be added to a primary partition. Primary views are defined by a
  * majority of members from the previous <b>primary</b> view.
  * 
- * @author José Mocito</a>
+ * @author Jose Mocito
  * @version 1.0
  */
 public class PrimaryViewSession extends Session implements InitializableSession {
@@ -33,7 +53,7 @@ public class PrimaryViewSession extends Session implements InitializableSession 
     
     private boolean blocked;
     private View view, lastPrimaryView;
-    private ViewState vs, vs_old;
+    private ViewState vs, vsOld;
     private LocalState ls;
     private boolean primaryProcess;
     private boolean isPrimary;
@@ -58,6 +78,8 @@ public class PrimaryViewSession extends Session implements InitializableSession 
             handleView((View) event);
         else if (event instanceof BlockOk)
             handleBlockOk((BlockOk) event);
+        else if (event instanceof EchoEvent)
+            handleEchoEvent((EchoEvent)event);
         else if (event instanceof ProbeEvent)
             handleProbeEvent((ProbeEvent) event);
         else if (event instanceof DeliverViewEvent)
@@ -76,48 +98,83 @@ public class PrimaryViewSession extends Session implements InitializableSession 
         }
     }
 
+    private void handleEchoEvent(EchoEvent event) {
+        if(!blocked){
+            // if I'm not blocked, release the echo event.
+            try {
+                event.go();
+            } catch (AppiaEventException e) {
+                e.printStackTrace();
+            }
+        }
+        else{
+            // if I'm blocked and I received another block (going up)
+            // this means that there is e second block going to be released
+            if(event.getEvent() instanceof BlockOk){
+                try {
+                    // release it here
+                    final BlockOk block = (BlockOk) event.getEvent();
+                    block.setChannel(event.getChannel());
+                    block.setDir(event.getDir() == Direction.UP ? Direction.DOWN : Direction.UP);
+                    block.setSource(this);
+                    block.init();
+                    block.go();
+                } catch (AppiaEventException e) {
+                    e.printStackTrace();
+                }                
+            }
+            else{
+                // if this is not a blockOk event, release the echo...
+                try {
+                    event.go();
+                } catch (AppiaEventException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        
+    }
+
     private void handleView(View view) {
-        blocked = false;
         this.view = view;
         if (vs == null) {
             vs = view.vs;
             ls = view.ls;
 
-            if (log.isInfoEnabled()) {
+            if (log.isDebugEnabled()) {
                 String viewStr = "Received first View:\n";
                 for (int i = 0; i < view.vs.view.length; i++)
                     viewStr += view.vs.view[i] + "\n";
-                log.info(viewStr);
+                log.debug(viewStr);
             }
 
             if (primaryProcess) {
-                isPrimary = true;
                deliverView();
             }
         }
         else {
             ackCount = 0;
             
-            vs_old = vs;
+            vsOld = vs;
             vs = view.vs;
             ls = view.ls;
 
-            if (log.isInfoEnabled()) {
+            if (log.isDebugEnabled()) {
                 String viewStr = "Received new View:\n";
                 for (int i = 0; i < view.vs.view.length; i++)
                     viewStr += view.vs.view[i] + "\n";
-                log.info(viewStr);
+                log.debug(viewStr);
             }
 
             if (isPrimary) {
-                log.info("My last view was primary");
-                Endpt[] survivingMembers = vs.getSurvivingMembers(vs_old);
-                if (survivingMembers.length >= vs_old.view.length / 2 + 1) {
+                log.debug("My last view was primary");
+                final Endpt[] survivingMembers = vs.getSurvivingMembers(vsOld);
+                if (survivingMembers.length >= vsOld.view.length / 2 + 1) {
                     // Is primary view = Has majority of members from previous view
-                    log.info("I'm still on a primary view");
+                    log.debug("I'm still on a primary view");
                     if (survivingMembers.length < vs.view.length) {
                         // There are new members, hold view
-                        Endpt[] newMembersEndpts = vs.getNewMembers(vs_old);
+                        final Endpt[] newMembersEndpts = vs.getNewMembers(vsOld);
                         newMembers = new int[newMembersEndpts.length];
                         for (int i = 0; i < newMembers.length; i++)
                             newMembers[i] = vs.getRank(newMembersEndpts[i]);
@@ -131,7 +188,7 @@ public class PrimaryViewSession extends Session implements InitializableSession 
                 }
                 else {
                     // Left the primary partition...
-                    log.info("Left the primary partition");
+                    log.debug("Left the primary partition");
                     isPrimary = false;
                     wasPrimary = true;
                 }
@@ -139,7 +196,7 @@ public class PrimaryViewSession extends Session implements InitializableSession 
             else if (!isPrimary || wasPrimary) {
                 // Hold view and send Probe
                 try {
-                    ProbeEvent event = new ProbeEvent(view.getChannel(), Direction.DOWN, this, vs.group, vs.id);
+                    final ProbeEvent event = new ProbeEvent(view.getChannel(), Direction.DOWN, this, vs.group, vs.id);
                     event.getMessage().pushInt(primaryCounter);
                     event.getMessage().pushBoolean(wasPrimary);
                     event.go();
@@ -151,7 +208,7 @@ public class PrimaryViewSession extends Session implements InitializableSession 
     }
     
     private void handleBlockOk(BlockOk ok) {
-        log.info("Received BlockOk");
+        log.debug("Received BlockOk");
         blocked = true;
         try {
             ok.go();
@@ -160,12 +217,12 @@ public class PrimaryViewSession extends Session implements InitializableSession 
         }
     }
     private void handleProbeEvent(ProbeEvent event) {
-        log.info("Received ProbeEvent");
+        log.debug("Received ProbeEvent");
         if (isPrimary) {
             // Last view was primary
             if (event.getMessage().popBoolean()) {
                 // Peer was in a primary partition at some point
-                if (ls.my_rank == vs.getRank(vs.getSurvivingMembers(vs_old)[0])) {
+                if (ls.my_rank == vs.getRank(vs.getSurvivingMembers(vsOld)[0])) {
                     // Process has the lowest rank from the surviving members. Kick peer! 
                     kick(event.getChannel(), event.orig);
                 }
@@ -173,10 +230,10 @@ public class PrimaryViewSession extends Session implements InitializableSession 
             }
             else if (++ackCount == newMembers.length) {
                 // New peers were never in a primary partition and all new members probed
-                if (ls.my_rank == vs.getRank(vs.getSurvivingMembers(vs_old)[0])) {
+                if (ls.my_rank == vs.getRank(vs.getSurvivingMembers(vsOld)[0])) {
                     // Process has the lowest rank from the surviving members. Order view delivery!
                     try {
-                        DeliverViewEvent deliver = new DeliverViewEvent(event.getChannel(), Direction.DOWN, this, vs.group, vs.id);
+                        final DeliverViewEvent deliver = new DeliverViewEvent(event.getChannel(), Direction.DOWN, this, vs.group, vs.id);
                         deliver.dest = newMembers;
                         deliver.getMessage().pushInt(primaryCounter);
                         deliver.go();
@@ -194,7 +251,7 @@ public class PrimaryViewSession extends Session implements InitializableSession 
                 // Process was in a primary partition at some point
                 if (event.getMessage().popBoolean()) {
                     // Peer was also in a primary partition at some point
-                    int peerPrimaryCounter = event.getMessage().popInt();
+                    final int peerPrimaryCounter = event.getMessage().popInt();
                     // Check primary view counter
                     if (peerPrimaryCounter > primaryCounter)
                         leave(event.getChannel());
@@ -214,12 +271,12 @@ public class PrimaryViewSession extends Session implements InitializableSession 
     }
 
     private void handleKickEvent(KickEvent kick) {
-        log.info("Received KickEvent");
+        log.debug("Received KickEvent");
         leave(kick.getChannel());
     }
     
     private void handleDeliverViewEvent(DeliverViewEvent deliver) {
-        log.info("Received DeliverViewEvent");
+        log.debug("Received DeliverViewEvent");
         primaryCounter = deliver.getMessage().popInt();
         deliverView();
     }
@@ -232,10 +289,11 @@ public class PrimaryViewSession extends Session implements InitializableSession 
     }
     
     private void deliverView() {
-        log.info("Delivering Primary View");
+        log.debug("Delivering Primary View");
         lastPrimaryView = this.view;
         isPrimary = true;
         wasPrimary = false;
+        blocked = false;
         try {
             this.view.go();
         } catch (AppiaEventException e) {
@@ -245,9 +303,9 @@ public class PrimaryViewSession extends Session implements InitializableSession 
     }
     
     private void kick(Channel ch, int dest) {
-        log.info("Kicking process "+dest+"...");
+        log.debug("Kicking process "+dest+"...");
         try {
-            KickEvent kick = new KickEvent(ch, Direction.DOWN, this, vs.group, vs.id);
+            final KickEvent kick = new KickEvent(ch, Direction.DOWN, this, vs.group, vs.id);
             kick.dest = new int[] {dest};
             kick.go();
         } catch (AppiaEventException e) {
@@ -256,9 +314,9 @@ public class PrimaryViewSession extends Session implements InitializableSession 
     }
     
     private void leave(Channel ch) {
-        log.info("Leaving group...");
+        log.debug("Leaving group...");
         try {
-            LeaveEvent leave = new LeaveEvent(ch, Direction.DOWN, this, vs.group, vs.id);
+            final LeaveEvent leave = new LeaveEvent(ch, Direction.DOWN, this, vs.group, vs.id);
             leave.go();
         } catch (AppiaEventException e) {
             e.printStackTrace();
