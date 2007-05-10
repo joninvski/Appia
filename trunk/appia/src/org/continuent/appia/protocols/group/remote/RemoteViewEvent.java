@@ -70,8 +70,7 @@ public class RemoteViewEvent extends GossipOutEvent {
 	 * @param g the {@link org.continuent.appia.protocols.group.Group} that will be given
 	 *          member information.
 	 */
-	public RemoteViewEvent(Channel channel, int dir, Session source,
-			Group g)
+	public RemoteViewEvent(Channel channel, int dir, Session source, Group g)
 	throws AppiaEventException {
 		super(channel,dir,source);
 		group=g;

@@ -30,7 +30,7 @@
 import org.continuent.appia.core.*;
 
 /**
- * This layer describes the Remote View facilty provided by RemoteViewSession.
+ * This layer describes the Remote View facility provided by RemoteViewSession.
  */
 public class RemoteViewLayer extends Layer {
 	

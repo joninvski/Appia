@@ -82,8 +82,8 @@ public class EccoSession extends Session implements InitializableSession {
        */
 	public void init(SessionProperties params) {
 		this.localPort = Integer.parseInt(params.getProperty("localport"));
-		String remoteHost = params.getProperty("remotehost");
-		int remotePort = Integer.parseInt(params.getProperty("remoteport"));
+		final String remoteHost = params.getProperty("remotehost");
+		final int remotePort = Integer.parseInt(params.getProperty("remoteport"));
 		try {
 			this.remote = 
 				new InetSocketAddress(InetAddress.getByName(remoteHost),remotePort);
@@ -143,8 +143,7 @@ public class EccoSession extends Session implements InitializableSession {
          * to interface Appia with sockets.
          */
         try {
-            RegisterSocketEvent rse = new RegisterSocketEvent(channel,Direction.DOWN,this,localPort);
-            rse.go();
+            new RegisterSocketEvent(channel,Direction.DOWN,this,localPort).go();
         } catch (AppiaEventException e1) {
             e1.printStackTrace();
         }
