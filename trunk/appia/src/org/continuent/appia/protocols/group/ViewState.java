@@ -33,7 +33,6 @@ import java.util.ListIterator;
 
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.core.message.MessageException;
-import org.continuent.appia.protocols.common.InetWithPort;
 
 /**
  * A <i>view</i>.
@@ -107,46 +106,6 @@ public class ViewState implements Externalizable {
 	
 	public ViewState() {}
 	
-	/**
-	 * Constructs a <i>view</i>.
-	 *
-	 * @param version the version of the <i>view</i>
-	 * @param group the {@link org.continuent.appia.protocols.group.Group Group} of the <i>view</i>
-	 * @param id the {@link org.continuent.appia.protocols.group.ViewID ViewID} of the <i>view</i>
-	 * @param previous the {@link org.continuent.appia.protocols.group.ViewID ViewIDs} of the previous
-	 * <i>views</i>
-	 * @param view the {@link org.continuent.appia.protocols.group.Endpt Endpts} of the members
-	 * of the <i>view</i>
-	 * @param addrs the addresses of the members of the <i>view</i>
-	 * @throws NullPointerException if group or id or view or addresses are
-	 * <b>null</b>
-	 * @throws AppiaGroupException if the sizes of view and addresses are different
-     * @deprecated
-	 */
-	public ViewState(
-			String version,
-			Group group,
-			ViewID id,
-			ViewID[] previous,
-			Endpt[] view,
-			InetWithPort[] addrs) throws NullPointerException,AppiaGroupException {
-		
-		if ( (group==null) || (id==null) || (view==null) || (addresses==null) )
-			throw new NullPointerException("appia:group:ViewState: group or view_id or view or addresses");
-		
-		if ( view.length != addresses.length )
-			throw new AppiaGroupException("ViewState: view.length != addresses.length");
-		
-		this.version=version;
-		this.group=group;
-		this.id=id;
-		this.previous=previous;
-		this.view=view;
-		this.addresses=new InetSocketAddress[addrs.length];
-        for (int i = 0; i<addrs.length; i++)
-            addresses[i] = new InetSocketAddress(addrs[i].host, addrs[i].port);
-	}
-
     /**
      * Constructs a <i>view</i>.
      *

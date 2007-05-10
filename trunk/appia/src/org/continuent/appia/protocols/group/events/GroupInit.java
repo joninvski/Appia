@@ -25,8 +25,10 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
-import org.continuent.appia.core.*;
-import org.continuent.appia.protocols.common.InetWithPort;
+import org.continuent.appia.core.AppiaEventException;
+import org.continuent.appia.core.Channel;
+import org.continuent.appia.core.Event;
+import org.continuent.appia.core.Session;
 import org.continuent.appia.protocols.group.AppiaGroupException;
 import org.continuent.appia.protocols.group.Endpt;
 import org.continuent.appia.protocols.group.Group;
@@ -60,36 +62,7 @@ public class GroupInit extends Event {
   private Group group;
   private boolean generateIPmulticast=false;
   private SocketAddress localAddress;
-
-    /**
-   * Creates an initialized <i>GroupInit</i>.
-   *
-   * @param vs the initial <i>view</i>
-   * @param endpt the {@link org.continuent.appia.protocols.group.Endpt Endpt} of the member
-   * @param ip_multicast the <i>IP multicast</i> address, or <b>null</b>
-   * @param channel the {@link org.continuent.appia.core.Channel Channel} of the Event
-   * @param dir the {@link org.continuent.appia.core.Direction Direction} of the Event
-   * @param source the {@link org.continuent.appia.core.Session Session} that is generating the Event
-   * @throws AppiaEventException as the result of calling
-   * {@link org.continuent.appia.core.Event#Event(Channel,int,Session)
-   * Event(Channel,Direction,Session)}
-   * @deprecated
-   */
-  public GroupInit(
-          ViewState vs,
-          Endpt endpt,
-          InetWithPort ip_multicast,
-          InetWithPort[] ip_gossip,
-          Channel channel, int dir, Session source)
-    throws AppiaEventException,NullPointerException,AppiaGroupException {
-  	this(vs,endpt,new InetSocketAddress(ip_multicast.host, ip_multicast.port),null,channel,dir,source);
-  	if (ip_gossip != null) {
-  		this.gossip = new InetSocketAddress[ip_gossip.length];
-  		for(int i=0; i<ip_gossip.length; i++)
-  			this.gossip[i] = new InetSocketAddress(ip_gossip[i].host, ip_gossip[i].port);
-  	}
-  }
-  
+ 
   /**
    * Creates an initialized <i>GroupInit</i>.
    *
