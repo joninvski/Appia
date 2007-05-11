@@ -63,12 +63,12 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
 
     /** Default duration of a round.
      */
-    public static final long DEFAULT_SUSPECT_SWEEP=3000; //in milliseconds
+    public static final long DEFAULT_SUSPECT_SWEEP=5000; //in milliseconds
     /** Default time to suspect a member.
      * <br>
-     * This value is converted in number of rounds and added 2 for transmission safety.
+     * This value is converted in number of rounds
      */
-    public static final long DEFAULT_SUSPECT_TIME=5000; //in milliseconds
+    public static final long DEFAULT_SUSPECT_TIME=30000; //in milliseconds
 
     /** Creates a new Suspect session.
      */  
@@ -82,7 +82,8 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
      * <ul>
      * <li><b>suspect_sweep</b> duration of a round in milliseconds.
      * <li><b>suspect_time</b> time to suspect a member, in milliseconds. 
-     * This value is converted in number of rounds and added 2 for transmission safety.
+     * This value is converted in number of rounds and added 1 
+     * (because rounds may not be synchronized)
      * </ul>
      * 
      * @param params The parameters given in the XML configuration.
@@ -92,7 +93,7 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
         if (params.containsKey("suspect_sweep"))
             suspect_sweep=params.getLong("suspect_sweep");
         if (params.containsKey("suspect_time"))
-            rounds_idle=(params.getLong("suspect_time")/suspect_sweep)+2;
+            rounds_idle=calcRoundsIdle(suspect_sweep, params.getLong("suspect_time"));
     }
 
     /**
@@ -101,7 +102,8 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
      * <ul>
      * <li><b>suspect_sweep</b> duration of a round in milliseconds.
      * <li><b>suspect_time</b> time to suspect a member, in milliseconds. 
-     * This value is converted in number of rounds and added 2 for transmission safety.
+     * This value is converted in number of rounds and added 1 
+     * (because rounds may not be synchronized)
      * </ul>
      * 
      * @see org.continuent.appia.management.ManagedSession#setParameter(java.lang.String, java.lang.String)
@@ -117,7 +119,7 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
         }
         else if (parameter.equals("suspect_time")){
             final Long oldValue = new Long(rounds_idle);
-            rounds_idle=(new Long(value).longValue()/suspect_sweep)+2;
+            rounds_idle=(new Long(value).longValue()/suspect_sweep)+1;
             notif = new AttributeChangeNotification(this,1,time.currentTimeMillis(),"Rounds idle Changed",
                     "rounds_idle",Long.class.getName(),oldValue,new Long(rounds_idle));
         }
@@ -134,7 +136,8 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
      * <ul>
      * <li><b>suspect_sweep</b> duration of a round in milliseconds.
      * <li><b>suspect_time</b> time to suspect a member, in milliseconds. 
-     * This value is converted in number of rounds and added 2 for transmission safety.
+     * This value is converted in number of rounds and added 1 
+     * (because rounds may not be synchronized)
      * </ul>
      * 
      * @see org.continuent.appia.management.ManagedSession#getParameter(java.lang.String)
@@ -143,7 +146,7 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
         if (parameter.equals("suspect_sweep"))
             return ""+suspect_sweep;          
         if (parameter.equals("suspect_time"))
-            return "" + ((rounds_idle-2)*suspect_sweep);
+            return "" + (rounds_idle*suspect_sweep);
         throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+SuspectSession.class.getName());
     }
 
@@ -195,7 +198,7 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
     private LocalState ls;
 
     private long suspect_sweep=DEFAULT_SUSPECT_SWEEP;
-    private long rounds_idle=(DEFAULT_SUSPECT_TIME/DEFAULT_SUSPECT_SWEEP)+2;
+    private long rounds_idle=calcRoundsIdle(DEFAULT_SUSPECT_SWEEP, DEFAULT_SUSPECT_TIME);
     private long round=0;
     private long[] last_recv=new long[0];
     private TimeProvider time = null;
@@ -300,64 +303,65 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
                 e.printStackTrace();
             } catch (AppiaException ex) {
                 ex.printStackTrace();
-                System.err.println("appia:group:SuspectSession: impossible to set SuspectTimer, SuspectSession will be idle");
+                log.error("appia:group:SuspectSession: impossible to set SuspectTimer, SuspectSession will be idle");
             }
+            return;
         }
-        else
-            try { 
-                ev.go(); 
-            } catch (AppiaEventException ex) {
-                ex.printStackTrace(); 
-            }    
-            int i;
-            boolean[] new_failed=null;
+        
+        try { 
+            ev.go(); 
+        } catch (AppiaEventException ex) {
+            ex.printStackTrace(); 
+        }
+            
+        int i;
+        boolean[] new_failed=null;
 
-            for (i=0 ; i < last_recv.length ; i++) {
-                if (i != ls.my_rank) {
-                    if ( (round-last_recv[i] > rounds_idle) && !ls.failed[i] ) {
-                        ls.fail(i);
-                        if (new_failed == null) {
-                            new_failed=new boolean[ls.failed.length];
-                            Arrays.fill(new_failed,false);
-                        }
-                        new_failed[i]=true;
-
-                        if (debugFull)
-                            log.debug("Suspected "+i+" because it passed "+(round-last_recv[i])+" rounds of "+suspect_sweep+" milliseconds since last reception");
+        for (i=0 ; i < last_recv.length ; i++) {
+            if (i != ls.my_rank) {
+                if ( (round-last_recv[i] >= rounds_idle) && !ls.failed[i] ) {
+                    ls.fail(i);
+                    if (new_failed == null) {
+                        new_failed=new boolean[ls.failed.length];
+                        Arrays.fill(new_failed,false);
                     }
+                    new_failed[i]=true;
+
+                    log.debug("Suspected "+i+" because it passed "+(round-last_recv[i])+" rounds of "+suspect_sweep+" milliseconds since last reception");
                 }
             }
+        }
 
-            if (new_failed != null) {
-                sendSuspect(new_failed,ev.getChannel());
-                sendFail(new_failed,ev.getChannel());
+        if (new_failed != null) {
+            sendSuspect(new_failed,ev.getChannel());
+            sendFail(new_failed,ev.getChannel());
 
-                if (debugFull) {
-                    String s="New failed members: ";
-                    for (int j=0 ; j < new_failed.length ; j++)
-                        if (new_failed[j])
-                            s=s+j+",";
-                    log.debug(s);
-                }    
-            }
-
-            if (round > last_recv[ls.my_rank]) {
-                sendAlive(ev.getChannel());
-                last_recv[ls.my_rank]=round;
-                if(debugFull)
-                    log.debug("Sent Alive in round "+round);
-            }
-
-            if (debugFull)
-                log.debug("Ended round "+round+" at "+ev.getChannel().getTimeProvider().currentTimeMillis()+" milliseconds");
-
-            round++;
-
-            if (round < 0) {
-                round=1;
-                for (i=0 ; i < last_recv.length ; i++)
-                    last_recv[i]=0;
+            if (debugFull) {
+                String s="New failed members: ";
+                for (int j=0 ; j < new_failed.length ; j++)
+                    if (new_failed[j])
+                        s=s+j+",";
+                log.debug(s);
             }    
+        }
+
+        if (round > last_recv[ls.my_rank]) {
+            sendAlive(ev.getChannel());
+            last_recv[ls.my_rank]=round;
+            if(debugFull)
+                log.debug("Sent Alive in round "+round);
+        }
+
+        if (debugFull)
+            log.debug("Ended round "+round+" at "+ev.getChannel().getTimeProvider().currentTimeMillis()+" milliseconds");
+
+        round++;
+
+        if (round < 0) {
+            round=1;
+            for (i=0 ; i < last_recv.length ; i++)
+                last_recv[i]=0;
+        }    
     }
 
     private void handleFIFOUndeliveredEvent(FIFOUndeliveredEvent ev) {
@@ -415,8 +419,7 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
                 sendSuspect(ls.failed,channel);
                 sendFail(new_failed,channel);
 
-                if (debugFull)
-                    log.debug("Suspected member "+rank+" due to Undelivered");
+                log.debug("Suspected member "+rank+" due to Undelivered");
             }
         } else
             log.debug("Undelivered didn't contain a current view member");
@@ -458,10 +461,16 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
         }
     }
 
+    private long calcRoundsIdle(long suspect_sweep, long suspect_time) {
+        long r=suspect_time/suspect_sweep; // number of rounds that corresponds to the time given
+        if ((suspect_time % suspect_sweep) != 0)
+            r++; // correction if suspect time is not divedable by suspect sweep
+        return r;
+    }
 
     // DEBUG
     /** Major debug mode.
      */
-    public static final boolean debugFull=true;
+    public static final boolean debugFull=false;
 
 }
