@@ -85,21 +85,24 @@ public class FragLayer extends Layer {
    * @see Layer
    */
   public FragLayer() {
-    evRequire=new Class[2];
-    evRequire[0]=SendableEvent.class;
-    evRequire[1]=ChannelInit.class;
-    evAccept=new Class[6];
-    evAccept[0]=SendableEvent.class;
-    evAccept[1]=ChannelInit.class;
-    evAccept[2]=ChannelClose.class;
-    evAccept[3]=Debug.class;
-    evAccept[4]=org.continuent.appia.protocols.frag.MaxPDUSizeEvent.class;
-    evAccept[5]=org.continuent.appia.protocols.frag.FragTimer.class;
-    evProvide=new Class[4];
-    evProvide[0]=org.continuent.appia.protocols.frag.FragEvent.class;
-    evProvide[1]=EchoEvent.class;
-    evProvide[2]=org.continuent.appia.protocols.frag.MaxPDUSizeEvent.class;
-    evProvide[3]=org.continuent.appia.protocols.frag.FragTimer.class;
+      evRequire=new Class[]{
+              SendableEvent.class,
+              ChannelInit.class,
+      };
+    evAccept=new Class[]{
+            SendableEvent.class,
+            ChannelInit.class,
+            ChannelClose.class,
+            Debug.class,
+            org.continuent.appia.protocols.frag.MaxPDUSizeEvent.class,
+            org.continuent.appia.protocols.frag.FragTimer.class,
+    };
+    evProvide=new Class[]{
+            org.continuent.appia.protocols.frag.FragEvent.class,
+            EchoEvent.class,
+            org.continuent.appia.protocols.frag.MaxPDUSizeEvent.class,
+            org.continuent.appia.protocols.frag.FragTimer.class,
+    };
   }
   
   /**

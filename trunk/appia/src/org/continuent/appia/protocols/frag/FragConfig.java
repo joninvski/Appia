@@ -44,5 +44,5 @@
  */
 
 public interface FragConfig {
-    public static final boolean debugOn = false;
+    public static final boolean DEBUG_ON = false;
 }

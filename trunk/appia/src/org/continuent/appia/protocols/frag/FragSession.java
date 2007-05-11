@@ -35,7 +35,7 @@
 //                                                                  //
 // Change Log:                                                      //
 //  16/Oct/2001: Enriched debugging output                          //
-//  11/Jul/2001: The debugOn variable was changed to the            //
+//  11/Jul/2001: The DEBUG_ON variable was changed to the            //
 //               FragConfig interface                               //
 //   9/Feb/2001: The switch tests on exceptions are made against    //
 //               the static class attribute instead of the          //
@@ -70,14 +70,15 @@ import org.continuent.appia.xml.utils.SessionProperties;
  */
 
 public class FragSession extends Session implements InitializableSession {
-  
+    private static final int INIT_HASHMAP_SIZE = 19;
+
   private int msgSeq = 0;
   private HashMap pdus;
   private HashMap sources;
   
   private final int fragHeaderSize = 8;
   
-  private int param_FRAG_SIZE=-1;
+  private int paramFragSize=-1;
   public static final int TIMER_PERIOD=30000; // 30 secs
   private Channel timerChannel=null;
   
@@ -86,6 +87,9 @@ public class FragSession extends Session implements InitializableSession {
   
   /* Helper classes */
   
+  /**
+   * Class to help the session protocol.
+   */
   private class PDUSize {
     
     public boolean def;
@@ -99,20 +103,33 @@ public class FragSession extends Session implements InitializableSession {
       holding = new LinkedList();
     }
   }
-  
+
+  /**
+   * This class defines a FragHolder.
+   * 
+   * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+   * @version 1.0
+   */
   private class FragHolder {
+      private static final int DEFAULT_NUMBER_FRAGS=10;
     public ArrayList frags;
     public Object source;
     public int msgId;
     public SendableEvent e=null;
-    public boolean second_chance=false;
+    public boolean secondChance=false;
     
-    public FragHolder(Object source, int msgId, int nfrags) {
+    public FragHolder(Object source, int msgId) {
       this.source = source;
       this.msgId = msgId;
-      frags=new ArrayList(nfrags);
+      frags=new ArrayList(DEFAULT_NUMBER_FRAGS);
     }
-    
+
+    public FragHolder(Object source, int msgId, int nFrags) {
+        this.source = source;
+        this.msgId = msgId;
+        frags=new ArrayList(nFrags);
+      }
+
     public void ensureSize(int size) {
       while (frags.size() < size)
         frags.add(null);
@@ -127,7 +144,7 @@ public class FragSession extends Session implements InitializableSession {
    */
   public FragSession(Layer layer) {
     super(layer);
-    pdus = new HashMap(19);
+    pdus = new HashMap(INIT_HASHMAP_SIZE);
     sources=new HashMap();
   }
 
@@ -142,15 +159,15 @@ public class FragSession extends Session implements InitializableSession {
    */
   public void init(SessionProperties params) {
     if (params.containsKey("frag_size"))
-      param_FRAG_SIZE=params.getInt("frag_size");
+      paramFragSize=params.getInt("frag_size");
   }
   
   private FragHolder findFragHolder(Object who, int msgId) {
-    ArrayList msgs=(ArrayList)sources.get(who);
+    final ArrayList msgs=(ArrayList)sources.get(who);
     if (msgs == null)
       return null;
     for (int i=0 ; i < msgs.size() ; i++) {
-      FragHolder f = (FragHolder)msgs.get(i);
+      final FragHolder f = (FragHolder)msgs.get(i);
       if (f.msgId == msgId)
         return f;
     }
@@ -167,7 +184,7 @@ public class FragSession extends Session implements InitializableSession {
   }
   
   private void removeFragHolder(FragHolder fh) {
-    ArrayList msgs=(ArrayList)sources.get(fh.source);
+    final ArrayList msgs=(ArrayList)sources.get(fh.source);
     if (msgs == null)
       return;
     msgs.remove(fh);
@@ -219,11 +236,10 @@ public class FragSession extends Session implements InitializableSession {
   
   private void sendTimer(Channel channel) {
     try {
-      FragTimer timer=new FragTimer(TIMER_PERIOD,channel,this,EventQualifier.ON);
-      timer.go();
+      new FragTimer(TIMER_PERIOD,channel,this,EventQualifier.ON).go();
       timerChannel=channel;
       
-      if (FragConfig.debugOn && debugOutput != null)
+      if (FragConfig.DEBUG_ON && debugOutput != null)
         debugOutput.println("Frag: Sent Timer.");
       
     } catch (AppiaEventException ex) {
@@ -237,23 +253,23 @@ public class FragSession extends Session implements InitializableSession {
   
   private void updateHolding() {
     
-    if (FragConfig.debugOn && debugOutput != null) {
+    if (FragConfig.DEBUG_ON && debugOutput != null) {
       debugOutput.println("Frag: Received Timer");
       printState(debugOutput);
     }
     
-    Iterator iter=sources.values().iterator();
+    final Iterator iter=sources.values().iterator();
     while (iter.hasNext()) {
-      ArrayList msgs=(ArrayList)iter.next();
-      Iterator i=msgs.iterator();
+      final ArrayList msgs=(ArrayList)iter.next();
+      final Iterator i=msgs.iterator();
       while (i.hasNext()) {
-        FragHolder f = (FragHolder)i.next();
-        if (f.second_chance) {
+        final FragHolder f = (FragHolder)i.next();
+        if (f.secondChance) {
           i.remove();
-          if (FragConfig.debugOn && debugOutput != null)
+          if (FragConfig.DEBUG_ON && debugOutput != null)
             debugOutput.println("Frag: Discarded message from "+f.source.toString()+" with id "+f.msgId);
         } else {
-          f.second_chance=true;
+          f.secondChance=true;
         }
       }
       if (msgs.size() == 0)
@@ -267,12 +283,12 @@ public class FragSession extends Session implements InitializableSession {
                            marked as undefined because we still don't know the max
                            pdu size
                          */
-      if (FragConfig.debugOn && debugOutput != null)
+      if (FragConfig.DEBUG_ON && debugOutput != null)
         debugOutput.println(
         "Frag: new channel opened. "
         + "Sending query to retrieve PDU size.");
       pdus.put(e.getChannel(), new PDUSize());
-      MaxPDUSizeEvent max = new MaxPDUSizeEvent(e.getChannel(),Direction.DOWN,this);
+      final MaxPDUSizeEvent max = new MaxPDUSizeEvent(e.getChannel(),Direction.DOWN,this);
       max.init();
       
       e.go();
@@ -307,10 +323,10 @@ public class FragSession extends Session implements InitializableSession {
   }
   
   private void setPDUSize(MaxPDUSizeEvent e) {
-    PDUSize p = (PDUSize) pdus.get(e.getChannel());
+    final PDUSize p = (PDUSize) pdus.get(e.getChannel());
     p.size = e.pduSize - fragHeaderSize;
     p.def = true;
-    if (FragConfig.debugOn && debugOutput != null)
+    if (FragConfig.DEBUG_ON && debugOutput != null)
       debugOutput.println(
       "Frag: PDU size for channel "
       + e.getChannel().getChannelID()
@@ -318,7 +334,7 @@ public class FragSession extends Session implements InitializableSession {
       + p.size
       + " bytes");
     while (!p.holding.isEmpty()) {
-      if (FragConfig.debugOn && debugOutput != null)
+      if (FragConfig.DEBUG_ON && debugOutput != null)
         debugOutput.println(
         "Frag: forwarding messages waiting to "
         + "know the PDU size");
@@ -328,14 +344,14 @@ public class FragSession extends Session implements InitializableSession {
   }
   
   private void split(SendableEvent e) {
-    if (param_FRAG_SIZE > 0)
-      splitMessage(e, param_FRAG_SIZE);
+    if (paramFragSize > 0)
+      splitMessage(e, paramFragSize);
     else {
-      PDUSize p = (PDUSize) pdus.get(e.getChannel());
+      final PDUSize p = (PDUSize) pdus.get(e.getChannel());
       if (p.def)
         splitMessage(e, p.size);
       else {
-        if (FragConfig.debugOn && debugOutput != null)
+        if (FragConfig.DEBUG_ON && debugOutput != null)
           debugOutput.println(
               "Received message to unknown PDU size "
               + "channel. Enqueing it.");
@@ -347,10 +363,10 @@ public class FragSession extends Session implements InitializableSession {
   private void splitMessage(SendableEvent e, int fragSize) {
     Message orig = e.getMessage();
     try {
-      int maxLength = fragSize;
-      int nFrags=getFrags(orig.length(),maxLength);
+      final int maxLength = fragSize;
+      final int nFrags=getFrags(orig.length(),maxLength);
       
-      if (FragConfig.debugOn && debugOutput != null) {
+      if (FragConfig.DEBUG_ON && debugOutput != null) {
         //debugOutput.println("Frag: Message with "+ orig.length()+ " bytes received for channel "+
         //e.getChannel().getChannelID()+ " ("+ maxLength+ " bytes max). It will be devided in "+nFrags+" frags. MsgId: "+msgSeq);
         debugOutput.println("Frag: Message with "+ orig.length()+ " bytes ("+ maxLength+ " bytes max). MsgId: "+msgSeq+" Num.Frags: "+nFrags);
@@ -373,7 +389,7 @@ public class FragSession extends Session implements InitializableSession {
         while (fragNumber < nFrags) {
           //create frags
           //send frags
-          FragEvent f = new FragEvent(e, this);
+          final FragEvent f = new FragEvent(e, this);
           
           if (orig.length() > maxLength) {
             m = new Message();
@@ -411,17 +427,17 @@ public class FragSession extends Session implements InitializableSession {
     
     try {
       /* Extract headers */
-      int msgId = e.getMessage().popInt();
-      int nFrags=e.getMessage().popInt();
+      final int msgId = e.getMessage().popInt();
+      final int nFrags=e.getMessage().popInt();
       
-      if (FragConfig.debugOn && debugOutput != null)
+      if (FragConfig.DEBUG_ON && debugOutput != null)
         debugOutput.println("Frag: message received with id: "+msgId+". Fragment: "+nFrags+" (is FragEvent = "+(e instanceof FragEvent)+")");
 
       FragHolder fHold=null;
       if (e instanceof FragEvent) {
         fHold = findFragHolder(e.source, msgId);
         if (fHold == null) {
-          fHold=new FragHolder(e.source, msgId, 10);
+          fHold=new FragHolder(e.source, msgId);
           addFragHolder(fHold);
         }
 
@@ -446,28 +462,28 @@ public class FragSession extends Session implements InitializableSession {
       
       
       if (receivedAll(fHold.frags)) {
-        Message msg=(Message)fHold.frags.get(0);
+        final Message msg=(Message)fHold.frags.get(0);
         for (int i=1 ; i < fHold.frags.size() ; i++)
           msg.join((Message)fHold.frags.get(i));
         
         fHold.e.setMessage(msg);
         fHold.e.go();
-        if (FragConfig.debugOn && debugOutput != null)
+        if (FragConfig.DEBUG_ON && debugOutput != null)
             debugOutput.println("Frag: message reasembled : "+fHold.e);        
         removeFragHolder(fHold);
       } else {
-        fHold.second_chance=false;
+        fHold.secondChance=false;
       }
     } catch (AppiaEventException ex) {
       System.err.println(
       "Unexpected event exception while "
-      + "reassemblying message");
+      + "reassembling message");
     }
   }
   
   private void handleDebug(Debug e) {
     
-    int q = e.getQualifierMode();
+    final int q = e.getQualifierMode();
     
     if (q == EventQualifier.ON) {
       debugOutput = new PrintStream(e.getOutput());
@@ -488,7 +504,7 @@ public class FragSession extends Session implements InitializableSession {
   private void printState(PrintStream out) {
     out.println("Frag Session state dumping:");
     
-    Iterator ipdus=pdus.keySet().iterator();
+    final Iterator ipdus=pdus.keySet().iterator();
     
     if (ipdus.hasNext())
       out.println("List of channels:");
@@ -496,19 +512,19 @@ public class FragSession extends Session implements InitializableSession {
       out.println("No channels available");
     
     while (ipdus.hasNext()) {
-      Channel c = (Channel) ipdus.next();
+      final Channel c = (Channel) ipdus.next();
       out.print(
       "Channel name: "
       + c.getChannelID()
       + " Defined: ");
-      PDUSize p = (PDUSize) pdus.get(c);
+      final PDUSize p = (PDUSize) pdus.get(c);
       if (p.def)
         out.println("yes. Max PDU size: " + p.size);
       else
         out.println("no.");
     }
     
-    Iterator iter=sources.values().iterator();
+    final Iterator iter=sources.values().iterator();
     
     if (iter.hasNext())
       out.println("Pending messages:");
@@ -516,9 +532,9 @@ public class FragSession extends Session implements InitializableSession {
       out.println("No pending messages.");
     
     while (iter.hasNext()) {
-      ArrayList msgs=(ArrayList)iter.next();
+      final ArrayList msgs=(ArrayList)iter.next();
       for (int i=0 ; i < msgs.size() ; i++) {
-        FragHolder f = (FragHolder)msgs.get(i);
+        final FragHolder f = (FragHolder)msgs.get(i);
         int r=0;
         for (int j=0 ; j < f.frags.size() ; j++)
           if (f.frags.get(j) != null)
@@ -530,7 +546,7 @@ public class FragSession extends Session implements InitializableSession {
         + " Fragments received: "
         + r
         + " SecondChance: "
-        + f.second_chance);
+        + f.secondChance);
       }
     }
     
