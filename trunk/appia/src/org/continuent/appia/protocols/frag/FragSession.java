@@ -56,6 +56,7 @@ import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.Message;
+import org.continuent.appia.core.message.MessageFactory;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
 
@@ -81,6 +82,7 @@ public class FragSession extends Session implements InitializableSession {
   private int paramFragSize=-1;
   public static final int TIMER_PERIOD=30000; // 30 secs
   private Channel timerChannel=null;
+  private MessageFactory messageFactory = null;
   
 
   private PrintStream debugOutput = System.err;
@@ -226,6 +228,7 @@ public class FragSession extends Session implements InitializableSession {
     if (timerChannel == null)
       sendTimer(ev.getChannel());
     queryPDUSize(ev);
+    messageFactory = ev.getChannel().getMessageFactory();
   }
   
   private void closedChannel(ChannelClose ev) {
@@ -376,7 +379,7 @@ public class FragSession extends Session implements InitializableSession {
         //does not fit in one packet
         //send original event with fist part of payload
         //System.out.println("fragging the message. Size:: "+orig.length());
-        Message m = new Message();
+        Message m = messageFactory.newMessage();
         orig.frag(m, maxLength);
         orig.pushInt(nFrags);
         orig.pushInt(msgSeq);
@@ -392,7 +395,7 @@ public class FragSession extends Session implements InitializableSession {
           final FragEvent f = new FragEvent(e, this);
           
           if (orig.length() > maxLength) {
-            m = new Message();
+            m = messageFactory.newMessage();
             orig.frag(m, maxLength);
           } else {
             m=null;
