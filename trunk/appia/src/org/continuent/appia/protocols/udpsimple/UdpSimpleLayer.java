@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package org.continuent.appia.protocols.udpsimple;
+package org.continuent.appia.protocols.udpsimple;
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
@@ -28,27 +28,28 @@ import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
+import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
 
 
-//////////////////////////////////////////////////////////////////////
-//                                                                  //
-// Appia: protocol development and composition framework            //
-//                                                                  //
-// Version: 1.0/J                                                   //
-//                                                                  //
-// Copyright, 2000, Universidade de Lisboa                          //
-// All rights reserved                                              //
-// See license.txt for further information                          //
-//                                                                  //
-// Class: UdpSimpleLayer:   Unreliable send/receive using UDP/IP,   //
-//                          allowing point-to-point or multicast    // 
-//                          communication                           // 
-//                                                                  //
-// Author: Hugo Miranda, 05/2000                                    //
-//         M.Joao Monteiro, 12/2001                                 //
-//                                                                  //
-//                                                                  // 
-//////////////////////////////////////////////////////////////////////
+
+////
+//Appia: protocol development and composition framework            //
+////
+//Version: 1.0/J                                                   //
+////
+//Copyright, 2000, Universidade de Lisboa                          //
+//All rights reserved                                              //
+//See license.txt for further information                          //
+////
+//Class: UdpSimpleLayer:   Unreliable send/receive using UDP/IP,   //
+//allowing point-to-point or multicast    // 
+//communication                           // 
+////
+//Author: Hugo Miranda, 05/2000                                    //
+//M.Joao Monteiro, 12/2001                                 //
+////
+//// 
+
 
 
 /**
@@ -76,9 +77,6 @@ import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
  *
  * <li>ChannelInit (Accept): Initialization procedures
  *
- * <li>UdpAsyncEvent (Require): used by the protocol reader thread to notify the major session that
- * a new event was received in the socket.
- *
  * <li>Debug(Accept): Dumping status information as defined in the Appia specification.
  *
  * <li>ChannelClose (Accept): closing procedures.
@@ -98,34 +96,36 @@ import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
  * @see org.continuent.appia.core.events.channel.Debug
  * @see org.continuent.appia.core.events.channel.ChannelClose
  * @see org.continuent.appia.protocols.frag.MaxPDUSizeEvent
- * @author Hugo Miranda, M.Joao Monteiro
+ * @author Hugo Miranda, M.Joao Monteiro, Alexandre Pinto
  */
 
 public class UdpSimpleLayer extends Layer implements AppiaMulticastSupport {
 
-	/**
-	 * Standard empty constructor
-	 */
-	public UdpSimpleLayer() {
-		super();
+    /**
+     * Standard empty constructor
+     */
+    public UdpSimpleLayer() {
+        super();
 
-		evProvide = new Class[2];
-		evProvide[0] = SendableEvent.class;
-		evProvide[1] = SendableNotDeliveredEvent.class;
+        evProvide = new Class[] {
+                SendableEvent.class,
+                SendableNotDeliveredEvent.class,
+        };
 
-		evRequire = new Class[0];
+        evRequire = new Class[0];
 
-		evAccept = new Class[7];
-		evAccept[0] = SendableEvent.class;
-		evAccept[1] = ChannelInit.class;
-		evAccept[2] = RegisterSocketEvent.class;
-		evAccept[3] = Debug.class;
-		evAccept[4] = ChannelClose.class;
-		evAccept[5] = MaxPDUSizeEvent.class;
-		evAccept[6] = MulticastInitEvent.class;
-	}
+        evAccept = new Class[] {
+                SendableEvent.class,
+                ChannelInit.class,
+                RegisterSocketEvent.class,
+                ChannelClose.class,
+                MaxPDUSizeEvent.class,
+                MulticastInitEvent.class,
+                Debug.class,
+        };
+    }
 
-	public Session createSession() {
-		return new UdpSimpleSession(this);
-	}
+    public Session createSession() {
+        return new UdpSimpleSession(this);
+    }
 }

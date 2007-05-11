@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 
+import org.apache.log4j.Logger;
 import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.Direction;
@@ -73,11 +74,13 @@ import org.continuent.appia.xml.utils.SessionProperties;
  * @see org.continuent.appia.protocols.common.RegisterSocketEvent
  * @see SendableNotDeliveredEvent
  * @see MulticastInitEvent
- * @author Hugo Miranda, M.Joao Monteiro
+ * @author Hugo Miranda, M.Joao Monteiro, Alexandre Pinto
  */
 
 public class UdpSimpleSession extends Session implements InitializableSession {
-  
+    private static Logger log = Logger.getLogger(UdpSimpleSession.class);
+    private static Logger logReader = Logger.getLogger(UdpSimpleReader.class);
+
   private DatagramSocket sock = null; //point-to-point socket
   private UdpSimpleReader sockReader = null; //point-to-point reader
   private HashMap multicastReaders = new HashMap(); //multicast readers
@@ -93,8 +96,6 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   private InetSocketAddress myAddress = null;
   private InetSocketAddress ipMulticast = null;
   
-  protected PrintStream debugOutput = System.out;
-
   private ThreadFactory threadFactory = null;
   
   /**
@@ -106,8 +107,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   public UdpSimpleSession(Layer l) {
     super(l);
     
-    if (UdpSimpleConfig.debugOn)
-      debug("UDP: New udpSimple session");
+    log.debug("New udpSimple session");
     threadFactory = AppiaThreadFactory.getThreadFactory();
   }
   
@@ -163,8 +163,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     else {
       /*Unexpected event received in UdpSimpleSession */
       try {
-        if (UdpSimpleConfig.debugOn)
-          debug(":handle: Unexpected event. Forwarding it...");
+          log.warn(":handle: Unexpected event. Forwarding it...");
         e.go();
       } catch (AppiaEventException ex) {}
     }
@@ -172,8 +171,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   
   private void handlePDUSize(MaxPDUSizeEvent e) {
     
-    if (UdpSimpleConfig.debugOn)
-      debug(":handlePDUSize ");
+    log.debug(":handlePDUSize ");
     
     try {
       e.pduSize = param_MAX_UDPMSG_SIZE-MAX_UdpSimple_HEADERS;
@@ -190,16 +188,14 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   
   private void handleDebug(Debug e) {
     
-    if (UdpSimpleConfig.debugOn)
-      debug(":handleDebug");
+    log.debug(":handleDebug");
     
     int q = e.getQualifierMode();
     
     if (q == EventQualifier.ON) {
-      debugOutput = new PrintStream(e.getOutput());
-      debug("UDP: Debugging started");
+        log.debug("Ignored Debug event with qualifier ON.");
     } else if (q == EventQualifier.OFF) {
-      debugOutput = null;
+        log.debug("Ignored Debug event with qualifier OFF.");
     } else if (q == EventQualifier.NOTIFY) {
       printState(new PrintStream(e.getOutput()));
     }
@@ -226,8 +222,6 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       Channel c = (Channel) iter.next();
       out.println("Channel name: " + c.getChannelID() + " QoS: " + c.getQoS().getQoSID());
     }
-    
-    out.println("Debug output is currently " + (debugOutput == null ? "off" : "on"));
   }
   
         /*
@@ -240,8 +234,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   
   private void handleRegisterSocket(RegisterSocketEvent e) {
     
-    if (UdpSimpleConfig.debugOn)
-      debug(":handleRegisterSocket");
+    log.debug(":handleRegisterSocket");
     
                 /* if the socket is already binded then something is
                  * wrong. Keep existing information.
@@ -272,16 +265,14 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   
   private void handleMulticastInit(MulticastInitEvent e) {
     
-    if (UdpSimpleConfig.debugOn)
-      debug(":handleAppiaMulticastInit");
+    log.debug(":handleAppiaMulticastInit");
 
     if (!multicastReaders.containsKey(e.ipMulticast)) {
       /*creates a multicast socket and binds it to a specific port on the local host machine*/
       try {
         MulticastSocket multicastSock = new MulticastSocket(((InetSocketAddress)e.ipMulticast).getPort());
         
-        if (UdpSimpleConfig.debugOn)
-          debug(":handleAppiaMulticastInit: Socket Multicast created. Address: "  + e.ipMulticast);
+        log.debug(":handleAppiaMulticastInit: Socket Multicast created. Address: "  + e.ipMulticast);
         
         /*joins a multicast group*/
         multicastSock.joinGroup(((InetSocketAddress)e.ipMulticast).getAddress());
@@ -289,8 +280,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         //keeping the multicast address...
         ipMulticast = new InetSocketAddress(((InetSocketAddress)e.ipMulticast).getAddress(),((InetSocketAddress)e.ipMulticast).getPort());
         
-        if (UdpSimpleConfig.debugOn)
-          debug(":handleAppiaMulticastInit: Socket Multicast joined.");
+        log.debug(":handleAppiaMulticastInit: Socket Multicast joined.");
         
         try {
         	multicastSock.setSoTimeout(param_SOTIMEOUT);
@@ -316,8 +306,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         e.error=true;
       }
     } else {
-      if (UdpSimpleConfig.debugOn)
-        debug(":handleAppiaMulticastInit: Requested multicast socket already existed.");
+      log.debug(":handleAppiaMulticastInit: Requested multicast socket already existed.");
     }
     
     try {
@@ -325,10 +314,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       e.setSource(this);
       e.init();
       e.go();
-      if (UdpSimpleConfig.debugOn){
-          debug(":handleAppiaMulticastInit: Returning multicastInit with error code: "+e.error);
-          debug(":handleAppiaMulticastInit: Direction is "+(e.getDir() == Direction.DOWN? "DOWN":"UP"));
-      }
+      log.debug(":handleAppiaMulticastInit: Returning multicastInit with error code: "+e.error);
+      log.debug(":handleAppiaMulticastInit: Direction is "+(e.getDir() == Direction.DOWN? "DOWN":"UP"));
     } catch (AppiaEventException ex) {
       ex.printStackTrace();
     }
@@ -341,8 +328,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   
   private void handleSendable(SendableEvent e) {
     
-    if (UdpSimpleConfig.debugOn)
-      debug(":handleSendable: "+e);
+    log.debug(":handleSendable: "+e);
     
     if (e.getDir() == Direction.DOWN) {
       formatAndSend(e);
@@ -365,8 +351,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
          */
   private void handleChannelInit(ChannelInit e) {
     
-    if (UdpSimpleConfig.debugOn)
-      debug(":handleChannelInit from channel: "+e.getChannel().getChannelID());
+    log.debug(":handleChannelInit from channel: "+e.getChannel().getChannelID());
     
     channels.put(new Integer(e.getChannel().getChannelID().hashCode()), e.getChannel());
     
@@ -382,8 +367,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
          */
   private void handleChannelClose(ChannelClose e) {
     
-    if (UdpSimpleConfig.debugOn)
-      debug(":handleChannelClose: Channel " + e.getChannel().getChannelID() + " closed");    
+    log.debug(":handleChannelClose: Channel " + e.getChannel().getChannelID() + " closed");    
     
     // Access to vectors is synchronized
     channels.remove(new Integer(e.getChannel().getChannelID().hashCode()));
@@ -566,12 +550,12 @@ public class UdpSimpleSession extends Session implements InitializableSession {
             dp.setPort(((InetSocketAddress) dests[i]).getPort());
             sock.send(dp);
             
-            if (UdpSimpleConfig.debugOn)
-              debug(":formatAndSend: Multicast emulation: " + dp.getLength() 
+            if (debugFull)
+              log.debug(":formatAndSend: Multicast emulation: " + dp.getLength() 
                   + " bytes datagram sent to " + dp.getAddress().getHostAddress() 
                   + " (port " + dp.getPort() + ")");
           } else
-            System.err.println("UdpSimpleSession: Wrong destination address type in event " + e);
+            log.error("UdpSimpleSession: Wrong destination address type in event " + e);
         }
       } else {
         InetSocketAddress dest = null;
@@ -598,19 +582,18 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         
         sock.send(dp);
         
-        if (UdpSimpleConfig.debugOn)
-          debug(":formatAndSend: "+dp.getLength()+" bytes datagram sent to "
+        if (debugFull)
+          log.debug(":formatAndSend: "+dp.getLength()+" bytes datagram sent to "
               + dp.getAddress().getHostAddress() + " (port " + dp.getPort() + ")");
       }
     } catch (IOException ex) {
-      if (UdpSimpleConfig.debugOn)
+      if (log.isDebugEnabled())
           ex.printStackTrace();
       /* Couldn't send message to socket. */
       try {
         SendableNotDeliveredEvent snd = new SendableNotDeliveredEvent(e.getChannel(), this, e);
         snd.go();
-        if (UdpSimpleConfig.debugOn)
-          debug(":formatAndSend: IOException when sending Datagram to socket. "
+        log.debug(":formatAndSend: IOException when sending Datagram to socket. "
               + "Inserting SendableNotDeliveredEvent in the channel.");
         
       } catch (AppiaEventException ex1) { /* Possible exception: Unwanted Event */
@@ -627,7 +610,6 @@ public class UdpSimpleSession extends Session implements InitializableSession {
          *
          */
   class UdpSimpleReader implements Runnable {
-    
       private static final int MAX_BUFFER_SIZE =65536; 
       
     private DatagramSocket sock = null;
@@ -680,21 +662,20 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       
       DatagramPacket msg = new DatagramPacket(b, b.length);
       
-      if (UdpSimpleConfig.debugReaderOn)
-        debug("Reader running (Multicast="+(sock instanceof MulticastSocket)+").");
+      logReader.debug("Reader running (Multicast="+(sock instanceof MulticastSocket)+").");
       
       while (running) {
         try {
           sock.receive(msg);
           
-          if (UdpSimpleConfig.debugReaderOn)
-            debug(":run: PtP datagram received. Size = " + msg.getLength());
+          if (debugFull)
+            logReader.debug(":run: PtP datagram received. Size = " + msg.getLength());
           
           if ((ignoreSource != null)
           && (ignoreSource.getPort() == msg.getPort())
           && (ignoreSource.getAddress().equals(msg.getAddress()))) {
-            if (UdpSimpleConfig.debugReaderOn)
-              debug(":run: Ignored Last received message");
+            if (debugFull)
+              logReader.debug(":run: Ignored Last received message");
           } else
             receiveFormatSend(msg);
           
@@ -730,9 +711,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         
         /* Create event */
         Class c = Class.forName(className);
-        if (UdpSimpleConfig.debugReaderOn) {
-          if (sock != null)
-            debug(":receiveAndFormat: Reader, creating "+className+" event.");
+        if (debugFull) {
+          logReader.debug(":receiveAndFormat: Reader, creating "+className+" event.");
         }
         e = (SendableEvent) c.newInstance();
         msg = e.getMessage();
@@ -746,8 +726,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         
         /* If channel does not exist, discard message */
         if (msgChannel == null) {
-        	if (UdpSimpleConfig.debugReaderOn)
-        		System.err.println(this.getClass().getName()+
+        	if (debugFull)
+        		logReader.debug(this.getClass().getName()+
         				": channel does not exist. message will be discarded. "
         				+ "hash="+channelHash
         				+ " "
@@ -755,8 +735,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         	return;
         }
         
-        if (UdpSimpleConfig.debugReaderOn)
-          debug(":receiveAndFormat: "+msgChannel.getChannelID()+" ("+channelHash+")");
+        if (debugFull)
+          logReader.debug(":receiveAndFormat: "+msgChannel.getChannelID()+" ("+channelHash+")");
 
         
         /* Extract the addresses and put them on the event */
@@ -772,15 +752,11 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         e.asyncGo(msgChannel, Direction.UP);
         
       } catch (Exception ex) {
-        if (UdpSimpleConfig.debugReaderOn) {
-          ex.printStackTrace(debugOutput);
-          debug("Exception catched while processing message from "+p.getAddress().getHostName()+":"+p.getPort()+". Continued operation.");
+        if (logReader.isDebugEnabled()) {
+          ex.printStackTrace();
+          logReader.debug("Exception catched while processing message from "+p.getAddress().getHostName()+":"+p.getPort()+". Continued operation.");
         }
       }
-    }
-    private void debug(String s) {
-      if (debugOutput != null)
-        debugOutput.println("["+parentSession.getClass().getName()+":Reader]"+s);
     }
   }
   
@@ -798,8 +774,5 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     }
   }
   
-  private void debug(String s) {
-    if (debugOutput != null)
-      debugOutput.println("["+this.getClass().getName()+"]"+s);
-  }
+  private static final boolean debugFull=true;
 }
