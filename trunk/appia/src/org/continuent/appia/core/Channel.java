@@ -30,10 +30,14 @@ import org.continuent.appia.core.events.channel.EchoEvent;
 import org.continuent.appia.core.events.channel.PeriodicTimer;
 import org.continuent.appia.core.events.channel.Timer;
 import org.continuent.appia.core.memoryManager.MemoryManager;
+import org.continuent.appia.core.message.DefaultMessageFactory;
+import org.continuent.appia.core.message.MessageFactory;
 import org.continuent.appia.management.SensorSession;
 import org.continuent.appia.management.jmx.ChannelManager;
 import org.continuent.appia.management.jmx.ConnectionServerFactory;
 import org.continuent.appia.management.jmx.JMXConfiguration;
+import org.continuent.appia.protocols.common.AppiaThreadFactory;
+import org.continuent.appia.protocols.common.ThreadFactory;
 
 
 
@@ -81,10 +85,13 @@ public class Channel {
   private boolean alive=false;
   private boolean started=false;
   
-  // added on 9-Jul-2001
   private MemoryManager memoryManager=null;
   
   private JMXConfiguration jmxConfiguration = null;
+
+  // Factories
+  private MessageFactory messageFactory = new DefaultMessageFactory();
+  private ThreadFactory threadFactory = AppiaThreadFactory.getThreadFactory();
   
   /**
    * The {@link org.continuent.appia.core.Session Sessions} stack.
@@ -156,7 +163,15 @@ public class Channel {
   public TimeProvider getTimeProvider(){
 	  return timerManager;
   }
-  
+
+  public ThreadFactory getThreadFactory(){
+      return threadFactory;
+  }
+
+  public MessageFactory getMessageFactory(){
+      return messageFactory;
+  }
+
   /**
    * Get the Channel ID
    * @return the Channel ID
