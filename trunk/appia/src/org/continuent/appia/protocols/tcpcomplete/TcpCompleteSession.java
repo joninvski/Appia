@@ -51,8 +51,15 @@ import org.continuent.appia.xml.utils.SessionProperties;
 
 
 /**
- * @author pedrofrv
- *
+ * Uses TCP to send/receive events to/from other Appia instances.<br>
+ * TCP connections are established automatically when required and 
+ * terminated after an inactivity period. <br>
+ * <br>
+ * <b>The TCP socket is bound to a local address</b>.
+ * If {@link org.continuent.appia.protocols.common.RegisterSocketEvent#localHost} is null, 
+ * {@link org.continuent.appia.protocols.utils.HostUtils} is used to select one. 
+ * 
+ * @author Pedro Vicente, Alexandre Pinto
  */
 public class TcpCompleteSession extends Session implements InitializableSession{
   

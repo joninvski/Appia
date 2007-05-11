@@ -54,7 +54,7 @@ import org.continuent.appia.xml.utils.SessionProperties;
 /**
  * This class defines a SslCompleteSession
  * 
- * @author Pedro Vicente and Nuno Carvalho
+ * @author Alexandre Pinto and Pedro Vicente and Nuno Carvalho 
  * @version 1.0
  */
 public class SslCompleteSession extends TcpCompleteSession implements InitializableSession {

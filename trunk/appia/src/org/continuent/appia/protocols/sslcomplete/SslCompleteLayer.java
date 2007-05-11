@@ -25,7 +25,7 @@ import org.continuent.appia.protocols.tcpcomplete.TcpCompleteLayer;
 
 
 /**
- * @author pedrofrv
+ * @author Pedro Vicente, Alexandre Pinto
  *
  */
 public class SslCompleteLayer extends TcpCompleteLayer {

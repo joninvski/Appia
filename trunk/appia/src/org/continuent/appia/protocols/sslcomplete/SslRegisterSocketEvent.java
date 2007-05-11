@@ -25,7 +25,7 @@ import org.continuent.appia.protocols.common.RegisterSocketEvent;
 /**
  * This class defines a SslRegisterSocketEvent
  * 
- * @author Pedro Vicente
+ * @author Pedro Vicente and Alexandre Pinto
  * @version 1.0
  */
 public class SslRegisterSocketEvent extends RegisterSocketEvent {

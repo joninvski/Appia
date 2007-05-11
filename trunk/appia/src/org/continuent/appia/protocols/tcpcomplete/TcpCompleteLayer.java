@@ -25,11 +25,14 @@ import org.continuent.appia.core.events.SendableEvent;
 import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
+import org.continuent.appia.protocols.udpsimple.UdpSimpleSession;
 
 
 /**
- * @author pedrofrv
- *
+ * Layer definition of the UdpSimple protocol.
+ * 
+ * @author Pedro Vicente, Alexandre Pinto 
+ * @see UdpSimpleSession
   */
 public class TcpCompleteLayer extends Layer implements org.continuent.appia.core.events.AppiaMulticastSupport {
 
