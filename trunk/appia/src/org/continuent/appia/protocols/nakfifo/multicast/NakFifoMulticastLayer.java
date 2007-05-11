@@ -65,7 +65,6 @@ public class NakFifoMulticastLayer extends Layer {
     		org.continuent.appia.core.events.channel.ChannelInit.class,
     		org.continuent.appia.core.events.channel.ChannelClose.class,
             MaxPDUSizeEvent.class,
-    		org.continuent.appia.core.events.channel.Debug.class,
     };
   }
   

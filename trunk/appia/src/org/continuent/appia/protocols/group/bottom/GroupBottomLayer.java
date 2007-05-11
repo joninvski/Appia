@@ -21,7 +21,6 @@ package org.continuent.appia.protocols.group.bottom;
 
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
-import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.protocols.group.events.GroupEvent;
 import org.continuent.appia.protocols.group.events.GroupInit;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;

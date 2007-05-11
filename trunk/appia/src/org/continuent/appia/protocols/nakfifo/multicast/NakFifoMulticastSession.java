@@ -30,16 +30,30 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ListIterator;
 
-import org.continuent.appia.core.*;
+import org.apache.log4j.Logger;
+import org.continuent.appia.core.AppiaError;
+import org.continuent.appia.core.AppiaEventException;
+import org.continuent.appia.core.AppiaException;
+import org.continuent.appia.core.Channel;
+import org.continuent.appia.core.Direction;
+import org.continuent.appia.core.Event;
+import org.continuent.appia.core.EventQualifier;
+import org.continuent.appia.core.Layer;
+import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.AppiaMulticast;
 import org.continuent.appia.core.events.SendableEvent;
 import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
-import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.protocols.common.FIFOUndeliveredEvent;
 import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
 import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
-import org.continuent.appia.protocols.nakfifo.*;
+import org.continuent.appia.protocols.nakfifo.IgnoreEvent;
+import org.continuent.appia.protocols.nakfifo.MessageUtils;
+import org.continuent.appia.protocols.nakfifo.NackEvent;
+import org.continuent.appia.protocols.nakfifo.Nacked;
+import org.continuent.appia.protocols.nakfifo.NakFifoTimer;
+import org.continuent.appia.protocols.nakfifo.Peer;
+import org.continuent.appia.protocols.nakfifo.PingEvent;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
 
@@ -51,7 +65,8 @@ import org.continuent.appia.xml.utils.SessionProperties;
  * @see org.continuent.appia.core.events.AppiaMulticast
  */
 public class NakFifoMulticastSession extends Session implements InitializableSession {
-  
+    private static Logger log = Logger.getLogger(NakFifoMulticastSession.class);
+    
   /** The default duration of a round in milliseconds. 
    */  
   public static final long DEFAULT_TIMER_PERIOD=700; // 0,7 secs
@@ -110,7 +125,6 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
    * <li><b>max_recv_time</b> maximum time for message reception, before suspecting the peer. (in milliseconds)
    * <li><b>max_sent_time</b> maximum time between sent messages. (in milliseconds)
    * <li><b>confirm_rounds</b> number of rounds between confirmation messages.
-   * <li><b>debug</b> bebug mode (boolean).
    * </ul>
    * 
    * @param params The parameters given in the XML configuration.
@@ -128,8 +142,6 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       param_MAX_SENT_ROUNDS=params.getLong("max_sent_time")/param_TIMER_PERIOD;
     if (params.containsKey("confirm_rounds"))
       param_CONFIRM_ROUNDS=params.getLong("confirm_rounds");
-    if (params.containsKey("debug"))
-      debugOn=params.getBoolean("debug");
   }
 
   /** 
@@ -159,24 +171,9 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       handleChannelClose((ChannelClose)event); return;
     } else if (event instanceof MaxPDUSizeEvent) {
       handleMaxPDUSize((MaxPDUSizeEvent)event); return;
-    } else if (event instanceof Debug) {
-      Debug ev=(Debug)event;
-      
-      if (ev.getQualifierMode() == EventQualifier.ON) {
-        debugOn=true;
-        if (ev.getOutput() instanceof java.io.PrintStream)
-          debug=(java.io.PrintStream)ev.getOutput();
-        else
-          debug=new java.io.PrintStream(ev.getOutput());
-      } else if (ev.getQualifierMode() == EventQualifier.OFF) {
-        debugOn=false;
-      }
-      
-      try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
-      return;
     }
     
-    debug("Unwanted event (\""+event.getClass().getName()+"\") received. Continued...");
+    log.warn("Unwanted event (\""+event.getClass().getName()+"\") received. Continued...");
     try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
   }
   
@@ -194,7 +191,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       sendTimer(ev.getChannel());
     
     //appia.protocols.drop.DropSession.dropRate=0.3;
-    debug("Params:\n\tTIMER_PERIOD="+param_TIMER_PERIOD+
+    log.debug("Params: "+ev.getChannel().getChannelID()+"\n\tTIMER_PERIOD="+param_TIMER_PERIOD+
         "\n\tMAX_APPL_ROUNDS="+param_MAX_APPL_ROUNDS+
         "\n\tMAX_RECV_ROUNDS="+param_MAX_RECV_ROUNDS+
         "\n\tMAX_SENT_ROUNDS="+param_MAX_SENT_ROUNDS+
@@ -214,9 +211,9 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
           sendTimer(peer.last_channel);
       }
       if (timerChannel != null)
-        debug("Sent new timer in channel "+timerChannel.getChannelID());
+        log.debug("Sent new timer in channel "+timerChannel.getChannelID());
       else
-        debug("Unable to send timer. Corret operation is not garanteed");
+        log.warn("Unable to send timer. Corret operation is not garanteed");
     }
   }
   
@@ -255,7 +252,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     if (event.getDir() == Direction.UP) {
       byte flags=event.getMessage().popByte();
       if ((flags & MessageUtils.IGNORE_FLAG) != 0) {
-        debug("Received message with ignore flag. Ignoring.");
+        log.debug("Received message with ignore flag. Ignoring.");
         try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
         return;
       }
@@ -266,7 +263,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
 
       long seq;
       if ((seq=utils.popSeq(event.getMessage(),peer.last_msg_delivered,false)) < 0) {
-        debug("Problems reading sequence number discarding event "+event+" from "+event.source.toString());
+        log.debug("Problems reading sequence number discarding event "+event+" from "+event.source.toString());
         return;
       }
       
@@ -277,7 +274,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     if (event.getDir() == Direction.DOWN) {
       
       if ((event.dest instanceof InetSocketAddress) && (((InetSocketAddress)event.dest).getAddress().isMulticastAddress())) {
-        debug("Destination is a IP Multicast address. Ignored.");
+        log.debug("Destination is a IP Multicast address. Ignored.");
         event.getMessage().pushByte(MessageUtils.IGNORE_FLAG);
         try { event.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
         return;
@@ -306,12 +303,12 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
         
       } catch (AppiaEventException ex) {
         ex.printStackTrace();
-        debug("To mantain coerence, sending undelivered.");
+        log.warn("To mantain coerence, sending undelivered.");
         sendFIFOUndelivered(event,event.dest);
         return;
       } catch (CloneNotSupportedException ex) {
         ex.printStackTrace();
-        debug("To mantain coerence, sending undelivered.");
+        log.warn("To mantain coerence, sending undelivered.");
         sendFIFOUndelivered(event,event.dest);
         return;
       }
@@ -319,24 +316,24 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       return;
     }
     
-    debug("Direction is wrong. Discarding event "+event);
+    log.warn("Direction is wrong. Discarding event "+event);
   }
   
   private void handlePing(PingEvent ev) {
     if (ev.getDir() != Direction.UP) {
-      debug("Discarding Ping event due to wrong diretion.");
+      log.warn("Discarding Ping event due to wrong diretion.");
       return;
     }
     
     // Confirmed
     Peer peer=(Peer)peers.get(ev.source);
     if (peer == null) {
-    	debug("Received Ping from unknown peer ("+ev.source+"). Ignoring confirm.");
+    	log.debug("Received Ping from unknown peer ("+ev.source+"). Ignoring confirm.");
     	ev.getMessage().discard(MessageUtils.SEQ_SIZE);
     } else {
     	long confirmed;
     	if ((confirmed=utils.popSeq(ev.getMessage(),peer.last_msg_confirmed,false)) < 0) {
-    		debug("Problems reading confirm sequence number from "+ev.source);
+    		log.debug("Problems reading confirm sequence number from "+ev.source);
     	} else {
     		confirmed(peer,confirmed,ev.getChannel());
     	}
@@ -356,21 +353,21 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     long last;
     
     if ((first=ev.getMessage().popLong()) < 0) {
-      debug("Ignoring Nack due to wrong first seq number.");
+      log.debug("Ignoring Nack due to wrong first seq number.");
       return;
     }
     if ((last=ev.getMessage().popLong()) < 0) {
-      debug("Ignoring Nack due to wrong last seq number.");
+      log.debug("Ignoring Nack due to wrong last seq number.");
       return;
     }
     if (first > last) {
-      debug("Ignoring Nack due to wrong seq numbers (first="+first+",last="+last+",confirmed="+peer.last_msg_confirmed+").");
+      log.debug("Ignoring Nack due to wrong seq numbers (first="+first+",last="+last+",confirmed="+peer.last_msg_confirmed+").");
       return;
     }
     
     if ((first < first_msg_sent) || (last > last_msg_sent)) {
       // Restart comunication
-      debug("Received Nack("+first+","+last+") for message not sent. Restarting communication.");
+      log.debug("Received Nack("+first+","+last+") for message not sent. Restarting communication.");
       ignore(peer,ev.getChannel());
       return;
     }
@@ -380,17 +377,17 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     
     if (first <= peer.last_msg_confirmed) {
       if (last <= peer.last_msg_confirmed) {
-        debug("Received Nack for messages already confirmed. Discarding.");
+        log.debug("Received Nack for messages already confirmed. Discarding.");
         return;
       }
       first=peer.last_msg_confirmed+1;
-      debug("Received Nack for message already confirmed. Changig first to "+first);
+      log.debug("Received Nack for message already confirmed. Changig first to "+first);
     }
     
     if (last > peer.last_msg_sent) {
-      debug("Nack includes messages not sent to peer. Sending Update.");
+      log.debug("Nack includes messages not sent to peer. Sending Update.");
       if (first <= peer.last_msg_sent) {
-        debug("Nack partially includes messages sent to peer, resending.");
+        log.debug("Nack partially includes messages sent to peer, resending.");
         resend(peer,first,peer.last_msg_sent);
       }
       update(peer,last,ev.getChannel());
@@ -468,10 +465,10 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
           e.go();
         } catch (AppiaEventException ex) {
           ex.printStackTrace();
-          debug("Impossible to send ping.");
+          log.warn("Impossible to send ping.");
         } catch (CloneNotSupportedException ex) {
           ex.printStackTrace();
-          debug("Impossible to send ping.");
+          log.warn("Impossible to send ping.");
         }
       }
       
@@ -498,7 +495,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     peer.last_channel=ev.getChannel();
     
     //if (debugFull)
-    debug("Received Ignore from "+peer.addr.toString()+" with value "+peer.last_msg_delivered);
+    log.debug("Received Ignore from "+peer.addr.toString()+" with value "+peer.last_msg_delivered);
   }
   
   private void handleUpdate(UpdateEvent ev) {
@@ -507,11 +504,11 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       peer=createPeer(ev.source,last_msg_sent,ev.getChannel());
     
     if ((ev.from=utils.popSeq(ev.getMessage(),peer.last_msg_delivered, false)) < 0) {
-      debug("Received incorrect Update. Discarding.");
+      log.debug("Received incorrect Update. Discarding.");
       return;
     }
     if ((ev.to=utils.popSeq(ev.getMessage(),peer.last_msg_delivered,false)) < 0){
-      debug("Received incorrect Update. Discarding.");
+      log.debug("Received incorrect Update. Discarding.");
       return;
     }
     
@@ -521,13 +518,13 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
   private void handleConfirm(ConfirmEvent ev) {
     Peer peer=(Peer)peers.get(ev.source);
     if (peer == null) {
-    	debug("Received Confirm from unknown peer ("+ev.source+"). Discarding it.");
+    	log.debug("Received Confirm from unknown peer ("+ev.source+"). Discarding it.");
     	return;
     }
     
     long confirmed;
     if ((confirmed=utils.popSeq(ev.getMessage(),peer.last_msg_confirmed,false)) < 0) {
-      debug("Problems reading confirm sequence number from "+ev.source);
+      log.debug("Problems reading confirm sequence number from "+ev.source);
       return;
     }
 
@@ -562,7 +559,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     peer.last_channel=ev.getChannel();
         
     if (debugFull)
-    	debug("Received event "+ev+" from "+peer.addr+" with seq "+seqfrom+" -> "+seqto);
+    	log.debug("Received event "+ev+" from "+peer.addr+" with seq "+seqfrom+" -> "+seqto);
     
     // Deliver
     if ((seqfrom <= peer.last_msg_delivered+1) && (seqto >= peer.last_msg_delivered+1)) {
@@ -591,12 +588,12 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       }
     } else { // Wrong seq number
       if (seqto <= peer.last_msg_delivered) {
-        debug("Received old message from "+peer.addr.toString()+". Discarding.");
+        log.debug("Received old message from "+peer.addr.toString()+". Discarding.");
         return;
       }
    
       if (debugFull)
-    	  debug("Storing undelivered from "+peer.addr+" with seq "+seqfrom);
+    	  log.debug("Storing undelivered from "+peer.addr+" with seq "+seqfrom);
       
       storeUndelivered(peer,ev,seqfrom);
       
@@ -612,7 +609,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
         removeUnconfirmed(peer,peer_confirmed);
     } else {
       if (peer_confirmed > last_msg_sent) {
-        debug("Received wrong peer confirmed number (expected between "+peer.first_msg_sent+" and "+last_msg_sent+", received "+peer_confirmed+" from "+peer.addr+". Sending Ignore.");
+        log.debug("Received wrong peer confirmed number (expected between "+peer.first_msg_sent+" and "+last_msg_sent+", received "+peer_confirmed+" from "+peer.addr+". Sending Ignore.");
         ignore(peer,channel);
       }
     }
@@ -634,10 +631,13 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       nack.go();      
     } catch (AppiaEventException ex) {
       ex.printStackTrace();
-      debug("Impossible to send Nack. Maybe next time.");
+      log.warn("Impossible to send Nack. Maybe next time.");
       return;
     }
     peer.nacked=new Nacked(first,last);
+    
+    // TODO erase
+    log.warn("nacked: "+first+" - "+last+" ("+(last-first)+")");
     
     if (debugFull)
       debugPeer(peer,"nack");
@@ -650,10 +650,10 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       ev.dest=peer.addr;
       ev.go();
       if (debugFull)
-        debug("Sent Ignore with "+peer.last_msg_confirmed+" to "+peer.addr);
+        log.debug("Sent Ignore with "+peer.last_msg_confirmed+" to "+peer.addr);
     } catch (AppiaEventException ex) {
       ex.printStackTrace();
-      debug("Unable to send Ignore later it will be retransmited.");
+      log.warn("Unable to send Ignore later it will be retransmited.");
       return;
     }
     peer.rounds_msg_sent=0;
@@ -674,11 +674,11 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       update.go();      
     } catch (AppiaEventException ex) {
       ex.printStackTrace();
-      debug("Unable to send or store update.");
+      log.error("Unable to send or store update.");
       throw new AppiaError("Don't know how to solve this problem. Aborting.");
     } catch (CloneNotSupportedException ex) {
       ex.printStackTrace();
-      debug("Unable to send or store update.");
+      log.error("Unable to send or store update.");
       throw new AppiaError("Don't know how to solve this problem. Aborting.");
     }
     peer.last_msg_sent=to;
@@ -693,12 +693,12 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
         ev.go();
     } catch (AppiaEventException ex) {
         ex.printStackTrace();
-        debug("Unable to send ConfirmEvent. Continuing.");
+        log.warn("Unable to send ConfirmEvent. Continuing.");
         return;
     }
     peer.last_confirm_sent=peer.last_msg_delivered;
     if (debugFull)
-        debug("Sent Confirm "+peer.last_confirm_sent+" to "+peer.addr);
+        log.debug("Sent Confirm "+peer.last_confirm_sent+" to "+peer.addr);
   }
 
   private void storeUnconfirmed(Peer peer, SendableEvent ev) {
@@ -709,6 +709,11 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     }
     
     peer.unconfirmed_msgs.addLast(ev);
+    
+    // TODO: erase
+    int size=peer.unconfirmed_msgs.size();
+    if (((size / 500) > 0) && ((size % 500) == 0))
+        log.warn("Unconfirmed reached "+peer.unconfirmed_msgs.size());
   }
   
   private void removeUnconfirmed(Peer peer, long last) {
@@ -793,14 +798,14 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       if (evaux instanceof UpdateEvent) { 
     	  UpdateEvent update=(UpdateEvent)evaux;
     	  if ((seq >= update.from) && (seq <= update.to)) {
-    		  debug("Received undelivered message already stored. Discarding new copy.");
+    		  log.debug("Received undelivered message already stored. Discarding new copy.");
     		  return;
     	  }
     	  seqaux=update.to;
       }  else {
     	  seqaux=utils.popSeq(evaux.getMessage(),peer.last_msg_delivered,true);
     	  if (seqaux == seq) {
-    		  debug("Received undelivered message already stored. Discarding new copy.");
+    		  log.debug("Received undelivered message already stored. Discarding new copy.");
     		  return;
     	  }
       }
@@ -820,7 +825,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       if (evaux instanceof UpdateEvent) {
         UpdateEvent update=(UpdateEvent)evaux;
         if (update.to <= peer.last_msg_delivered) {
-        	debug("Discarded unwanted event from "+peer.addr+" with seq "+update.from+" -> "+update.to);
+        	log.debug("Discarded unwanted event from "+peer.addr+" with seq "+update.from+" -> "+update.to);
         	aux.remove();
         } else if (update.from == peer.last_msg_delivered+1) {
           peer.last_msg_delivered=update.to;
@@ -831,7 +836,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       } else { // Not UpdateEvent interface regular SendableEvent
         long seqaux=utils.popSeq(evaux.getMessage(),peer.last_msg_delivered,true);
         if (seqaux <= peer.last_msg_delivered) {
-        	debug("Discarded unwanted event from "+peer.addr+" with seq "+seqaux);
+        	log.debug("Discarded unwanted event from "+peer.addr+" with seq "+seqaux);
         	aux.remove();        	
         } else if (seqaux == peer.last_msg_delivered+1) {
           if (!(evaux instanceof PingEvent)) {
@@ -840,7 +845,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
               evaux.go();
             } catch (AppiaEventException ex) {
               ex.printStackTrace();
-              debug("Discarding event "+evaux+". This may lead to incoherence.");
+              log.debug("Discarding event "+evaux+". This may lead to incoherence.");
             }
           }
           peer.last_msg_delivered=seqaux;
@@ -870,10 +875,10 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       e.go();
     } catch (AppiaEventException ex) {
       ex.printStackTrace();
-      debug("Unable to send Undelivered notification. Continuing but problems may happen.");
+      log.warn("Unable to send Undelivered notification. Continuing but problems may happen.");
     } catch (CloneNotSupportedException ex) {
       ex.printStackTrace();
-      debug("Unable to send Undelivered notification. Continuing but problems may happen.");
+      log.warn("Unable to send Undelivered notification. Continuing but problems may happen.");
     }
   }
   
@@ -884,7 +889,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
       timerChannel=channel;
     } catch (AppiaException ex) {
       //ex.printStackTrace();
-      debug("Unable to send timer. Correct operation of session is not guaranteed.");
+      log.warn("Unable to send timer. Correct operation of session is not guaranteed.");
     }
   }
     
@@ -900,7 +905,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
     }
     myHashes[myHashesLen]=addr.hashCode();
     myHashesLen++;
-    debug("Registered "+addr+" with hash "+myHashes[myHashesLen-1]);
+    log.debug("Registered "+addr+" with hash "+myHashes[myHashesLen-1]);
   }
   
   private boolean forMe(int hash) {
@@ -915,64 +920,54 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
   
   // DEBUG
   /** Full debug information. */
-  public static final boolean debugFull=false;
+  public static final boolean debugFull=true;
   public static final int debugListLimit=10;
-  private boolean debugOn=false;
-  private java.io.PrintStream debug = System.err;
-  
-  private void debug(String s) {
-    if ((debugFull || debugOn) && (debug != null))
-      debug.println("appia.protocols.NakFifoMulticastSession: "+s);
-  }
   
   private void debugPeer(Peer peer, String s) {
-    if ((debugFull || debugOn) && (debug != null)) {
-      debug.println("@"+s+" Peer: "+peer.addr.toString());
-      debug.println("\t First Msg Sent: "+peer.first_msg_sent);
-      debug.println("\t Last Msg Sent/Confirmed: "+peer.last_msg_sent+"/"+peer.last_msg_confirmed);
-      debug.println("\t Last Msg Delivered: "+peer.last_msg_delivered);
-      debug.println("\t Rounds Appl/Sent/Recv: "+peer.rounds_appl_msg+"/"+peer.rounds_msg_sent+"/"+peer.rounds_msg_recv);
-      
-      int limit=debugListLimit;
-      debug.println("\t Unconfirmed Msgs (size="+peer.unconfirmed_msgs.size()+"):");
-      ListIterator iter=peer.unconfirmed_msgs.listIterator();
-      long l=peer.last_msg_confirmed;
-      while (iter.hasNext()) {
-        SendableEvent ev=(SendableEvent)iter.next();
-        l++;
-        debug.println("\t\t "+l+": "+ev);
-        if (--limit <= 0) {
-            debug.println("\t\t  ...");
-            break;
-        }
+      if (debugFull && log.isDebugEnabled()) {
+          s="@"+s+" Peer: "+peer.addr.toString()+"\n";
+          s+="\t First Msg Sent: "+peer.first_msg_sent+"\n";
+          s+="\t Last Msg Sent/Confirmed: "+peer.last_msg_sent+"/"+peer.last_msg_confirmed+"\n";
+          s+="\t Last Msg Delivered: "+peer.last_msg_delivered+"\n";
+          s+="\t Rounds Appl/Sent/Recv: "+peer.rounds_appl_msg+"/"+peer.rounds_msg_sent+"/"+peer.rounds_msg_recv+"\n";
+
+          int limit=debugListLimit;
+          s+="\t Unconfirmed Msgs:"+"\n";
+          ListIterator iter=peer.unconfirmed_msgs.listIterator();
+          long l=peer.last_msg_confirmed;
+          while (iter.hasNext()) {
+              SendableEvent ev=(SendableEvent)iter.next();
+              l++;
+              s+="\t\t "+l+": "+ev+"\n";
+              if (--limit <= 0) {
+                  s+="\t\t  ..."+"\n";
+                  break;
+              }
+          }
+
+          limit=debugListLimit;
+          s+="\t Undelivered Msgs:"+"\n";
+          iter=peer.undelivered_msgs.listIterator();
+          while (iter.hasNext()) {
+              SendableEvent ev=(SendableEvent)iter.next();
+              l=utils.popSeq(ev.getMessage(),peer.last_msg_delivered,true);
+              s+="\t\t "+l+": "+ev+"\n";
+              if (--limit <= 0) {
+                  s+="\t\t  ..."+"\n";
+                  break;
+              }
+          }
+
+          s+="\t Nacked First/Last/Rounds: ";
+          if (peer.nacked == null)
+              s+="null"+"\n";
+          else
+              s+=""+peer.nacked.first_msg+"/"+peer.nacked.last_msg+"/"+peer.nacked.rounds+"\n";
+
+          s+="\t Channel: "+peer.last_channel+"\n";
+
+          log.debug(s);
       }
-      
-      limit=debugListLimit;
-      debug.println("\t Undelivered Msgs (size="+peer.undelivered_msgs.size()+"):");
-      iter=peer.undelivered_msgs.listIterator();
-      while (iter.hasNext()) {
-        SendableEvent ev=(SendableEvent)iter.next();
-        if (ev instanceof UpdateEvent) {
-        	UpdateEvent e=(UpdateEvent)ev;
-        	debug.println("\t\t "+e.from+" -> "+e.to);
-        } else {
-        	l=utils.popSeq(ev.getMessage(),peer.last_msg_delivered,true);
-        	debug.println("\t\t "+l+": "+ev);
-        }
-        if (--limit <= 0) {
-            debug.println("\t\t  ...");
-            break;
-        }
-      }
-      
-      debug.print("\t Nacked First/Last/Rounds: ");
-      if (peer.nacked == null)
-        debug.println("null");
-      else
-        debug.println(""+peer.nacked.first_msg+"/"+peer.nacked.last_msg+"/"+peer.nacked.rounds);
-      
-      debug.println("\t Channel: "+peer.last_channel);
-    }
   }
   
 /*
