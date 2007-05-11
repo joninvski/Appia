@@ -26,7 +26,7 @@
 package org.continuent.appia.core.events;
 
 /**
- * Any layer that offers the core support to AppiaMulticast to other layers 
+ * Any layer that offers the core support to {@link AppiaMulticast AppiaMulticast} to other layers 
  * should implement the AppiaMulticastSupport interface.
  * <br>
  * This tag allows the other layers to know if they can use AppiaMulticast.
@@ -34,6 +34,7 @@ package org.continuent.appia.core.events;
  *
  * @author  Alexandre Pinto
  * @version 0.1
+ * @see AppiaMulticast
  */
 public interface AppiaMulticastSupport {}
 
