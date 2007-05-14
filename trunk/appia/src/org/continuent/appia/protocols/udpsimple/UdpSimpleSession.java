@@ -47,7 +47,7 @@ import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.Message;
-import org.continuent.appia.core.message.MessageFactory;
+import org.continuent.appia.core.message.MsgBuffer;
 import org.continuent.appia.protocols.common.AppiaThreadFactory;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
@@ -97,7 +97,6 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   private InetSocketAddress ipMulticast = null;
   
   private ThreadFactory threadFactory = null;
-  private MessageFactory messageFactory = null;
   
   /**
    * Session standard constructor.
@@ -191,7 +190,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     
     log.debug(":handleDebug");
     
-    final int q = e.getQualifierMode();
+    int q = e.getQualifierMode();
     
     if (q == EventQualifier.ON) {
         log.debug("Ignored Debug event with qualifier ON.");
@@ -215,12 +214,12 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     while (iter.hasNext())
       out.println("Local Multicast address: " + ((InetSocketAddress)iter.next()));
     
-    final int nChannels = channels.size();
+    int nChannels = channels.size();
     out.println("Currently connected channels: " + nChannels);
     
     iter = channels.values().iterator();
     while (iter.hasNext()) {
-      final Channel c = (Channel) iter.next();
+      Channel c = (Channel) iter.next();
       out.println("Channel name: " + c.getChannelID() + " QoS: " + c.getQoS().getQoSID());
     }
   }
@@ -271,7 +270,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     if (!multicastReaders.containsKey(e.ipMulticast)) {
       /*creates a multicast socket and binds it to a specific port on the local host machine*/
       try {
-        final MulticastSocket multicastSock = new MulticastSocket(((InetSocketAddress)e.ipMulticast).getPort());
+        MulticastSocket multicastSock = new MulticastSocket(((InetSocketAddress)e.ipMulticast).getPort());
         
         log.debug(":handleAppiaMulticastInit: Socket Multicast created. Address: "  + e.ipMulticast);
         
@@ -291,9 +290,9 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         }
 
         /* The socket is binded. Launch reader and return the event.*/
-        final UdpSimpleReader multicastReader = 
+        UdpSimpleReader multicastReader = 
           new UdpSimpleReader(this, multicastSock, ipMulticast, e.fullDuplex ? null : myAddress);
-        final Thread thread = threadFactory.newThread(multicastReader,"MulticastReaderThread ["+ipMulticast+"]");
+        Thread thread = threadFactory.newThread(multicastReader,"MulticastReaderThread ["+ipMulticast+"]");
         multicastReader.setParentThread(thread);
         thread.start();
         
@@ -355,7 +354,6 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     log.debug(":handleChannelInit from channel: "+e.getChannel().getChannelID());
     
     channels.put(new Integer(e.getChannel().getChannelID().hashCode()), e.getChannel());
-    messageFactory = e.getChannel().getMessageFactory();
     
     try {
       e.go();
@@ -383,12 +381,47 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       // Terminating 
       sockReader.terminate();
       
-      final Iterator iter=multicastReaders.values().iterator();
+      Iterator iter=multicastReaders.values().iterator();
       while (iter.hasNext()) {
-        final UdpSimpleReader reader=(UdpSimpleReader)iter.next();
+        UdpSimpleReader reader=(UdpSimpleReader)iter.next();
         reader.terminate();
       }
     }
+  }
+  
+  /**
+   * int serialization.
+   */
+  byte[] intToByteArray(int i) {
+    byte[] ret = new byte[4];
+    
+    ret[0] = (byte) ((i & 0xff000000) >> 24);
+    ret[1] = (byte) ((i & 0x00ff0000) >> 16);
+    ret[2] = (byte) ((i & 0x0000ff00) >> 8);
+    ret[3] = (byte) (i & 0x000000ff);
+    
+    return ret;
+  }
+  
+  void intToByteArray(int i, byte[] a, int o) {
+    a[o + 0] = (byte) ((i & 0xff000000) >> 24);
+    a[o + 1] = (byte) ((i & 0x00ff0000) >> 16);
+    a[o + 2] = (byte) ((i & 0x0000ff00) >> 8);
+    a[o + 3] = (byte) (i & 0x000000ff);
+  }
+  
+  /**
+   * int deserialization.
+   */
+  int byteArrayToInt(byte[] b, int off) {
+    int ret = 0;
+    
+    ret |= b[off] << 24;
+    ret |= (b[off + 1] << 24) >>> 8; // must be done this way because of
+    ret |= (b[off + 2] << 24) >>> 16; // java's sign extension of <<
+    ret |= (b[off + 3] << 24) >>> 24;
+    
+    return ret;
   }
   
   private boolean newSock(int port, InetAddress addr) {
@@ -409,7 +442,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       }
     } else if (port == RegisterSocketEvent.RANDOMLY_AVAILABLE) {
       /*chooses a random port*/
-      final Random random = new Random();
+      Random random = new Random();
       
       boolean sucess = false;
       
@@ -451,9 +484,9 @@ public class UdpSimpleSession extends Session implements InitializableSession {
 	}
 
     /* The socket is binded. Launch reader*/
-	//FIXME ?????  Fix What ?!?!?!
+	//FIXME
     sockReader = new UdpSimpleReader(this, sock, myAddress);
-    final Thread t = threadFactory.newThread(sockReader,"UdpSimpleReader ["+myAddress+"]");
+    Thread t = threadFactory.newThread(sockReader,"UdpSimpleReader ["+myAddress+"]");
     sockReader.setParentThread(t);
     t.start();
     
@@ -473,20 +506,34 @@ public class UdpSimpleSession extends Session implements InitializableSession {
           throw new IOException("Impossible to create new socket.");
       }
       
-      final Message msg = e.getMessage();
-      msg.pushInt(e.getChannel().getChannelID().hashCode());
-      msg.pushString(e.getClass().getName());
+      Message msg = e.getMessage();
+      MsgBuffer mbuf = new MsgBuffer();
+      
+      byte[] eventType = e.getClass().getName().getBytes("ISO-8859-1");
+      int channelHash = e.getChannel().getChannelID().hashCode();
+      
+      mbuf.len = 4;
+      msg.push(mbuf);
+      intToByteArray(channelHash, mbuf.data, mbuf.off);
+      
+      mbuf.len = eventType.length;
+      msg.push(mbuf);
+      System.arraycopy(eventType, 0, mbuf.data, mbuf.off, mbuf.len);
+      
+      mbuf.len = 4;
+      msg.push(mbuf);
+      intToByteArray(eventType.length, mbuf.data, mbuf.off);
       
       if (msg.length() > param_MAX_UDPMSG_SIZE)
         throw new IOException("Message length to great, may be truncated");
       
       /* Create the packet and send it */
-      final byte[] bytes = msg.toByteArray();
+      byte[] bytes = msg.toByteArray();
       
       if ((e.dest instanceof AppiaMulticast)
           && (((AppiaMulticast) e.dest).getMulticastAddress() == null)) {
         
-        final Object[] dests = ((AppiaMulticast) e.dest).getDestinations();
+        Object[] dests = ((AppiaMulticast) e.dest).getDestinations();
         
         if (dests == null) {
           System.err.println(
@@ -494,7 +541,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
           return;
         }
         
-        final DatagramPacket dp = new DatagramPacket(bytes, bytes.length);
+        DatagramPacket dp = new DatagramPacket(bytes, bytes.length);
         
         for (int i = 0; i < dests.length; i++) {
           if (dests[i] instanceof InetSocketAddress) {
@@ -515,7 +562,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         if (e.dest instanceof InetSocketAddress) {
           dest = (InetSocketAddress) e.dest;
         } else if (e.dest instanceof AppiaMulticast) {
-          final Object aux=((AppiaMulticast) e.dest).getMulticastAddress();
+          Object aux=((AppiaMulticast) e.dest).getMulticastAddress();
           if (aux instanceof InetSocketAddress) {
             dest = (InetSocketAddress)aux;
             if (!dest.getAddress().isMulticastAddress()) {
@@ -531,7 +578,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
           return;
         }
         
-        final DatagramPacket dp = new DatagramPacket(bytes, bytes.length, dest.getAddress(), dest.getPort());
+        DatagramPacket dp = new DatagramPacket(bytes, bytes.length, dest.getAddress(), dest.getPort());
         
         sock.send(dp);
         
@@ -544,7 +591,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
           ex.printStackTrace();
       /* Couldn't send message to socket. */
       try {
-        new SendableNotDeliveredEvent(e.getChannel(), this, e).go();
+        SendableNotDeliveredEvent snd = new SendableNotDeliveredEvent(e.getChannel(), this, e);
+        snd.go();
         log.debug(":formatAndSend: IOException when sending Datagram to socket. "
               + "Inserting SendableNotDeliveredEvent in the channel.");
         
@@ -553,8 +601,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       }
     }
   }
-        /**
-         * Auxiliary class.
+        /* Auxiliary class.
          *
          * This is the class responsible for blocking on a socket waiting for
          * datagrams to come. Incoming datagrams are transformed in Events and
@@ -572,6 +619,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     private Thread parentThread = null;
     
     private byte[] b = new byte[MAX_BUFFER_SIZE];
+    private MsgBuffer mbuf = new MsgBuffer();
     
     private boolean terminate=false;
     
@@ -612,7 +660,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     public void run() {
       boolean running=true;
       
-      final DatagramPacket msg = new DatagramPacket(b, b.length);
+      DatagramPacket msg = new DatagramPacket(b, b.length);
       
       logReader.debug("Reader running (Multicast="+(sock instanceof MulticastSocket)+").");
       
@@ -649,24 +697,32 @@ public class UdpSimpleSession extends Session implements InitializableSession {
                  */
     private void receiveFormatSend(DatagramPacket p) {
       
-      final byte[] data = new byte[p.getLength()];
+      byte[] data = new byte[p.getLength()];
       System.arraycopy(p.getData(), p.getOffset(), data, 0, p.getLength());
       SendableEvent e = null;
-      final Message msg = messageFactory.newMessage();
+      Message msg = null;
       
-      msg.setByteArray(data, 0, data.length);
       try {
+        /* Extract event class name */
+        //size of class name
+        int sLength = byteArrayToInt(data, 0);
+        //the class name
+        String className = new String(data, 4, sLength, "ISO-8859-1");
+        
         /* Create event */
-          final String className = msg.popString();
-        final Class c = Class.forName(className);
+        Class c = Class.forName(className);
         if (debugFull) {
           logReader.debug(":receiveAndFormat: Reader, creating "+className+" event.");
         }
         e = (SendableEvent) c.newInstance();
-        e.setMessage(msg);
+        msg = e.getMessage();
+        msg.setByteArray(data, 4 + sLength, data.length - (4 + sLength));
         
-        final int channelHash = msg.popInt();
-        final Channel msgChannel = (Channel) parentSession.channels.get(new Integer(channelHash));
+        /* Extract channel hash and put event in it*/
+        mbuf.len = 4;
+        msg.pop(mbuf);
+        int channelHash = byteArrayToInt(mbuf.data, mbuf.off);
+        Channel msgChannel = (Channel) parentSession.channels.get(new Integer(channelHash));
         
         /* If channel does not exist, discard message */
         if (msgChannel == null) {
@@ -685,8 +741,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         
         /* Extract the addresses and put them on the event */
         
-        //msg's source. in the future, change udpsimple to common
-        final InetSocketAddress addr = new InetSocketAddress(p.getAddress(),p.getPort());
+        //msg's source, futurely change udpsimple to common
+        InetSocketAddress addr = new InetSocketAddress(p.getAddress(),p.getPort());
         e.source = addr;
         
         //msg's destination
