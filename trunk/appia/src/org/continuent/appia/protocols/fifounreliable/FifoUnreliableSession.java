@@ -178,7 +178,7 @@ public class FifoUnreliableSession extends Session {
      * <li>org.continuent.appia.core.events.SendableEvent
      * </ul>
      * 
-     * @param event the event to handle.
+     * @param e the event to handle.
      * @see org.continuent.appia.core.Session#handle(org.continuent.appia.core.Event)
      */
 	public void handle(Event e) {

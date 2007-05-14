@@ -44,7 +44,6 @@ public class TokenTimer extends Timer {
     /**
      * Creates a new TokenTimer.
      * @param when
-     * @param timerID
      * @param channel
      * @param dir
      * @param source
