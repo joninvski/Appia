@@ -125,8 +125,8 @@ public class ConnectorGraphics extends javax.swing.JFrame {
         Channel ctext = null;
     	Channel cdraw = null;
     	try {
-			ctext = AppiaXML.createChannel(txtStr,"text",group.getText(),null,false);
-			cdraw = AppiaXML.createChannel(drawStr,"draw",group.getText(),null,false);
+			ctext = AppiaXML.createChannel(txtStr,"text",group.getText(),null,false,null,null);
+			cdraw = AppiaXML.createChannel(drawStr,"draw",group.getText(),null,false,null,null);
 		} catch (AppiaException e) {
 			e.printStackTrace();
 		}

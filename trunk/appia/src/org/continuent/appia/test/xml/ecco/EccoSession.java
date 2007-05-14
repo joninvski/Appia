@@ -39,7 +39,6 @@ import org.continuent.appia.core.TimeProvider;
 import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.message.Message;
-import org.continuent.appia.protocols.common.AppiaThreadFactory;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
@@ -161,7 +160,7 @@ public class EccoSession extends Session implements InitializableSession {
         local = new InetSocketAddress(event.localHost,event.port);
         
         shell = new MyShell(channel);
-        AppiaThreadFactory.getThreadFactory().newThread(shell,"Ecco shell").start();
+        event.getChannel().getThreadFactory().newThread(shell,"Ecco shell").start();
 
     }
 
@@ -169,12 +168,11 @@ public class EccoSession extends Session implements InitializableSession {
      * EchoEvent
      */
 	private void handleMyEchoEvent(MyEccoEvent echo) {
-		Message message = echo.getMessage();
+		final Message message = echo.getMessage();
         
 		if (echo.getDir() == Direction.DOWN) {
             // Event is going DOWN
-			String text = echo.getText();
-			message.pushString(text);
+			message.pushString(echo.getText());
 			
 			echo.source = local;
 			echo.dest = remote;
@@ -188,8 +186,7 @@ public class EccoSession extends Session implements InitializableSession {
 		}
 		else {
             // Event is going UP
-			String text = message.popString();
-			echo.setText(text);
+			echo.setText(message.popString());
             final long now = time.currentTimeMillis();
 			System.out.print("\nOn ["+new Date(now)+"] : "+echo.getText()+"\n> ");
 		}

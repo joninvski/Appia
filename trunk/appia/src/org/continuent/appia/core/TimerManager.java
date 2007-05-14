@@ -22,6 +22,7 @@ package org.continuent.appia.core;
 
 import org.continuent.appia.core.events.channel.*;
 import org.continuent.appia.protocols.common.AppiaThreadFactory;
+import org.continuent.appia.protocols.common.ThreadFactory;
 
 /** <I>Appia</I> timers manager.
  * This is an independent <I>thread</I> that gathers all timers
@@ -40,7 +41,6 @@ public class TimerManager implements Runnable, TimeProvider {
     /**
      * This class defines a MyTimer
      * 
-     * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
      * @version 1.0
      */
   private class MyTimer {
@@ -68,7 +68,6 @@ public class TimerManager implements Runnable, TimeProvider {
   /**
    * This class defines a MyClock
    * 
-   * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
    * @version 1.0
    */
   private class MyClock {
@@ -178,8 +177,8 @@ public class TimerManager implements Runnable, TimeProvider {
   
   /** Creates a new TimerManager
    */  
-  public TimerManager() {
-    thread = AppiaThreadFactory.getThreadFactory().newThread(this,"Appia Timer Manager",true);
+  public TimerManager(ThreadFactory thf) {
+    thread = thf.newThread(this,"Appia Timer Manager",true);
   }
   
   //////////////////////////////////////////////

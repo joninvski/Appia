@@ -48,7 +48,6 @@ import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.Debug;
 import org.continuent.appia.core.message.Message;
 import org.continuent.appia.core.message.MsgBuffer;
-import org.continuent.appia.protocols.common.AppiaThreadFactory;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
 import org.continuent.appia.protocols.common.ThreadFactory;
@@ -96,7 +95,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   private InetSocketAddress myAddress = null;
   private InetSocketAddress ipMulticast = null;
   
-  private ThreadFactory threadFactory = null;
+//  private ThreadFactory threadFactory = null;
   
   /**
    * Session standard constructor.
@@ -108,7 +107,6 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     super(l);
     
     log.debug("New udpSimple session");
-    threadFactory = AppiaThreadFactory.getThreadFactory();
   }
   
   /**
@@ -250,7 +248,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     	return;
     }
     	
-    if (newSock(e.port,e.localHost)) {
+    if (newSock(e.port,e.localHost,e.getChannel().getThreadFactory())) {
       reverseRegister(e, myAddress.getPort(), myAddress.getAddress(), false);
     } else {
       reverseRegister(e, e.port, null, true);
@@ -290,9 +288,10 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         }
 
         /* The socket is binded. Launch reader and return the event.*/
-        UdpSimpleReader multicastReader = 
+        final UdpSimpleReader multicastReader = 
           new UdpSimpleReader(this, multicastSock, ipMulticast, e.fullDuplex ? null : myAddress);
-        Thread thread = threadFactory.newThread(multicastReader,"MulticastReaderThread ["+ipMulticast+"]");
+        final Thread thread = e.getChannel().getThreadFactory().
+                newThread(multicastReader,"MulticastReaderThread ["+ipMulticast+"]");
         multicastReader.setParentThread(thread);
         thread.start();
         
@@ -354,7 +353,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     log.debug(":handleChannelInit from channel: "+e.getChannel().getChannelID());
     
     channels.put(new Integer(e.getChannel().getChannelID().hashCode()), e.getChannel());
-    
+   
     try {
       e.go();
     } catch (AppiaEventException ex) {
@@ -424,7 +423,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     return ret;
   }
   
-  private boolean newSock(int port, InetAddress addr) {
+  private boolean newSock(int port, InetAddress addr, ThreadFactory threadFactory) {
     if (addr == null) {
       if (param_LOCAL_ADDRESS == null)
         addr=HostUtils.getLocalAddress();
@@ -502,7 +501,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     /* Event Class name */
     try {
       if (sock == null) {
-        if (!newSock(RegisterSocketEvent.FIRST_AVAILABLE,null))
+        if (!newSock(RegisterSocketEvent.FIRST_AVAILABLE,null,e.getChannel().getThreadFactory()))
           throw new IOException("Impossible to create new socket.");
       }
       

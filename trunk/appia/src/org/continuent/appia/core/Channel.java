@@ -91,7 +91,7 @@ public class Channel {
 
   // Factories
   private MessageFactory messageFactory = new DefaultMessageFactory();
-  private ThreadFactory threadFactory = AppiaThreadFactory.getThreadFactory();
+  private ThreadFactory threadFactory = new AppiaThreadFactory();
   
   /**
    * The {@link org.continuent.appia.core.Session Sessions} stack.
@@ -114,6 +114,7 @@ public class Channel {
     this.eventScheduler=eventScheduler;
     sessions=new Session[qos.getLayers().length];
     timerManager=(eventScheduler.getAppiaInstance()).instanceGetTimerManager();
+    threadFactory = eventScheduler.getAppiaInstance().getThreadFactory();
     this.jmxConfiguration = jmxConfig;
   }
   
@@ -135,6 +136,7 @@ public class Channel {
 
     sessions=new Session[qos.getLayers().length];
     timerManager=eventScheduler.getAppiaInstance().instanceGetTimerManager();
+    threadFactory = eventScheduler.getAppiaInstance().getThreadFactory();
     this.memoryManager = memoryManager;
     this.jmxConfiguration = jmxConfig;
   }
@@ -170,6 +172,10 @@ public class Channel {
 
   public MessageFactory getMessageFactory(){
       return messageFactory;
+  }
+
+  public void setMessageFactory(MessageFactory messageFactory) {
+      this.messageFactory = messageFactory;
   }
 
   /**

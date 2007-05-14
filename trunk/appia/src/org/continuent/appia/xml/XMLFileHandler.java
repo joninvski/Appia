@@ -56,6 +56,7 @@ public class XMLFileHandler extends DefaultHandler {
 	private String channelLabel;
 	private String channelInitialized;
     private String channelManaged;
+    private String channelMsgFactory;
 	// Session related attributes
 	private String sessionName;
 	private boolean settingParameter;
@@ -128,6 +129,18 @@ public class XMLFileHandler extends DefaultHandler {
 			String att = attributes.getValue("multischedulers");
 			if (att != null && att.equals("yes"))
 				config.useMultiSchedulers(true);
+            att = attributes.getValue("threadFactory");
+            if(att != null && !att.equals("")){
+                try {
+                    config.setThreadFactory(att);
+                } catch (ClassNotFoundException e) {
+                    throw new SAXException(e);
+                } catch (InstantiationException e) {
+                    throw new SAXException(e);
+                } catch (IllegalAccessException e) {
+                    throw new SAXException(e);
+                }
+            }
 			att = attributes.getValue("scheduler");
 			if (att != null) {
 				try {
@@ -169,6 +182,7 @@ public class XMLFileHandler extends DefaultHandler {
 			channelInitialized = attributes.getValue("initialized");
              channelManaged = attributes.getValue("managed");
 			channelLabel = attributes.getValue("label");
+            channelMsgFactory = attributes.getValue("messageFactory");
 		}
 		else if (qName.equals("chsession")) {
 			sessionName = attributes.getValue("name");
@@ -216,12 +230,14 @@ public class XMLFileHandler extends DefaultHandler {
                 managed = true;
 			if (config.usesGlobalScheduler())
 				try {
-					config.createChannel(channelName,channelTemplateName,channelLabel,params,init,memoryManager,managed);
+					config.createChannel(channelName,channelTemplateName,channelLabel,params,init,
+                            memoryManager,managed,channelMsgFactory);
 				} catch (AppiaXMLException e) {
 					throw new SAXException(e);
 				}
 			else
-				config.storeChannel(channelName,channelTemplateName,channelLabel,params,init,memoryManager,managed);
+				config.storeChannel(channelName,channelTemplateName,channelLabel,params,init,
+                        memoryManager,managed,channelMsgFactory);
 			creatingChannel = false;
 		}
 		else if (qName.equals("chsession") && creatingChannel) {

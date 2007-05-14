@@ -186,10 +186,9 @@ public class Perf {
       System.exit(1);
     }
     
-    final ThreadFactory threadFactory = AppiaThreadFactory.getThreadFactory();
-    
     for (; instances > 0; instances--) {
       final Appia appiaInstance=new Appia();
+      ThreadFactory threadFactory = null;
       
       // TODO: test schedulers
       final EventScheduler es=new EventScheduler(appiaInstance);
@@ -200,7 +199,7 @@ public class Perf {
       //Session lwg_session=null;
       for (int g=groups ; g > 0 ; g--) {
         final Channel myChannel=myQoS.createUnboundChannel("Perf Channel "+g,es);
-        
+        threadFactory = myChannel.getThreadFactory();
         final PerfSession ps=(PerfSession)qos[qos.length-1].createSession();
         params.put("group","Perf Group "+g);
         ps.init(params);

@@ -28,6 +28,8 @@ package org.continuent.appia.core;
 import java.util.Vector;
 
 import org.continuent.appia.core.events.channel.ExternalEvent;
+import org.continuent.appia.protocols.common.AppiaThreadFactory;
+import org.continuent.appia.protocols.common.ThreadFactory;
 
 /**
  * <i>Appia</i> main class.
@@ -52,6 +54,8 @@ public class Appia {
   protected Thread thread = null;
   protected int nEvents=0;
   
+  private ThreadFactory threadFactory;
+  
   private boolean running = true;
   
   /**
@@ -60,9 +64,20 @@ public class Appia {
    * It creates, and starts, the default {@link org.continuent.appia.core.TimerManager TimerManager}.
    */
   public Appia() {
-      timerManager=new TimerManager();
+      threadFactory = new AppiaThreadFactory();
+      timerManager=new TimerManager(threadFactory);
   }
-  
+
+  /**
+   * Default constructor.
+   * <br>
+   * It creates, and starts, the default {@link org.continuent.appia.core.TimerManager TimerManager}.
+   */
+  public Appia(ThreadFactory thf) {
+      threadFactory = thf;
+      timerManager=new TimerManager(threadFactory);
+  }
+
   public TimerManager instanceGetTimerManager() {
     return timerManager;
   }
@@ -255,7 +270,19 @@ public class Appia {
    * @return Thread
    */
   public static Thread getAppiaThread() {
-    return appia.thread;
+      return appia.thread;
   }
-  
+
+  public synchronized ThreadFactory getThreadFactory() {
+      return threadFactory;
+  }
+
+  public void setThreadFactory(ThreadFactory thf) throws AppiaException {
+      if (this.timerManager!=null)
+          this.timerManager.stop();
+      this.threadFactory = thf;
+      this.timerManager=new TimerManager(thf);
+      this.timerManager.start();
+  }
+
 }

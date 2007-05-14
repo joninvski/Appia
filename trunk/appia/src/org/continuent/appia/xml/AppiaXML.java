@@ -192,7 +192,11 @@ public class AppiaXML {
 		}
 		else
 			if (config == null) {
-				config = new Configuration(appia);
+				try {
+                    config = new Configuration(appia);
+                } catch (AppiaXMLException e) {
+                    throw new SAXException(e);
+                }
 				handler = new XMLFileHandler(config);
 			}
         log.info("Loading XML configuration from file: "+xmlfile);
@@ -241,9 +245,13 @@ public class AppiaXML {
 				config = new Configuration();
 		else
 			if (config == null)
-				config = new Configuration(appia);
+                try {
+                    config = new Configuration(appia);
+                } catch (AppiaXMLException e) {
+                    throw new SAXException(e);
+                }
 		handler = new XMLFileHandler(config);
-        log.info("Loading XML configuration from a caracter stream...");
+        log.info("Loading XML configuration from a char stream...");
 		parser.parse(new InputSource(new StringReader(xmlstr)),handler);
 	}
 	
@@ -309,8 +317,10 @@ public class AppiaXML {
 			String label,
 			ChannelProperties params,
 			boolean initialized,
-			MemoryManager mm) throws AppiaException {
-		return appiaxml.instanceCreateChannel(name,templateName,label,params,initialized,mm);
+			MemoryManager mm,
+            String messageFactory) throws AppiaException {
+		return appiaxml.instanceCreateChannel(name,templateName,label,params,initialized,
+                mm,messageFactory);
 	}
 
 	/**
@@ -330,8 +340,10 @@ public class AppiaXML {
 			String templateName,
 			String label,
 			ChannelProperties params,
-			boolean initialized) throws AppiaException {
-		return appiaxml.instanceCreateChannel(name,templateName,label,params,initialized,null);
+			boolean initialized,
+            String messageFactory) throws AppiaException {
+		return appiaxml.instanceCreateChannel(name,templateName,label,params,initialized,
+                null,messageFactory);
 	}
 
 	/**
@@ -353,8 +365,10 @@ public class AppiaXML {
 			String label,
 			ChannelProperties params,
 			boolean initialized,
-			MemoryManager mm) throws AppiaException {
-		return config.createChannel(name,templateName,label,params,initialized,mm,false);
+			MemoryManager mm,
+            String messageFactory) throws AppiaException {
+		return config.createChannel(name,templateName,label,params,initialized,mm,false,
+                messageFactory);
 	}
 
     /**
@@ -378,8 +392,10 @@ public class AppiaXML {
             ChannelProperties params,
             boolean initialized,
             MemoryManager mm,
-            boolean managed) throws AppiaException {
-        return config.createChannel(name,templateName,label,params,initialized,mm,managed);
+            boolean managed,
+            String messageFactory) throws AppiaException {
+        return config.createChannel(name,templateName,label,params,initialized,mm,
+                managed,messageFactory);
     }
 
 	/**
@@ -399,8 +415,9 @@ public class AppiaXML {
 			String templateName,
 			String label,
 			ChannelProperties params,
-			boolean initialized) throws AppiaException {
-		return config.createChannel(name,templateName,label,params,initialized,null,false);
+			boolean initialized,
+            String messageFactory) throws AppiaException {
+		return config.createChannel(name,templateName,label,params,initialized,null,false,messageFactory);
 	}
 
     /**
@@ -421,8 +438,10 @@ public class AppiaXML {
             String label,
             ChannelProperties params,
             boolean initialized,
-            boolean managed) throws AppiaException {
-        return config.createChannel(name,templateName,label,params,initialized,null,managed);
+            boolean managed,
+            String messageFactory) throws AppiaException {
+        return config.createChannel(name,templateName,label,params,initialized,null,
+                managed,messageFactory);
     }
 
 	/**

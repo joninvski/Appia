@@ -31,11 +31,14 @@ import java.util.LinkedList;
 
 import org.continuent.appia.core.Appia;
 import org.continuent.appia.core.AppiaDuplicatedSessionsException;
+import org.continuent.appia.core.AppiaException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.EventScheduler;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.memoryManager.MemoryManager;
+import org.continuent.appia.core.message.MessageFactory;
 import org.continuent.appia.management.jmx.JMXConfiguration;
+import org.continuent.appia.protocols.common.ThreadFactory;
 import org.continuent.appia.xml.templates.ChannelTemplate;
 import org.continuent.appia.xml.templates.SessionTemplate;
 import org.continuent.appia.xml.utils.ChannelInfo;
@@ -78,6 +81,8 @@ public class Configuration {
 	
     //JMX global configuration
     private JMXConfiguration jmxConfiguration;
+    
+    private ThreadFactory threadFactory;
 
 	// EventScheduler class and constructors
 	private boolean schedulerClassIsSet;
@@ -126,7 +131,7 @@ public class Configuration {
 	 * Builds an empty configuration.
 	 *
 	 */
-	public Configuration(Appia appia) {
+	public Configuration(Appia appia) throws AppiaXMLException {
 		templates = new Hashtable();
 		channels = new Hashtable();
 		globalSessions = new Hashtable();
@@ -137,6 +142,12 @@ public class Configuration {
 		globalEventScheduler = new EventScheduler(appia);
 		//globalEventScheduler = getEventScheduler();
         jmxConfiguration = new JMXConfiguration();
+        try {
+            if(threadFactory != null)
+                appia.setThreadFactory(threadFactory);
+        } catch (AppiaException e) {
+            throw new AppiaXMLException("Could not create XML Configuration.",e);
+        }
 	}
 	
 	/*
@@ -205,6 +216,10 @@ public class Configuration {
 		}
 		schedulerClassIsSet = true;
 	}
+    
+    public void setThreadFactory(String className) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        threadFactory = (ThreadFactory) Class.forName(className).newInstance();
+    }    
 
 	private EventScheduler getEventScheduler() throws AppiaXMLException {
 		if (globalEventScheduler != null)
@@ -315,12 +330,13 @@ public class Configuration {
 			ChannelProperties params,
 			boolean initialized,
 			MemoryManager mm,
-            boolean managed) {
+            boolean managed,
+            String msgFact) {
 		ChannelInfo cinfo = null;
 		if(mm == null)
-			cinfo = new ChannelInfo(name,templateName,label,params,initialized);
+			cinfo = new ChannelInfo(name,templateName,label,params,initialized,msgFact);
 		else
-			cinfo = new ChannelInfo(name,templateName,label,params,initialized,mm);
+			cinfo = new ChannelInfo(name,templateName,label,params,initialized,mm, msgFact);
         cinfo.setManaged(managed);
 		channelList.add(cinfo);
 		final ChannelTemplate ctempl = (ChannelTemplate) templates.get(templateName);
@@ -418,7 +434,7 @@ public class Configuration {
 			ci = (ChannelInfo) newChannelList.removeFirst();
 			createChannel(ci.getName(),ci.getTemplateName(),ci.getLabel(),
 					ci.getParams(),ci.isInitialized(),ci.getEventScheduler(),ci.getMemoryManager(),
-                    (ci.isManaged()? jmxConfiguration : null));
+                    (ci.isManaged()? jmxConfiguration : null),ci.getMessageFactory());
 		}
 	}
 	
@@ -442,11 +458,23 @@ public class Configuration {
 			ChannelProperties params,
 			boolean initialized, 
 			MemoryManager mm, 
-            boolean managed) 
+            boolean managed,
+            String msgFactory) 
 	throws AppiaXMLException {
 		final ChannelTemplate chnt = ((ChannelTemplate) templates.get(templateName));
 		final Channel chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,globalEventScheduler,
                 mm,(managed? jmxConfiguration : null));
+		if(msgFactory != null && !msgFactory.equals("")){
+		    try {
+		        chn.setMessageFactory((MessageFactory) Class.forName(msgFactory).newInstance());
+		    } catch (InstantiationException e1) {
+		        throw new AppiaXMLException("Could not instantiate the message factory", e1);
+		    } catch (IllegalAccessException e1) {
+		        throw new AppiaXMLException("Could not instantiate the message factory", e1);
+		    } catch (ClassNotFoundException e1) {
+		        throw new AppiaXMLException("Could not instantiate the message factory", e1);
+		    }
+		}
 		channels.put(name,chn);
 		// Should the channel be returned already "started"?
 		if (initialized){
@@ -482,11 +510,24 @@ public class Configuration {
 			boolean initialized,
 			EventScheduler eventScheduler,
 			MemoryManager mm,
-            JMXConfiguration jmxConfig)
+            JMXConfiguration jmxConfig,
+            String msgFactory)
 	throws AppiaXMLException {
 		final ChannelTemplate chnt = ((ChannelTemplate) templates.get(templateName));
 		Channel chn = null;
             chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,eventScheduler,mm,jmxConfig);
+            if(msgFactory != null && !msgFactory.equals("")){
+                try {
+                    chn.setMessageFactory((MessageFactory) Class.forName(msgFactory).newInstance());
+                } catch (InstantiationException e1) {
+                    throw new AppiaXMLException("Could not instantiate the message factory", e1);
+                } catch (IllegalAccessException e1) {
+                    throw new AppiaXMLException("Could not instantiate the message factory", e1);
+                } catch (ClassNotFoundException e1) {
+                    throw new AppiaXMLException("Could not instantiate the message factory", e1);
+                }
+            }
+
 		channels.put(name,chn);
 		// Should the channel be returned already "started"?
 		if (initialized){

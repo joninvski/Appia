@@ -42,6 +42,7 @@ public class ChannelInfo {
 	private EventScheduler eventScheduler;
 	private MemoryManager memoryManager = null;
 	private boolean managed;
+    private String messageFactory=null;
     
 	private LinkedList dependencies;
 	
@@ -55,13 +56,14 @@ public class ChannelInfo {
 	 * @param  initialized     whether or not the channel is to be initialized.
 	 */
 	public ChannelInfo(String name, String templateName, String label,
-			ChannelProperties params, boolean initialized) {
+			ChannelProperties params, boolean initialized, String msgFact) {
 		super();
 		this.name = name;
 		this.templateName = templateName;
 		this.label = label;
 		this.params = params;
 		this.initialized = initialized;
+        this.messageFactory = msgFact;
 		
 		this.dependencies = new LinkedList();
 	}
@@ -77,7 +79,8 @@ public class ChannelInfo {
 	 * @param  memoryManager    the memory manager associated with the channel.
 	 */
 	public ChannelInfo(String name, String templateName, String label,
-			ChannelProperties params, boolean initialized, MemoryManager memoryManager) {
+			ChannelProperties params, boolean initialized, MemoryManager memoryManager,
+            String msgFact) {
 		super();
 		this.name = name;
 		this.templateName = templateName;
@@ -86,6 +89,7 @@ public class ChannelInfo {
 		this.initialized = initialized;
 		this.dependencies = new LinkedList();
 		this.memoryManager = memoryManager;
+        this.messageFactory = msgFact;
 	}
 
 	/**
@@ -225,4 +229,13 @@ public class ChannelInfo {
     public void setManaged(boolean managed) {
         this.managed = managed;
     }
+
+    public String getMessageFactory() {
+        return messageFactory;
+    }
+
+    public void setMessageFactory(String messageFactory) {
+        this.messageFactory = messageFactory;
+    }
+
 }

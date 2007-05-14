@@ -45,6 +45,7 @@ import org.continuent.appia.core.events.AppiaMulticast;
 import org.continuent.appia.core.events.SendableEvent;
 import org.continuent.appia.protocols.common.AppiaThreadFactory;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
+import org.continuent.appia.protocols.common.ThreadFactory;
 import org.continuent.appia.protocols.tcpcomplete.AcceptReader;
 import org.continuent.appia.protocols.tcpcomplete.TcpCompleteSession;
 import org.continuent.appia.protocols.utils.HostUtils;
@@ -414,7 +415,7 @@ public class SslCompleteSession extends TcpCompleteSession implements Initializa
         // FIXME: this is using class from tcpcomplete
           // comment: it should be Ok because it extends the class anyway...
         acceptThread = new AcceptReader(ss,this,channel,socketLock);
-        AppiaThreadFactory.getThreadFactory().newThread(acceptThread,"TCP SSL accept reader").start();
+        channel.getThreadFactory().newThread(acceptThread,"TCP SSL accept reader").start();
         
         ourPort = ss.getLocalPort();
         if(log.isDebugEnabled())

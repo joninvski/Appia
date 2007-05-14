@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.continuent.appia.core.TimeProvider;
 import org.continuent.appia.protocols.common.AppiaThreadFactory;
+import org.continuent.appia.protocols.common.ThreadFactory;
 
 /**
  * @author jmartins
@@ -50,21 +51,21 @@ public class Benchmark {
 	 * Obtains the singleton instance of the benchmarking class.
 	 * @return the benchmark class.
 	 */
-	public static Benchmark getInstance(TimeProvider tp) {
+	public static Benchmark getInstance(TimeProvider tp, ThreadFactory thf) {
           if (!ON)
             return null;
           
 		if (inst == null) {
-			inst = new Benchmark(tp);
+			inst = new Benchmark(tp,thf);
 		}
 		
 		return inst;
 	}
 
-	private Benchmark(TimeProvider tp) {
+	private Benchmark(TimeProvider tp, ThreadFactory threadFactory) {
 		shHook = new SHook(hash);
 		timeProvider = tp;
-		Thread hook = AppiaThreadFactory.getThreadFactory().newThread(shHook,"Benchmark Shutdown Hook");
+		Thread hook = threadFactory.newThread(shHook,"Benchmark Shutdown Hook");
 		Runtime.getRuntime().addShutdownHook(hook);
 	}		
 

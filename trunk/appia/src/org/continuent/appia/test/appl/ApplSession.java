@@ -103,8 +103,6 @@ public class ApplSession extends Session {
     
     public ApplSession(ApplLayer l) {
         super(l);
-        
-        AppiaThreadFactory.getThreadFactory().newThread(new ApplReader(this),"Appl Reader Thread").start();
     }
     
     public void init(int port, SocketAddress multicast, SocketAddress[] gossips, Group group, SocketAddress[] viewAddrs) {
@@ -501,6 +499,8 @@ public class ApplSession extends Session {
     
     private void handleChannelInit(ChannelInit e) {
         
+        e.getChannel().getThreadFactory().newThread(new ApplReader(this),"Appl Reader Thread").start();
+         
                 /* Forwards channel init event. New events must follow this
                    one */
         try {
