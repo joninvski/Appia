@@ -1,6 +1,6 @@
 /**
  * Appia: Group communication and protocol composition framework library
- * Copyright 2006 University of Lisbon
+ * Copyright 2006-2007 University of Lisbon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,15 +43,9 @@ import org.continuent.appia.xml.utils.SessionProperties;
 
 /**
  * Protocol that implements an algorithm to switch between Total Order algorithms.
- * <p></p>
  * If the parameter <i>firstChannel</i> is defined, then the corresponding channel
  * is used initially. Otherwise, the initial channel is the one associated with
  * the first ChannelInit received by this session.
- * <p></p>
- * Configuration parameters:<br>
- * 
- * topChannel [<string>]: the top channel name. Default: <i>topChannel</i>
- * firstChannel [<string>]: the initial bottom channel name. Default: First channel 
  *  
  * @author Jose Mocito
  * @version 0.7
@@ -106,6 +100,17 @@ public class SwitchingSession extends Session implements InitializableSession {
 		super(layer);
 	}
 	
+    /**
+     * Initializes the session using the parameters given in the XML configuration.
+     * Possible parameters:
+     * <ul>
+     * <li><b>topChannel [<string>]</b> the top channel name. Default: <i>topChannel</i>.
+     * <li><b>firstChannel [<string>]</b> the initial bottom channel name. Default: <i>First channel</i>.
+     * </ul>
+     * 
+     * @param params The parameters given in the XML configuration.
+     * @see org.continuent.appia.xml.interfaces.InitializableSession#init(SessionProperties)
+     */
 	public void init(SessionProperties params) {
         if (params.containsKey("topChannel"))
             topChannelName = params.getString("topChannel");
