@@ -26,6 +26,7 @@ import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 import org.continuent.appia.protocols.group.intra.View;
+import org.continuent.appia.protocols.group.leave.LeaveEvent;
 import org.continuent.appia.protocols.group.sync.BlockOk;
 import org.continuent.appia.protocols.total.common.RegularServiceEvent;
 import org.continuent.appia.protocols.total.common.SETOServiceEvent;
@@ -49,6 +50,7 @@ public class SETOLayer extends Layer {
 				SETOTimer.class,
 				UniformTimer.class,
 				UniformInfoEvent.class,
+                LeaveEvent.class,
 		};
 		
 		evRequire = new Class[]{};

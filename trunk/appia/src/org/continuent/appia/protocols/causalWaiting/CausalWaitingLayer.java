@@ -23,6 +23,7 @@ import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 import org.continuent.appia.protocols.group.intra.View;
+import org.continuent.appia.protocols.group.leave.LeaveEvent;
 import org.continuent.appia.protocols.group.sync.BlockOk;
 
 
@@ -53,6 +54,7 @@ public class CausalWaitingLayer extends Layer {
 				GroupSendableEvent.class,
 				View.class,
 				BlockOk.class,
+                LeaveEvent.class,
 		};
 		
 		evRequire = new Class[] {

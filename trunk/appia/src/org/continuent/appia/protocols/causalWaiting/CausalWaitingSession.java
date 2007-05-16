@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
+import org.apache.log4j.Logger;
 import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.Direction;
 import org.continuent.appia.core.Event;
@@ -33,6 +34,7 @@ import org.continuent.appia.protocols.group.LocalState;
 import org.continuent.appia.protocols.group.ViewState;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 import org.continuent.appia.protocols.group.intra.View;
+import org.continuent.appia.protocols.group.leave.LeaveEvent;
 
 
 /**
@@ -46,6 +48,8 @@ import org.continuent.appia.protocols.group.intra.View;
  */
 public class CausalWaitingSession extends Session {
 
+    private static Logger log = Logger.getLogger(CausalWaitingSession.class);
+    
 	private LocalState ls;
 	private ViewState vs;
 	
@@ -72,6 +76,7 @@ public class CausalWaitingSession extends Session {
 	 * This is the protocol's main event handler.
 	 * It accepts the following events:
 	 * <ul>
+     * <li>org.continuent.appia.protocols.group.leave.LeaveEvent
 	 * <li>org.continuent.appia.protocols.group.events.GroupSendableEvent
 	 * <li>org.continuent.appia.protocols.group.intra.View
 	 * </ul>
@@ -82,6 +87,8 @@ public class CausalWaitingSession extends Session {
 	public void handle(Event event) {
 		if (event instanceof View)
 			handleView((View) event);
+        else if(event instanceof LeaveEvent)
+            handleLeaveEvent((LeaveEvent) event);
 		else if (event instanceof GroupSendableEvent)
 			handleGroupSendableEvent((GroupSendableEvent) event);
 		else
@@ -112,7 +119,16 @@ public class CausalWaitingSession extends Session {
 		}
 	}
 
+    private void handleLeaveEvent(LeaveEvent ev){
+        try {
+            ev.go();
+        } catch (AppiaEventException e) {
+            e.printStackTrace();
+        }
+    }
+    
 	private void handleGroupSendableEvent(GroupSendableEvent event) {
+        System.out.println("CAUSAL Processing event "+event);
 		if (event.getDir() == Direction.DOWN) {
 			Message omsg = event.getMessage();
 			for (int i = 0; i < VC.length; i++)

@@ -43,6 +43,7 @@ import org.continuent.appia.protocols.group.ViewID;
 import org.continuent.appia.protocols.group.ViewState;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 import org.continuent.appia.protocols.group.intra.View;
+import org.continuent.appia.protocols.group.leave.LeaveEvent;
 import org.continuent.appia.protocols.group.sync.BlockOk;
 import org.continuent.appia.protocols.total.common.RegularServiceEvent;
 import org.continuent.appia.protocols.total.common.SETOServiceEvent;
@@ -143,6 +144,8 @@ public class SETOSession extends Session implements InitializableSession {
 			handleUniformInfo((UniformInfoEvent) event);
 		else if (event instanceof UniformTimer)
 			handleUniformTimer((UniformTimer) event);
+        else if (event instanceof LeaveEvent)
+            handleLeaveEvent((LeaveEvent) event);
 		else if(event instanceof GroupSendableEvent)
 			handleGroupSendable((GroupSendableEvent)event);
 		else{
@@ -154,6 +157,14 @@ public class SETOSession extends Session implements InitializableSession {
 			}
 		}
 	}
+
+    private void handleLeaveEvent(LeaveEvent ev){
+        try {
+            ev.go();
+        } catch (AppiaEventException e) {
+            e.printStackTrace();
+        }
+    }
 
 	private void handleChannelInit(ChannelInit init) {
 		channel = init.getChannel();
@@ -247,12 +258,13 @@ public class SETOSession extends Session implements InitializableSession {
 	 * @param event
 	 */
 	private void handleGroupSendable(GroupSendableEvent event) {
-		log.debug("------------> " + vs.addresses[ls.my_rank] + " Received from "+vs.addresses[event.orig]);
+		//log.debug("------------> " + vs.addresses[ls.my_rank] + " Received from "+vs.addresses[event.orig]);
 		// events from the application
 		if(event.getDir() == Direction.DOWN){
 			if(isBlocked){
-				log.error("Received event while blocked. ignoring it.");
-				return;
+			    log.warn("Received event while blocked:"+event.getClass().getName()+" from session: "+
+                        event.getSource()+". Ignoring it.");
+                return;
 			}
 			long msgDelay = max(delay) - delay[seq];
 			reliableDATAMulticast(event, msgDelay);
@@ -266,7 +278,7 @@ public class SETOSession extends Session implements InitializableSession {
 	/**
 	 * Multicast a DATA event to the group.
 	 * 
-	 * @param event the event to be multicasted.
+	 * @param event the event to be multicast.
 	 * @param msgDelay the message delay associated with the event.
 	 */
 	private void reliableDATAMulticast(GroupSendableEvent event, long msgDelay) {
@@ -301,7 +313,7 @@ public class SETOSession extends Session implements InitializableSession {
 		ListContainer container = new ListContainer(event, header);
 		// add the event to the RECEIVED list...
 		R.addLast(container);
-		// ... and set a timer to be delivered later, acording to the delay that came with the message
+		// ... and set a timer to be delivered later, according to the delay that came with the message
 		setTimer(container,delay[header.id],vs.id);
 		
 		// Deliver event to the upper layer (spontaneous order)
