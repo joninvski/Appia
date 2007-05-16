@@ -51,7 +51,7 @@ public class PrimaryViewSession extends Session implements InitializableSession 
 
     private static Logger log = Logger.getLogger(PrimaryViewSession.class);
     
-    private boolean blocked;
+    private boolean blocked=true;
     private View view, lastPrimaryView;
     private ViewState vs, vsOld;
     private LocalState ls;
@@ -109,7 +109,7 @@ public class PrimaryViewSession extends Session implements InitializableSession 
         }
         else{
             // if I'm blocked and I received another block (going up)
-            // this means that there is e second block going to be released
+            // this means that there is a second block going to be released
             if(event.getEvent() instanceof BlockOk){
                 try {
                     // release it here
@@ -321,5 +321,9 @@ public class PrimaryViewSession extends Session implements InitializableSession 
         } catch (AppiaEventException e) {
             e.printStackTrace();
         }
+    }
+    
+    private void unblock(){
+        
     }
 }
