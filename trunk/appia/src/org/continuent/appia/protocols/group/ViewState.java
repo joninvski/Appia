@@ -231,10 +231,10 @@ public class ViewState implements Externalizable {
 	 * The view is the concatenation of the different views, according to the order provided by the list itself.
 	 * The version is the smallest all the versions.
 	 * 
-	 * @param l A list conatining the view states to merge
+	 * @param l A list containing the view states to merge
 	 * @return the merged view state.
-	 * @throws AppiaGroupException See {@linkplain ViewState#ViewState(String, Group, ViewID, ViewID[], Endpt[], InetWithPort[])}
-	 * @throws NullPointerException See {@linkplain ViewState#ViewState(String, Group, ViewID, ViewID[], Endpt[], InetWithPort[])}
+	 * @throws AppiaGroupException See {@linkplain ViewState#ViewState(String, Group, ViewID, ViewID[], Endpt[], SocketAddress[])}
+	 * @throws NullPointerException See {@linkplain ViewState#ViewState(String, Group, ViewID, ViewID[], Endpt[], SocketAddress[])}
 	 */
 	public static ViewState merge(List l) throws NullPointerException, AppiaGroupException {
 		ListIterator iter=l.listIterator(l.size());
