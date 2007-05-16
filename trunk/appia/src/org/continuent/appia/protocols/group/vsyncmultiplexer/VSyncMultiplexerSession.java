@@ -26,6 +26,7 @@ package org.continuent.appia.protocols.group.vsyncmultiplexer;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.log4j.Logger;
 import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.Event;
@@ -43,6 +44,8 @@ import org.continuent.appia.protocols.group.sync.BlockOk;
  *
  */
 public class VSyncMultiplexerSession extends Session {
+    
+    private static Logger log = Logger.getLogger(VSyncMultiplexerSession.class);
 
 	private HashMap channels;
 	private int blockOkCounter;
@@ -103,8 +106,10 @@ public class VSyncMultiplexerSession extends Session {
 	 * @param ok
 	 */
 	private void handleBlockOk(BlockOk ok) {
+        log.debug("Collecting blockok events :: counter = "+blockOkCounter);
 	  if((--blockOkCounter) == 0)
 	    try {
+            log.debug("Delivering blockok on channel: "+ok.getChannel().getChannelID());
 	      ok.go();
 	    } catch (AppiaEventException e) {
 	      e.printStackTrace();
@@ -115,6 +120,9 @@ public class VSyncMultiplexerSession extends Session {
 	 * @param view
 	 */
 	private void handleView(View view) {
+        
+        log.debug("Replicating view to all channels");
+        
 	  view.vs.version="MULTI";
 	  
 	  Iterator it = channels.keySet().iterator();
@@ -142,6 +150,7 @@ public class VSyncMultiplexerSession extends Session {
 	 */
 	private void handleEchoEvent(EchoEvent echo) {
 	  if(echo.getEvent() instanceof BlockOk){
+          log.debug("Replicating EchoEvent to all channels. Echo received on Channel: "+echo.getChannel().getChannelID());
 	    blockOkCounter=0;
 	    
 	    BlockOk blockok=(BlockOk)echo.getEvent();
