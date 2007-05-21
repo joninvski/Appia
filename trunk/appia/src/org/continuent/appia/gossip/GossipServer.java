@@ -142,7 +142,7 @@ public class GossipServer {
   }
 
   // Must end with a '-'
-  private static final String SESSION_PARAMS="-port-gossip-remove_time-timer-";
+  private static final String SESSION_PARAMS="-port-gossips-remove_time-timer-";
     
   private static boolean parse(String[] args, int i, SessionProperties params) {
 

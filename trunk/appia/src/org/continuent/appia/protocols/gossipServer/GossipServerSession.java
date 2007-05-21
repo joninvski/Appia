@@ -100,9 +100,9 @@ public class GossipServerSession extends Session implements InitializableSession
       remove_time=params.getLong("remove_time");
     if (params.containsKey("timer"))
       timer=params.getLong("timer");
-    if (params.containsKey("gossip")) {
+    if (params.containsKey("gossips")) {
       try {
-        gossips=ParseUtils.parseSocketAddressArray(params.getString("gossip"),null,DEFAULT_PORT);
+        gossips=ParseUtils.parseSocketAddressArray(params.getString("gossips"),null,DEFAULT_PORT);
       } catch (Exception ex) {
         ex.printStackTrace();
         System.exit(1);
