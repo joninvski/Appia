@@ -461,8 +461,10 @@ public class Configuration {
             boolean managed,
             String msgFactory) 
 	throws AppiaXMLException {
-		final ChannelTemplate chnt = ((ChannelTemplate) templates.get(templateName));
-		final Channel chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,globalEventScheduler,
+        final ChannelTemplate chnt = ((ChannelTemplate) templates.get(templateName));
+        if (chnt == null)
+            throw new AppiaXMLException("Template '"+templateName+"' does not exist");
+        final Channel chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,globalEventScheduler,
                 mm,(managed? jmxConfiguration : null));
 		if(msgFactory != null && !msgFactory.equals("")){
 		    try {
@@ -514,8 +516,9 @@ public class Configuration {
             String msgFactory)
 	throws AppiaXMLException {
 		final ChannelTemplate chnt = ((ChannelTemplate) templates.get(templateName));
-		Channel chn = null;
-            chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,eventScheduler,mm,jmxConfig);
+        if (chnt == null)
+            throw new AppiaXMLException("Template '"+templateName+"' does not exist");
+		Channel chn = chnt.createChannel(name,label,params,globalSessions,labelSessions,eventScheduler,mm,jmxConfig);
             if(msgFactory != null && !msgFactory.equals("")){
                 try {
                     chn.setMessageFactory((MessageFactory) Class.forName(msgFactory).newInstance());
