@@ -27,6 +27,8 @@ import org.continuent.appia.core.Event;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.channel.EchoEvent;
+import org.continuent.appia.management.AppiaManagementException;
+import org.continuent.appia.management.ManagedSession;
 import org.continuent.appia.protocols.group.Endpt;
 import org.continuent.appia.protocols.group.LocalState;
 import org.continuent.appia.protocols.group.ViewState;
@@ -47,7 +49,7 @@ import org.continuent.appia.xml.utils.SessionProperties;
  * @author Jose Mocito
  * @version 1.0
  */
-public class PrimaryViewSession extends Session implements InitializableSession {
+public class PrimaryViewSession extends Session implements InitializableSession, ManagedSession {
 
     private static Logger log = Logger.getLogger(PrimaryViewSession.class);
     
@@ -323,7 +325,26 @@ public class PrimaryViewSession extends Session implements InitializableSession 
         }
     }
     
-    private void unblock(){
-        
+    public String getParameter(String parameter) throws AppiaManagementException {
+        throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+this.getClass().getName());
+    }
+
+    public void setParameter(String parameter, String value) throws AppiaManagementException {
+        if(parameter.equals("setPrimary")){
+            if(view == null){
+                log.warn("Process set to Primary by Management.");
+                primaryProcess = true;
+            }
+            else if(blocked){
+                log.warn("View unblocked by Management. Process set to Primary");
+                deliverView();
+            }
+            else{
+                log.warn("Management instruction "+parameter+" ignored.");
+            }
+        }
+        else 
+            throw new AppiaManagementException("The session "+this.getClass().getName()
+                    +" do not accept the parameter '"+parameter+"'.");
     }
 }
