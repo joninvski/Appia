@@ -390,7 +390,6 @@ public class Channel {
     		} catch (AppiaException e) {
     			e.printStackTrace();
     		}
-    		System.out.println("MBean registered.");
     	}
   }
   
@@ -572,19 +571,19 @@ public class Channel {
         Session currentSession = null;
         int numSensorSessions = 0;
         ConnectionServerFactory.getInstance(jmxConfiguration).registerMBean(this,manager);
-        
-      final ChannelCursor cc = getCursor();
-      cc.top();
-      while(cc.isPositioned()){
-          currentSession = cc.getSession();
-          if(currentSession instanceof SensorSession){
-              ((SensorSession)currentSession).addSensorListener(manager);
-              manager.addManagedSession(currentSession);
-              numSensorSessions++;
-          }
-          cc.down();
-      }
-      log.info("MBean registered on channel "+channelID+". Listening on "+numSensorSessions+" SensorSession(s).");
+
+        final ChannelCursor cc = getCursor();
+        cc.top();
+        while(cc.isPositioned()){
+            currentSession = cc.getSession();
+            if(currentSession instanceof SensorSession){
+                ((SensorSession)currentSession).addSensorListener(manager);
+                manager.addManagedSession(currentSession);
+                numSensorSessions++;
+            }
+            cc.down();
+        }
+        log.info("MBean registered on channel "+channelID+". Listening on "+numSensorSessions+" SensorSession(s).");
     }
 
     private void unregisterMBean() throws AppiaException{
