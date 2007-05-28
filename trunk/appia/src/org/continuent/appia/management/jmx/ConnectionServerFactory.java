@@ -98,7 +98,7 @@ public class ConnectionServerFactory {
         // Register and start the rmiregistry MBean, needed by JSR 160 RMIConnectorServer
         ObjectName namingName=null;
         try {
-            namingName = ObjectName.getInstance("naming:type=rmiregistry");
+            namingName = ObjectName.getInstance("Naming:type=rmiregistry");
             mbeanServer.createMBean("mx4j.tools.naming.NamingService", namingName, null);
             log.info("Starting naming service...");
             
