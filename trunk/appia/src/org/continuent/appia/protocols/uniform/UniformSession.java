@@ -1,6 +1,7 @@
+
 /**
  * Appia: Group communication and protocol composition framework library
- * Copyright 2006 University of Lisbon
+ * Copyright 2007 University of Lisbon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,238 +15,281 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  *
- * Initial developer(s): Alexandre Pinto and Hugo Miranda.
+ * Initial developer(s): Jose' Mocito.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package org.continuent.appia.protocols.uniform;
+package org.continuent.appia.protocols.uniform;
 
-import org.apache.log4j.Logger;
-import org.continuent.appia.core.AppiaError;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.ListIterator;
+
 import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.AppiaException;
+import org.continuent.appia.core.Channel;
 import org.continuent.appia.core.Direction;
 import org.continuent.appia.core.Event;
+import org.continuent.appia.core.EventQualifier;
 import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
+import org.continuent.appia.core.TimeProvider;
+import org.continuent.appia.core.events.channel.ChannelClose;
 import org.continuent.appia.core.events.channel.ChannelInit;
+import org.continuent.appia.core.message.Message;
+import org.continuent.appia.protocols.group.LocalState;
+import org.continuent.appia.protocols.group.ViewState;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
-import org.continuent.appia.protocols.group.events.Send;
 import org.continuent.appia.protocols.group.intra.View;
 import org.continuent.appia.protocols.group.sync.BlockOk;
-import org.continuent.appia.xml.interfaces.InitializableSession;
-import org.continuent.appia.xml.utils.SessionProperties;
+import org.continuent.appia.protocols.total.common.UniformServiceEvent;
 
-
-public class UniformSession extends Session implements InitializableSession {
+/**
+ * Protocol that ensures uniformity in messages delivered by group members.
+ * 
+ * @author Jose Mocito
+ */
+public class UniformSession extends Session {
 	
-	Logger log = Logger.getLogger(UniformSession.class);
-
-	//private Channel channel;
-
-	private long seqNumber, myRank;
-
-	private int max_nodes, majority_nodes;
-
-	private static final String MAX_NODES = "max_nodes";
-	private static final String MAJ_NODES = "majority_nodes";
-
-	private UniformData uniformData;
-
-	//private ViewState vs;
-
-	//private LocalState ls;
-
-	public UniformSession(Layer l) {
-		super(l);
-
-		uniformData = new UniformData();
-	}
-
-	/**
-	 * Called by the AppiaXML parser to deliver parameters to this session. 
-	 * It accepts the parameters "max_nodes" or "majority_nodes". First, "max_nodes" is
-	 * readed and only if this parameter does not exist "majority_nodes" is readed. Only one
-	 * is needed. If the two parameters are given, the "majority_nodes" is ignored.
-	 * @see org.continuent.appia.xml.interfaces.InitializableSession#init(org.continuent.appia.xml.utils.SessionProperties)
-	 */
-	public void init(SessionProperties params) {
-		if (params.containsKey(MAX_NODES)){
-			max_nodes = params.getInt(MAX_NODES);
-			majority_nodes = (max_nodes/2)+1;
-			return;
-		}
-		else if (params.containsKey(MAJ_NODES)) {
-			majority_nodes = params.getInt(MAJ_NODES);
-			max_nodes = Integer.MAX_VALUE;
-			return;
-		}
-		else
-            // FIXME: add a proper exception here.
-			throw new AppiaError("parameter " + MAX_NODES + " or " + MAJ_NODES
-					+ " must be set in the xml config file (Session: "
-					+ this.getClass().getName() + ").");
-	}
-
-	/**
-	 * Main handler of events.
-	 */
-	public void handle(Event e) {
-		if(log.isDebugEnabled())
-			log.debug("MAIN Uniform Handle: "+e + " Direction is "+(e.getDir()==Direction.DOWN? "DOWN" : "UP"));
+	private static final long UNIFORM_INFO_PERIOD = 100;
 		
-		if (e instanceof ChannelInit)
-			handleChannelInit((ChannelInit) e);
+	private long sn;
+	private long[][] snInfoList;
 
-		else if (e instanceof UniformAckEvent)
-			handleUniformAckEvent((UniformAckEvent) e);
-
-		else if (e instanceof GroupSendableEvent)
-			handleGroupSendable((GroupSendableEvent) e);
-
-		else if (e instanceof BlockOk)
-			handleBlockOk((BlockOk) e);
-
-		else if (e instanceof View)
-			handleView((View) e);
-
-		else if(log.isDebugEnabled())
-			log.debug("Unknown event: "+e);
+	private boolean isBlocked = true;
+	
+	private ViewState vs;
+	private LocalState ls;
+	private Channel channel;
+	private TimeProvider timeProvider;
+	
+	
+	private LinkedList R = new LinkedList(); // Received
+	
+	private long timeLastMsgSent;
+	private boolean utSet; // Uniform timer is set?
+	
+	/**
+	 * Constructs a new SETOSession.
+	 * 
+	 * @param layer
+	 */
+	public UniformSession(Layer layer) {
+		super(layer);
 	}
 
-	private void handleGroupSendable(GroupSendableEvent e) {
-		if (e instanceof Send) {
+	
+	/** 
+	 * Main handler of events.
+	 * @see org.continuent.appia.core.Session#handle(Event)
+	 */
+	public void handle(Event event)  {
+
+		if(event instanceof ChannelInit)
+			handleChannelInit((ChannelInit) event);
+		else if(event instanceof ChannelClose)
+			handleChannelClose((ChannelClose)event);
+		else if(event instanceof BlockOk)
+			handleBlockOk((BlockOk)event);
+		else if(event instanceof View)
+			handleNewView((View)event);
+		else if (event instanceof UniformInfoEvent)
+			handleUniformInfo((UniformInfoEvent) event);
+		else if (event instanceof UniformTimer)
+			handleUniformTimer((UniformTimer) event);
+		else if(event instanceof GroupSendableEvent)
+			handleGroupSendable((GroupSendableEvent)event);
+		else{
 			try {
-				e.go();
-			} catch (AppiaException ex) {
-				ex.printStackTrace();
-				log.debug("ERROR sending event.");
+				event.go();
+			} catch (AppiaEventException e) {
+				e.printStackTrace();
 			}
-		} else {
-			if (e.getDir() == Direction.DOWN)
-				handleGroupSendableDown(e);
-			else
-				handleGroupSendableUp(e);
 		}
 	}
 
-	private void handleGroupSendableDown(GroupSendableEvent e) {
-
-		UniformHeader uh = new UniformHeader(seqNumber++, myRank);
-
-		e.getMessage().pushObject(uh);
-
+	private void handleChannelInit(ChannelInit init) {
+		channel = init.getChannel();
+		timeProvider = channel.getTimeProvider();
 		try {
-			e.go();
-		} catch (AppiaEventException ex) {
-			ex.printStackTrace();
-			log.debug("Error sending event");
+			init.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void handleChannelClose(ChannelClose close) {
+		channel = null;
+		try {
+			close.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * The group os blocked. It is going to change view.
+	 * @param ok
+	 */
+	private void handleBlockOk(BlockOk ok) {
+		isBlocked = true;
+		
+		if (vs.view.length > 1)
+			sendUniformInfo(ok.getChannel());
+		
+		try {
+			ok.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
 		}
 	}
 
-	private void handleGroupSendableUp(GroupSendableEvent e) {
+	/**
+	 * New view.
+	 * @param view
+	 */
+	private void handleNewView(View view) {
+		isBlocked = false;
+		ls=view.ls;
+		vs=view.vs;
 
-		UniformHeader uh = (UniformHeader) e.getMessage().popObject();
-		UniformNode node = null;
+		// resets sequence numbers and information about delays
+		reset();
 
-		if (!uniformData.exists(uh)) {
-			if(log.isDebugEnabled())
-				log.debug("Uniform data does not exist. Creating it -> "+uh);
-			node = new UniformNode(uh, e);
-			uniformData.put(node);
-		} else {
-			node = uniformData.get(uh);
-			if(log.isDebugEnabled())
-				log.debug("Uniform data exists. event of uniform data is "+node.getEvent());
-			if (node.getEvent() == null)
-				node.setEvent(e);
-		}
-
-		//send ack to the group garanteing that it has seen the message.
-		UniformAckEvent uae = null;
 		try {
-			uae = new UniformAckEvent(e.getChannel(), Direction.DOWN, this,
-					e.group, e.view_id);
-		} catch (AppiaEventException ex) {
-			ex.printStackTrace();
-			log.debug("Error sending event");
+			view.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
 		}
-
-		uae.getMessage().pushObject(uh);
-		if(log.isDebugEnabled())
-			log.debug("Sending Uniform ACK.");
-		try {
-			uae.go();
-		} catch (AppiaEventException ex) {
-			ex.printStackTrace();
-			log.debug("Error Sending Event");
+		
+		if (!utSet) {
+			try {
+				UniformTimer ut = new UniformTimer(UNIFORM_INFO_PERIOD,channel,Direction.DOWN,this,EventQualifier.ON);
+				ut.go();
+				utSet = true;
+			} catch (AppiaEventException e) {
+				e.printStackTrace();
+			} catch (AppiaException e) {
+				e.printStackTrace();
+			}
 		}
 	}
-
-	private void handleUniformAckEvent(UniformAckEvent e) {
-		UniformHeader header;
-		UniformNode deliver, node;
-
-		header = (UniformHeader) e.getMessage().popObject();
-
-		if (!uniformData.exists(header)) {
-			if(log.isDebugEnabled())
-				log.debug("data does not exist. creating it. -> "+header);
-			node = new UniformNode(header, null);
-			uniformData.put(node);
-		} else {
-			if(log.isDebugEnabled())
-				log.debug("data exists. updating it. -> "+header);
-			deliver = uniformData.update(header, majority_nodes);
-			if(log.isDebugEnabled())
-				log.debug("data updated. -> "+deliver);
-			if (deliver != null && deliver.getEvent() != null){
-				if(log.isDebugEnabled())
-					log.debug("delivering message. -> "+deliver.getEvent());
+	
+	/**
+	 * @param event
+	 */
+	private void handleGroupSendable(GroupSendableEvent event) {
+		Message msg = event.getMessage();
+		if(event.getDir() == Direction.DOWN) {
+			msg.pushLong(sn);
+			for (int i = 0; i < snInfoList[ls.my_rank].length; i++)
+				msg.pushLong(snInfoList[ls.my_rank][i]);
+			try {
+				event.go();
+			} catch (AppiaEventException e) {
+				e.printStackTrace();
+			}
+			timeLastMsgSent = timeProvider.currentTimeMillis();
+		}
+		else{
+			long[] uniformInfo = new long[vs.view.length];
+			for (int i = uniformInfo.length; i > 0; i--)
+				uniformInfo[i-1] = msg.popLong();
+			mergeUniformInfo(uniformInfo, event.orig);
+			long msgSN = msg.popLong();
+			R.add(new MessageContainer(event.orig, msgSN, msg));
+			snInfoList[ls.my_rank][event.orig] = msgSN;
+			try {
+				event.go();
+			} catch (AppiaEventException e) {
+				e.printStackTrace();
+			}
+		}	
+	}
+	
+		private void handleUniformTimer(UniformTimer timer) {
+		if (!isBlocked && timeProvider.currentTimeMillis() - timeLastMsgSent >= UNIFORM_INFO_PERIOD) {
+			sendUniformInfo(timer.getChannel());
+		}
+	}
+	
+	private void sendUniformInfo(Channel channel) {
+		if (!isBlocked) {
+			UniformInfoEvent event = new UniformInfoEvent();
+			
+			Message msg = event.getMessage();
+			for (int i = 0; i < snInfoList[ls.my_rank].length; i++)
+				msg.pushLong(snInfoList[ls.my_rank][i]);
+			
+			event.setChannel(channel);
+			event.setDir(Direction.DOWN);
+			event.setSource(this);
+			try {
+				event.init();
+				event.go();
+			} catch (AppiaEventException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private void handleUniformInfo(UniformInfoEvent event) {
+		Message msg = event.getMessage();
+		long[] uniformInfo = new long[vs.view.length];
+		for (int i = uniformInfo.length; i > 0; i--)
+			uniformInfo[i-1] = msg.popLong();
+		mergeUniformInfo(uniformInfo, event.orig);
+		deliverUniform();
+	}
+	
+	private void mergeUniformInfo(long[] table, int orig) {
+		for (int i = 0; i < table.length; i++)
+			if (table[i] > snInfoList[orig][i])
+				snInfoList[orig][i] = table[i];
+	}
+	
+	/**
+	 * Tries to deliver Uniform messages.
+	 */
+	private void deliverUniform() {
+		ListIterator it = R.listIterator();
+		while (it.hasNext()) {
+			MessageContainer nextMsg = (MessageContainer)it.next();
+			if (isUniform(nextMsg)) {
 				try {
-					deliver.getEvent().go();
-				} catch (AppiaEventException ex) {
-					ex.printStackTrace();
-					log.debug("Error sending the event to the upper layers");
+					// deliver uniform notification
+					UniformServiceEvent use = new UniformServiceEvent(channel, Direction.UP, this, nextMsg.getMessage());
+					use.go();
+				} catch (AppiaEventException e) {
+					e.printStackTrace();
 				}
+				it.remove();
 			}
 		}
 	}
-
-	private void handleBlockOk(BlockOk e) {
-		try {
-			e.go();
-		} catch (AppiaEventException ex) {
-			ex.printStackTrace();
-			log.debug("Error sending blockOk");
-		}
+	
+	/**
+	 * Checks if the message is uniform.
+	 * 
+	 * @param header the header of the message.
+	 * @return <tt>true</tt> if the message is uniform, <tt>false</tt> otherwise.
+	 */
+	private boolean isUniform(MessageContainer cont) {
+		int seenCount = 0;
+		for (int i = 0; i < snInfoList.length; i++)
+			if (snInfoList[i][cont.getOrig()] >= cont.getSn())
+				seenCount++;
+		if (seenCount >= vs.view.length/2 + 1)			
+			return true;
+		return false;
 	}
-
-	private void handleView(View e) {
-		//vs = e.vs;
-		//ls = e.ls;
-
-		// TODO: must acknoledge messages (and deliver it) in the next view!
-		// Cleaning messages on view change is wrong!!!
-		if(uniformData.size() > 0)
-			uniformData.clean();
-
-		try {
-			e.go();
-		} catch (AppiaEventException ex) {
-			ex.printStackTrace();
-			log.debug("Error sending view");
-		}
+	
+	/**
+	 * Resets all sequence numbers and auxiliary variables
+	 */
+	private void reset(){
+		sn = 0;
+		snInfoList = new long[vs.view.length][vs.view.length];
+		for (int i = 0; i < snInfoList.length; i++)
+			Arrays.fill(snInfoList[i], 0);
 	}
-
-	private void handleChannelInit(ChannelInit e) {
-		//channel = e.getChannel();
-
-		try {
-			e.go();
-		} catch (AppiaEventException ex) {
-			ex.printStackTrace();
-			log.debug("Error sending channelinit");
-		}
-	}
-
 }

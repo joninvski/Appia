@@ -1,6 +1,7 @@
+
 /**
  * Appia: Group communication and protocol composition framework library
- * Copyright 2006 University of Lisbon
+ * Copyright 2007 University of Lisbon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,42 +15,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License. 
  *
- * Initial developer(s): Alexandre Pinto and Hugo Miranda.
+ * Initial developer(s): Jose Mocito.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package org.continuent.appia.protocols.uniform;
+package org.continuent.appia.protocols.uniform;
 
-import org.continuent.appia.core.*;
+import org.continuent.appia.core.Layer;
+import org.continuent.appia.core.Session;
+import org.continuent.appia.core.events.channel.ChannelClose;
+import org.continuent.appia.core.events.channel.ChannelInit;
+import org.continuent.appia.protocols.group.events.GroupSendableEvent;
+import org.continuent.appia.protocols.group.intra.View;
+import org.continuent.appia.protocols.group.sync.BlockOk;
+import org.continuent.appia.protocols.total.common.UniformServiceEvent;
 
 /**
- * The Uniform is the protocol that assures that the messages
- * are seen by all members of the group before being delivered.
+ * @author Jose' Mocito
+ *
  */
 public class UniformLayer extends Layer {
 
-	/*
-	 * Basic Constructor.
-	 */
-	public UniformLayer() {
-
-		// Events that the protocol requires
-		evRequire = new Class[] {
-				org.continuent.appia.protocols.group.events.GroupSendableEvent.class,
-				org.continuent.appia.protocols.group.intra.View.class, };
-
-		//Events that the protocol accepts
-		evAccept = new Class[] {
-				org.continuent.appia.protocols.group.events.GroupSendableEvent.class,
-				org.continuent.appia.core.events.channel.ChannelInit.class,
-				org.continuent.appia.protocols.group.intra.View.class,
-				org.continuent.appia.protocols.group.sync.BlockOk.class,
-				org.continuent.appia.protocols.uniform.UniformAckEvent.class, };
-
-		//Events that the protocol provides
-		evProvide = new Class[] {
-				org.continuent.appia.protocols.uniform.UniformAckEvent.class, };
+	public UniformLayer(){
+		super();
+		evAccept = new Class[]{
+				ChannelInit.class,
+				ChannelClose.class,
+				GroupSendableEvent.class,
+				View.class,
+				BlockOk.class,
+				UniformTimer.class,
+				UniformInfoEvent.class,
+		};
+		
+		evRequire = new Class[]{
+				ChannelInit.class,
+				View.class,
+				BlockOk.class,
+		};
+		
+		evProvide = new Class[]{
+				UniformServiceEvent.class,
+		};
 	}
-
+	
 	public Session createSession() {
 		return new UniformSession(this);
 	}
