@@ -195,7 +195,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
                     wasPrimary = true;
                 }
             }
-            else if (!isPrimary || wasPrimary) {
+            else {
                 // Hold view and send Probe
                 try {
                     final ProbeEvent event = new ProbeEvent(view.getChannel(), Direction.DOWN, this, vs.group, vs.id);
@@ -218,6 +218,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             e.printStackTrace();
         }
     }
+    
     private void handleProbeEvent(ProbeEvent event) {
         log.debug("Received ProbeEvent");
         if (isPrimary) {
@@ -245,28 +246,24 @@ public class PrimaryViewSession extends Session implements InitializableSession,
                 }
                 // All primary processes can deliver their views
                 deliverView();
-            }   
-        }
-        else {
-            // Last view was not primary
-            if (wasPrimary) {
-                // Process was in a primary partition at some point
-                if (event.getMessage().popBoolean()) {
-                    // Peer was also in a primary partition at some point
-                    final int peerPrimaryCounter = event.getMessage().popInt();
-                    // Check primary view counter
-                    if (peerPrimaryCounter > primaryCounter)
-                        leave(event.getChannel());
-                    else if (peerPrimaryCounter < primaryCounter)
-                        ackCount--;
-                }
-                else {
-                    // Peer was never in a primary partition. New peers can only join
-                    // primary partitions. KICK!
-                    kick(event.getChannel(), event.orig);
-                }
             }
-            
+        }
+        else if (wasPrimary) {
+            // Process was in a primary partition at some point
+            if (event.getMessage().popBoolean()) {
+                // Peer was also in a primary partition at some point
+                final int peerPrimaryCounter = event.getMessage().popInt();
+                // Check primary view counter
+                if (peerPrimaryCounter > primaryCounter)
+                    leave(event.getChannel());
+                else if (peerPrimaryCounter < primaryCounter)
+                    ackCount--;
+            }
+            else {
+                // Peer was never in a primary partition. New peers can only join
+                // primary partitions. KICK!
+                kick(event.getChannel(), event.orig);
+            }
             if (++ackCount == vs.view.length && hasMajority(view, lastPrimaryView))
                 deliverView();
         }
