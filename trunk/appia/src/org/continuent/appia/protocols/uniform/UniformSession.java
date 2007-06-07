@@ -59,19 +59,18 @@ public class UniformSession extends Session {
 	
 	private ViewState vs;
 	private LocalState ls;
-	private Channel channel;
 	private TimeProvider timeProvider;
 	
 	
-	private LinkedList R = new LinkedList(); // Received
+	private LinkedList receivedMessages = new LinkedList();
 	
 	private long timeLastMsgSent;
 	private boolean utSet; // Uniform timer is set?
 	
 	/**
-	 * Constructs a new SETOSession.
+	 * Constructs a new UniformSession.
 	 * 
-	 * @param layer
+	 * @param layer the corresponding layer.
 	 */
 	public UniformSession(Layer layer) {
 		super(layer);
@@ -108,8 +107,7 @@ public class UniformSession extends Session {
 	}
 
 	private void handleChannelInit(ChannelInit init) {
-		channel = init.getChannel();
-		timeProvider = channel.getTimeProvider();
+		timeProvider = init.getChannel().getTimeProvider();
 		try {
 			init.go();
 		} catch (AppiaEventException e) {
@@ -118,7 +116,6 @@ public class UniformSession extends Session {
 	}
 	
 	private void handleChannelClose(ChannelClose close) {
-		channel = null;
 		try {
 			close.go();
 		} catch (AppiaEventException e) {
@@ -127,7 +124,7 @@ public class UniformSession extends Session {
 	}
 	
 	/**
-	 * The group os blocked. It is going to change view.
+	 * The group is blocked. It is going to change view.
 	 * @param ok
 	 */
 	private void handleBlockOk(BlockOk ok) {
@@ -163,8 +160,7 @@ public class UniformSession extends Session {
 		
 		if (!utSet) {
 			try {
-				UniformTimer ut = new UniformTimer(UNIFORM_INFO_PERIOD,channel,Direction.DOWN,this,EventQualifier.ON);
-				ut.go();
+				new UniformTimer(UNIFORM_INFO_PERIOD,view.getChannel(),Direction.DOWN,this,EventQualifier.ON).go();
 				utSet = true;
 			} catch (AppiaEventException e) {
 				e.printStackTrace();
@@ -178,7 +174,7 @@ public class UniformSession extends Session {
 	 * @param event
 	 */
 	private void handleGroupSendable(GroupSendableEvent event) {
-		Message msg = event.getMessage();
+		final Message msg = event.getMessage();
 		if(event.getDir() == Direction.DOWN) {
 			msg.pushLong(sn);
 			for (int i = 0; i < snInfoList[ls.my_rank].length; i++)
@@ -191,12 +187,12 @@ public class UniformSession extends Session {
 			timeLastMsgSent = timeProvider.currentTimeMillis();
 		}
 		else{
-			long[] uniformInfo = new long[vs.view.length];
+			final long[] uniformInfo = new long[vs.view.length];
 			for (int i = uniformInfo.length; i > 0; i--)
 				uniformInfo[i-1] = msg.popLong();
 			mergeUniformInfo(uniformInfo, event.orig);
-			long msgSN = msg.popLong();
-			R.add(new MessageContainer(event.orig, msgSN, msg));
+			final long msgSN = msg.popLong();
+			receivedMessages.add(new MessageContainer(event.orig, msgSN, msg));
 			snInfoList[ls.my_rank][event.orig] = msgSN;
 			try {
 				event.go();
@@ -214,9 +210,9 @@ public class UniformSession extends Session {
 	
 	private void sendUniformInfo(Channel channel) {
 		if (!isBlocked) {
-			UniformInfoEvent event = new UniformInfoEvent();
+			final UniformInfoEvent event = new UniformInfoEvent();
 			
-			Message msg = event.getMessage();
+			final Message msg = event.getMessage();
 			for (int i = 0; i < snInfoList[ls.my_rank].length; i++)
 				msg.pushLong(snInfoList[ls.my_rank][i]);
 			
@@ -233,12 +229,12 @@ public class UniformSession extends Session {
 	}
 	
 	private void handleUniformInfo(UniformInfoEvent event) {
-		Message msg = event.getMessage();
-		long[] uniformInfo = new long[vs.view.length];
+		final Message msg = event.getMessage();
+		final long[] uniformInfo = new long[vs.view.length];
 		for (int i = uniformInfo.length; i > 0; i--)
 			uniformInfo[i-1] = msg.popLong();
 		mergeUniformInfo(uniformInfo, event.orig);
-		deliverUniform();
+		deliverUniform(event.getChannel());
 	}
 	
 	private void mergeUniformInfo(long[] table, int orig) {
@@ -250,15 +246,14 @@ public class UniformSession extends Session {
 	/**
 	 * Tries to deliver Uniform messages.
 	 */
-	private void deliverUniform() {
-		ListIterator it = R.listIterator();
+	private void deliverUniform(Channel channel) {
+		final ListIterator it = receivedMessages.listIterator();
 		while (it.hasNext()) {
-			MessageContainer nextMsg = (MessageContainer)it.next();
+			final MessageContainer nextMsg = (MessageContainer)it.next();
 			if (isUniform(nextMsg)) {
 				try {
 					// deliver uniform notification
-					UniformServiceEvent use = new UniformServiceEvent(channel, Direction.UP, this, nextMsg.getMessage());
-					use.go();
+					new UniformServiceEvent(channel, Direction.UP, this, nextMsg.getMessage()).go();
 				} catch (AppiaEventException e) {
 					e.printStackTrace();
 				}
