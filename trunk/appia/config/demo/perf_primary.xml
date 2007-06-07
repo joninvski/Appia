@@ -185,7 +185,7 @@
 			<parameter name="m">100</parameter>
 			<parameter name="gossip">224.0.0.3:10001</parameter>
 		</chsession>
-		<chsession="primary">
+		<chsession name="primary">
 			<!-- Example of parameter for the first node in the group. Other nodes should have
 			it set to false or not declare the parameter -->
 			<parameter name="primary">true</parameter>
