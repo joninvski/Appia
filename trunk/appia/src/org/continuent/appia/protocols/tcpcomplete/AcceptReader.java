@@ -28,6 +28,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 import org.continuent.appia.core.Channel;
+import org.continuent.appia.protocols.utils.ParseUtils;
 
 
 /**
@@ -117,7 +118,7 @@ public class AcceptReader implements Runnable {
     
     receiveNBytes(socket.getInputStream(),bufferPort, INT_SIZE);
     
-    port = session.byteArrayToInt(bufferPort);
+    port = ParseUtils.byteArrayToInt(bufferPort,0);
     
     if(TcpCompleteConfig.debugOn)
       debug("received remote port:: "+port);

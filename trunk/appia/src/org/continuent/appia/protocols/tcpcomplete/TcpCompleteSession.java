@@ -44,6 +44,7 @@ import org.continuent.appia.core.message.Message;
 import org.continuent.appia.core.message.MsgBuffer;
 import org.continuent.appia.protocols.common.RegisterSocketEvent;
 import org.continuent.appia.protocols.utils.HostUtils;
+import org.continuent.appia.protocols.utils.ParseUtils;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
 
@@ -406,7 +407,7 @@ public void init(SessionProperties params) {
       newSocket = new Socket(iwp.getAddress(),iwp.getPort());
       newSocket.setTcpNoDelay(true);
       
-      byte bPort[]= intToByteArray(ourPort);
+      byte bPort[]= ParseUtils.intToByteArray(ourPort);
       
       
       newSocket.getOutputStream().write(bPort);
@@ -474,7 +475,7 @@ public void init(SessionProperties params) {
     
     mbuf.len = 4;
     msg.push(mbuf);
-    intToByteArray(channelID.length, mbuf.data, mbuf.off);
+    ParseUtils.intToByteArray(channelID.length, mbuf.data, mbuf.off);
     
     mbuf.len = eventType.length;
     msg.push(mbuf);
@@ -482,54 +483,13 @@ public void init(SessionProperties params) {
     
     mbuf.len = 4;
     msg.push(mbuf);
-    intToByteArray(eventType.length, mbuf.data, mbuf.off);
+    ParseUtils.intToByteArray(eventType.length, mbuf.data, mbuf.off);
     
     mbuf.len = 4;
     msg.push(mbuf);
-    intToByteArray(msg.length()-4,mbuf.data,mbuf.off);
+    ParseUtils.intToByteArray(msg.length()-4,mbuf.data,mbuf.off);
     
     return msg.toByteArray();
-  }
-  
-  
-  protected byte[] intToByteArray(int i) {
-    byte[] ret = new byte[4];
-    
-    ret[0] = (byte) ((i & 0xff000000) >> 24);
-    ret[1] = (byte) ((i & 0x00ff0000) >> 16);
-    ret[2] = (byte) ((i & 0x0000ff00) >> 8);
-    ret[3] = (byte) (i & 0x000000ff);
-    
-    return ret;
-  }
-  
-  protected void intToByteArray(int i,byte[] a, int o) {
-    a[o+0] = (byte) ((i & 0xff000000) >> 24);
-    a[o+1] = (byte) ((i & 0x00ff0000) >> 16);
-    a[o+2] = (byte) ((i & 0x0000ff00) >> 8);
-    a[o+3] = (byte) (i & 0x000000ff);
-  }
-  
-  protected int byteArrayToInt(byte[] b) {
-    int ret = 0;
-    
-    ret |= b[0] << 24;
-    ret |= (b[1] << 24) >>> 8; // must be done this way because of java's
-    ret |= (b[2] << 24) >>> 16; // sign extension of <<
-    ret |= (b[3] << 24) >>> 24;
-    
-    return ret;
-  }
-  
-  protected int byteArrayToInt(byte[] b, int off) {
-    int ret = 0;
-    
-    ret |= b[off] << 24;
-    ret |= (b[off+1] << 24) >>> 8;  // must be done this way because of
-    ret |= (b[off+2] << 24) >>> 16; // java's sign extension of <<
-    ret |= (b[off+3] << 24) >>> 24;
-    
-    return ret;
   }
   
   protected void sendUndelivered(Channel channel, Object who) {

@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 import org.continuent.appia.core.*;
 import org.continuent.appia.core.events.SendableEvent;
 import org.continuent.appia.protocols.tcpcomplete.TcpUndeliveredEvent;
+import org.continuent.appia.protocols.utils.ParseUtils;
 
 /**
  * @author pedrofrv
@@ -152,7 +153,7 @@ public class TcpReader implements Runnable {
 			//if (bench != null) bench.startBench("read msg size");
 			receive_n(bTotal,4);
 			//if (bench != null) bench.stopBench("read msg size");			
-			total =parentSession.byteArrayToInt(bTotal);
+			total =ParseUtils.byteArrayToInt(bTotal,0);
 			
 			byte data[] = new byte[total];
 			
@@ -165,7 +166,7 @@ public class TcpReader implements Runnable {
 			
 			/* Extract event class name */
 			//size of class name
-			int sLength=parentSession.byteArrayToInt(data, curPos);
+			int sLength=ParseUtils.byteArrayToInt(data, curPos);
 			//the class name
 		    String className=new String(data,curPos+4,sLength);
 
@@ -179,7 +180,7 @@ public class TcpReader implements Runnable {
 		        e=(SendableEvent)c.newInstance();
 
 		        /* Extract channel name and put event in it*/
-		        sLength = parentSession.byteArrayToInt(data, curPos);
+		        sLength = ParseUtils.byteArrayToInt(data, curPos);
 		        String channelName=new String(data,curPos+4,sLength);
 
 			Channel msgChannel = parentSession.getChannel(channelName);

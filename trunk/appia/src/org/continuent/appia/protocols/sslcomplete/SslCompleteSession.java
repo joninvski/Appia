@@ -49,6 +49,7 @@ import org.continuent.appia.protocols.common.ThreadFactory;
 import org.continuent.appia.protocols.tcpcomplete.AcceptReader;
 import org.continuent.appia.protocols.tcpcomplete.TcpCompleteSession;
 import org.continuent.appia.protocols.utils.HostUtils;
+import org.continuent.appia.protocols.utils.ParseUtils;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
 
@@ -431,7 +432,7 @@ public class SslCompleteSession extends TcpCompleteSession implements Initializa
    * @param hm
    * @param iwp
    * @param channel
-   * @return the new socket or null if an error ocurred.
+   * @return the new socket or null if an error occurred.
    * @throws IOException
    */
   protected Socket createSSLSocket(HashMap hm,InetSocketAddress iwp,Channel channel) throws IOException{
@@ -446,7 +447,7 @@ public class SslCompleteSession extends TcpCompleteSession implements Initializa
 
       newSocket.setTcpNoDelay(true);
       
-      final byte bPort[]= intToByteArray(ourPort);
+      final byte bPort[]= ParseUtils.intToByteArray(ourPort);
       
       newSocket.getOutputStream().write(bPort);
       if(log.isDebugEnabled())

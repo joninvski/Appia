@@ -53,6 +53,7 @@ import org.continuent.appia.protocols.common.SendableNotDeliveredEvent;
 import org.continuent.appia.protocols.common.ThreadFactory;
 import org.continuent.appia.protocols.frag.MaxPDUSizeEvent;
 import org.continuent.appia.protocols.utils.HostUtils;
+import org.continuent.appia.protocols.utils.ParseUtils;
 import org.continuent.appia.xml.interfaces.InitializableSession;
 import org.continuent.appia.xml.utils.SessionProperties;
 
@@ -388,41 +389,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     }
   }
   
-  /**
-   * int serialization.
-   */
-  byte[] intToByteArray(int i) {
-    byte[] ret = new byte[4];
-    
-    ret[0] = (byte) ((i & 0xff000000) >> 24);
-    ret[1] = (byte) ((i & 0x00ff0000) >> 16);
-    ret[2] = (byte) ((i & 0x0000ff00) >> 8);
-    ret[3] = (byte) (i & 0x000000ff);
-    
-    return ret;
-  }
-  
-  void intToByteArray(int i, byte[] a, int o) {
-    a[o + 0] = (byte) ((i & 0xff000000) >> 24);
-    a[o + 1] = (byte) ((i & 0x00ff0000) >> 16);
-    a[o + 2] = (byte) ((i & 0x0000ff00) >> 8);
-    a[o + 3] = (byte) (i & 0x000000ff);
-  }
-  
-  /**
-   * int deserialization.
-   */
-  int byteArrayToInt(byte[] b, int off) {
-    int ret = 0;
-    
-    ret |= b[off] << 24;
-    ret |= (b[off + 1] << 24) >>> 8; // must be done this way because of
-    ret |= (b[off + 2] << 24) >>> 16; // java's sign extension of <<
-    ret |= (b[off + 3] << 24) >>> 24;
-    
-    return ret;
-  }
-  
+
   private boolean newSock(int port, InetAddress addr, ThreadFactory threadFactory) {
     if (addr == null) {
       if (param_LOCAL_ADDRESS == null)
@@ -513,7 +480,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       
       mbuf.len = 4;
       msg.push(mbuf);
-      intToByteArray(channelHash, mbuf.data, mbuf.off);
+      ParseUtils.intToByteArray(channelHash, mbuf.data, mbuf.off);
       
       mbuf.len = eventType.length;
       msg.push(mbuf);
@@ -521,7 +488,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       
       mbuf.len = 4;
       msg.push(mbuf);
-      intToByteArray(eventType.length, mbuf.data, mbuf.off);
+      ParseUtils.intToByteArray(eventType.length, mbuf.data, mbuf.off);
       
       if (msg.length() > param_MAX_UDPMSG_SIZE)
         throw new IOException("Message length to great, may be truncated");
@@ -704,7 +671,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       try {
         /* Extract event class name */
         //size of class name
-        int sLength = byteArrayToInt(data, 0);
+        int sLength = ParseUtils.byteArrayToInt(data, 0);
         //the class name
         String className = new String(data, 4, sLength, "ISO-8859-1");
         
@@ -720,7 +687,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         /* Extract channel hash and put event in it*/
         mbuf.len = 4;
         msg.pop(mbuf);
-        int channelHash = byteArrayToInt(mbuf.data, mbuf.off);
+        int channelHash = ParseUtils.byteArrayToInt(mbuf.data, mbuf.off);
         Channel msgChannel = (Channel) parentSession.channels.get(new Integer(channelHash));
         
         /* If channel does not exist, discard message */

@@ -170,6 +170,48 @@ public final class ParseUtils {
     
     return addr;
   }
+
+  /**
+   * converts an int to an array of bytes.
+   * @param i the int to convert.
+   */
+  public static byte[] intToByteArray(int i) {
+    byte[] ret = new byte[4];
+    
+    ret[0] = (byte) ((i & 0xff000000) >> 24);
+    ret[1] = (byte) ((i & 0x00ff0000) >> 16);
+    ret[2] = (byte) ((i & 0x0000ff00) >> 8);
+    ret[3] = (byte) (i & 0x000000ff);
+    
+    return ret;
+  }
+
+  /**
+   * Convert an int to a byte array and put the bytes in the given array.
+   * @param i the int to convert.
+   * @param a the byte array where to place the converted bytes
+   * @param o the offset.
+   */
+  public static void intToByteArray(int i, byte[] a, int o) {
+    a[o + 0] = (byte) ((i & 0xff000000) >> 24);
+    a[o + 1] = (byte) ((i & 0x00ff0000) >> 16);
+    a[o + 2] = (byte) ((i & 0x0000ff00) >> 8);
+    a[o + 3] = (byte) (i & 0x000000ff);
+  }
+  
+  /**
+   * int deserialization.
+   */
+  public static int byteArrayToInt(byte[] b, int off) {
+    int ret = 0;
+    
+    ret |= b[off] << 24;
+    ret |= (b[off + 1] << 24) >>> 8; // must be done this way because of
+    ret |= (b[off + 2] << 24) >>> 16; // java's sign extension of <<
+    ret |= (b[off + 3] << 24) >>> 24;
+    
+    return ret;
+  }
   
 }
 
