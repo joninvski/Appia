@@ -33,6 +33,8 @@ import org.continuent.appia.core.Layer;
 import org.continuent.appia.core.Session;
 import org.continuent.appia.core.events.channel.ChannelInit;
 import org.continuent.appia.core.events.channel.EchoEvent;
+import org.continuent.appia.management.AppiaManagementException;
+import org.continuent.appia.management.ManagedSession;
 import org.continuent.appia.protocols.group.LocalState;
 import org.continuent.appia.protocols.group.ViewState;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
@@ -50,7 +52,7 @@ import org.continuent.appia.xml.utils.SessionProperties;
  * @author Jose Mocito
  * @version 0.7
  */
-public class SwitchingSession extends Session implements InitializableSession {
+public class SwitchingSession extends Session implements InitializableSession, ManagedSession {
 
 	private static final int NULL_TIMEOUT = 30; // default
 	
@@ -461,5 +463,37 @@ public class SwitchingSession extends Session implements InitializableSession {
 			lastDelivered[cont.source] = cont.sn;
 		}
 		nextList.clear();
+    }
+    
+       
+    /**
+     * This method is called from JMX and accepts the parameters topChannel and currentChannel.
+     * The current channel parameter is the bottom channel that is being used.
+     * 
+     * @see org.continuent.appia.management.ManagedSession#getParameter(java.lang.String)
+     */
+    public String getParameter(String parameter) throws AppiaManagementException {
+        if(parameter.equals("topChannel"))
+            return topChannel.getChannelID();
+        if(parameter.equals("currentChannel"))
+            return currentChannel.getChannelID();
+        throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+this.getClass().getName());
+    }
+
+    /**
+     * This method is called from JMX and accepts the parameter currentChannel.
+     * If the channel name (value) does not exist, an exception if thrown.
+     */
+    public void setParameter(String parameter, String value) throws AppiaManagementException {
+        if(parameter.equals("currentChannel")){
+            if(channelList.containsKey(value))
+                startSwitching(value);
+            else
+                throw new AppiaManagementException("The session "+this.getClass().getName()
+                        +" does not have the channel '"+value+"'.");
+        }
+        else 
+            throw new AppiaManagementException("The session "+this.getClass().getName()
+                    +" do not accept the parameter '"+parameter+"'.");
     }
 }
