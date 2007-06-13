@@ -192,7 +192,7 @@ public class UniformSession extends Session {
 				uniformInfo[i-1] = msg.popLong();
 			mergeUniformInfo(uniformInfo, event.orig);
 			final long msgSN = msg.popLong();
-			receivedMessages.add(new MessageContainer(event.orig, msgSN, msg));
+			receivedMessages.add(new MessageContainer(msgSN,event));
 			snInfoList[ls.my_rank][event.orig] = msgSN;
 			try {
 				event.go();
@@ -202,10 +202,10 @@ public class UniformSession extends Session {
 		}	
 	}
 	
-		private void handleUniformTimer(UniformTimer timer) {
-		if (!isBlocked && timeProvider.currentTimeMillis() - timeLastMsgSent >= UNIFORM_INFO_PERIOD) {
-			sendUniformInfo(timer.getChannel());
-		}
+	private void handleUniformTimer(UniformTimer timer) {
+	    if (!isBlocked && timeProvider.currentTimeMillis() - timeLastMsgSent >= UNIFORM_INFO_PERIOD) {
+	        sendUniformInfo(timer.getChannel());
+	    }
 	}
 	
 	private void sendUniformInfo(Channel channel) {
@@ -253,7 +253,7 @@ public class UniformSession extends Session {
 			if (isUniform(nextMsg)) {
 				try {
 					// deliver uniform notification
-					new UniformServiceEvent(channel, Direction.UP, this, nextMsg.getMessage()).go();
+					new UniformServiceEvent(channel, Direction.UP, this, nextMsg.getSendableEvent().getMessage()).go();
 				} catch (AppiaEventException e) {
 					e.printStackTrace();
 				}

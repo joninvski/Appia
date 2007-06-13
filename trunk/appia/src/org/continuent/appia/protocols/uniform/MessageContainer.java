@@ -21,33 +21,34 @@
 package org.continuent.appia.protocols.uniform;
 
 import org.continuent.appia.core.message.Message;
+import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 
+/**
+ * This class defines a MessageContainer
+ * 
+ * @author Jose Mocito
+ * @version 1.0
+ */
 public class MessageContainer {
 
-	private int orig;
 	private long sn;
-	private Message message;
+	private GroupSendableEvent sendableEvent;
 	
-	public MessageContainer(int orig, long sn, Message message) {
-		this.orig = orig;
+	public MessageContainer(long sn, GroupSendableEvent e) {
 		this. sn = sn;
-		this.message = message;
+		this.sendableEvent = e;
 	}
+    
+	public GroupSendableEvent getSendableEvent() {
+        return sendableEvent;
+    }
 
-	public Message getMessage() {
-		return message;
-	}
+    public void setSendableEvent(GroupSendableEvent sendableEvent) {
+        this.sendableEvent = sendableEvent;
+    }
 
-	public void setMessage(Message message) {
-		this.message = message;
-	}
-
-	public int getOrig() {
-		return orig;
-	}
-
-	public void setOrig(int orig) {
-		this.orig = orig;
+    public int getOrig() {
+		return sendableEvent.orig;
 	}
 
 	public long getSn() {
@@ -59,7 +60,7 @@ public class MessageContainer {
 	}
 
 	public boolean equals(MessageContainer cont) {
-		if (orig == cont.getOrig() && sn == cont.getSn())
+		if (this.getOrig() == cont.getOrig() && sn == cont.getSn())
 			return true;
 		return false;
 	}
