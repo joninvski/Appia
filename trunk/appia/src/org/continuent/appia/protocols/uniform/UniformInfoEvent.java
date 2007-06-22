@@ -20,6 +20,11 @@
  */
  package org.continuent.appia.protocols.uniform;
 
+import org.continuent.appia.core.AppiaEventException;
+import org.continuent.appia.core.Channel;
+import org.continuent.appia.core.Session;
+import org.continuent.appia.protocols.group.Group;
+import org.continuent.appia.protocols.group.ViewID;
 import org.continuent.appia.protocols.group.events.GroupSendableEvent;
 
 /**
@@ -27,4 +32,12 @@ import org.continuent.appia.protocols.group.events.GroupSendableEvent;
  * 
  */
 public class UniformInfoEvent extends GroupSendableEvent {
+    public UniformInfoEvent(){
+        super();
+    }
+
+    public UniformInfoEvent(Channel channel, int dir, Session source, Group group, ViewID view_id) throws AppiaEventException {
+        super(channel, dir, source, group, view_id);
+    }
+    
 }
