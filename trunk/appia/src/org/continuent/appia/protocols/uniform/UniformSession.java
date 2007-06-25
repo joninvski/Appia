@@ -21,9 +21,9 @@
 package org.continuent.appia.protocols.uniform;
 
 import java.util.Arrays;
-import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.ListIterator;
 
-import org.apache.log4j.Logger;
 import org.continuent.appia.core.AppiaEventException;
 import org.continuent.appia.core.AppiaException;
 import org.continuent.appia.core.Channel;
@@ -50,57 +50,19 @@ import org.continuent.appia.protocols.total.common.UniformServiceEvent;
  */
 public class UniformSession extends Session {
 	
-    private static Logger log = Logger.getLogger(UniformSession.class);
 	private static final long UNIFORM_INFO_PERIOD = 100;
 		
-    /**
-     * This class defines a MessageKey. It is used to hash messages until they can be purged.
-     * 
-     * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
-     * @version 1.0
-     */
-    class MessageKey {
-        int src;
-        long sn;
-        MessageKey(int s, long n){
-            src = s;
-            sn = n;
-        }
-        public int hashCode() {
-            return (int) (src ^ sn);
-        }
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            final MessageKey other = (MessageKey) obj;
-            if (sn != other.sn)
-                return false;
-            if (src != other.src)
-                return false;
-            return true;
-        }
-        
-    }
-
 	private long sn;
 	private long[][] snInfoList;
 
-	private boolean 
-        isBlocked = true,
-        isProcessingStability = false,
-        stabilityReceived[]=null;
+	private boolean isBlocked = true;
 	
-	private ViewState vs, oldVS;
-	private LocalState ls, oldLS;
-    
-    private Hashtable holdedViews = new Hashtable();
+	private ViewState vs;
+	private LocalState ls;
 	private TimeProvider timeProvider;
 	
-	private Hashtable receivedMessages = new Hashtable();
+	
+	private LinkedList receivedMessages = new LinkedList();
 	
 	private long timeLastMsgSent;
 	private boolean utSet; // Uniform timer is set?
@@ -183,29 +145,13 @@ public class UniformSession extends Session {
 	 * @param view
 	 */
 	private void handleNewView(View view) {
-        if(vs == null){
-            ls = view.ls;
-            vs = view.vs;
-            deliverView(view);
-        }
-        else{
-            oldLS = ls;
-            oldVS = vs;
-            ls = view.ls;
-            vs = view.vs;
+		isBlocked = false;
+		ls=view.ls;
+		vs=view.vs;
 
-            isProcessingStability = true;
-            stabilityReceived = new boolean[vs.view.length];
-            holdedViews.put(view.getChannel().getChannelID(), view);
-            sendUniformInfo(view.getChannel());
-        }
-	}
-
-    private void deliverView(View view) {
-        isBlocked = false;
-        isProcessingStability = false;
-		// resets sequence numbers
+		// resets sequence numbers and information about delays
 		reset();
+
 		try {
 			view.go();
 		} catch (AppiaEventException e) {
@@ -230,10 +176,6 @@ public class UniformSession extends Session {
 	private void handleGroupSendable(GroupSendableEvent event) {
 		final Message msg = event.getMessage();
 		if(event.getDir() == Direction.DOWN) {
-            if(isBlocked){
-                log.error("Received message from above protocols while blocked. Discarding it.");
-                return;
-            }
 			msg.pushLong(sn);
 			for (int i = 0; i < snInfoList[ls.my_rank].length; i++)
 				msg.pushLong(snInfoList[ls.my_rank][i]);
@@ -245,15 +187,13 @@ public class UniformSession extends Session {
 			timeLastMsgSent = timeProvider.currentTimeMillis();
 		}
 		else{
-            final ViewState myvs = (isProcessingStability)? oldVS : vs;
-            final LocalState myls = (isProcessingStability)? oldLS : ls;
-			final long[] uniformInfo = new long[myvs.view.length];
+			final long[] uniformInfo = new long[vs.view.length];
 			for (int i = uniformInfo.length; i > 0; i--)
 				uniformInfo[i-1] = msg.popLong();
 			mergeUniformInfo(uniformInfo, event.orig);
 			final long msgSN = msg.popLong();
-            receivedMessages.put(new MessageKey(event.orig,msgSN), new MessageContainer(msgSN,event));
-			snInfoList[myls.my_rank][event.orig] = msgSN;
+			receivedMessages.add(new MessageContainer(msgSN,event));
+			snInfoList[ls.my_rank][event.orig] = msgSN;
 			try {
 				event.go();
 			} catch (AppiaEventException e) {
@@ -268,62 +208,58 @@ public class UniformSession extends Session {
 	    }
 	}
 	
-    /*
-     * send the info about my received messages 
-     */
 	private void sendUniformInfo(Channel channel) {
 		if (!isBlocked) {
-            final ViewState myvs = (isProcessingStability)? oldVS : vs;
-            final LocalState myls = (isProcessingStability)? oldLS : ls;
-            try {
-                final UniformInfoEvent event = 
-                    new UniformInfoEvent(channel,Direction.DOWN,this,myvs.group,myvs.id);
-                final Message msg = event.getMessage();
-                for (int i = 0; i < snInfoList[myls.my_rank].length; i++)
-                    msg.pushLong(snInfoList[myls.my_rank][i]);                
-                event.go();
-            } catch (AppiaEventException e) {
-                e.printStackTrace();
-            }
+			final UniformInfoEvent event = new UniformInfoEvent();
 			
+			final Message msg = event.getMessage();
+			for (int i = 0; i < snInfoList[ls.my_rank].length; i++)
+				msg.pushLong(snInfoList[ls.my_rank][i]);
+			
+			event.setChannel(channel);
+			event.setDir(Direction.DOWN);
+			event.setSource(this);
+			try {
+				event.init();
+				event.go();
+			} catch (AppiaEventException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
 	private void handleUniformInfo(UniformInfoEvent event) {
-        final ViewState myvs = (isProcessingStability)? oldVS : vs;
 		final Message msg = event.getMessage();
-		final long[] uniformInfo = new long[myvs.view.length];
+		final long[] uniformInfo = new long[vs.view.length];
 		for (int i = uniformInfo.length; i > 0; i--)
 			uniformInfo[i-1] = msg.popLong();
 		mergeUniformInfo(uniformInfo, event.orig);
-        
+		deliverUniform(event.getChannel());
 	}
 	
 	private void mergeUniformInfo(long[] table, int orig) {
-	    for (int i = 0; i < table.length; i++){
-	        while(table[i] > snInfoList[orig][i]){
-	            deliverUniform(orig, ++snInfoList[orig][i]);
-                if(allReceived(orig,snInfoList[orig][i]))
-                    receivedMessages.remove(new MessageKey(orig,snInfoList[orig][i]));
-	        }
-        }
+		for (int i = 0; i < table.length; i++)
+			if (table[i] > snInfoList[orig][i])
+				snInfoList[orig][i] = table[i];
 	}
 	
 	/**
 	 * Tries to deliver Uniform messages.
 	 */
-	private void deliverUniform(int orig, long msgSN) {
-        final MessageKey key = new MessageKey(orig,msgSN);
-	    final MessageContainer nextMsg = (MessageContainer) receivedMessages.get(key);
-	    if (isUniform(nextMsg)) {
-	        try {
-	            // deliver uniform notification
-	            new UniformServiceEvent(nextMsg.getSendableEvent().getChannel(), 
-	                    Direction.UP, this, nextMsg.getSendableEvent().getMessage()).go();
-	        } catch (AppiaEventException e) {
-	            e.printStackTrace();
-	        }
-	    }
+	private void deliverUniform(Channel channel) {
+		final ListIterator it = receivedMessages.listIterator();
+		while (it.hasNext()) {
+			final MessageContainer nextMsg = (MessageContainer)it.next();
+			if (isUniform(nextMsg)) {
+				try {
+					// deliver uniform notification
+					new UniformServiceEvent(channel, Direction.UP, this, nextMsg.getSendableEvent().getMessage()).go();
+				} catch (AppiaEventException e) {
+					e.printStackTrace();
+				}
+				it.remove();
+			}
+		}
 	}
 	
 	/**
@@ -341,23 +277,7 @@ public class UniformSession extends Session {
 			return true;
 		return false;
 	}
-
-    /**
-     * Checks if the message is uniform.
-     * 
-     * @param header the header of the message.
-     * @return <tt>true</tt> if the message is uniform, <tt>false</tt> otherwise.
-     */
-    private boolean allReceived(int orig, long msgSN) {
-        int seenCount = 0;
-        for (int i = 0; i < snInfoList.length; i++)
-            if (snInfoList[i][orig] >= msgSN)
-                seenCount++;
-        if (seenCount == vs.view.length)
-            return true;
-        return false;
-    }
-    
+	
 	/**
 	 * Resets all sequence numbers and auxiliary variables
 	 */
@@ -368,4 +288,3 @@ public class UniformSession extends Session {
 			Arrays.fill(snInfoList[i], 0);
 	}
 }
-
