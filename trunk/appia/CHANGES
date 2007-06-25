@@ -1,4 +1,42 @@
 ========================
+25/06/2007   Version 3.3
+========================
+
+Release Notes:
+
+** Bug
+    * [APPIA-54] - Frag protocol should not create Messages explicitly
+    * [APPIA-69] - Improve failure detection in cases of high load of messages.
+    * [APPIA-76] - Several protocols must have a special case for the LeaveEvent.
+    * [APPIA-77] - Views are not properly handled by non primary elements by the primary protocol.
+    * [APPIA-79] - Error on parsinf parameters in the GossipServer main class.
+    * [APPIA-80] - Creating a channel using a non-existant XML template results in a NullPointerException
+
+** New Feature
+    * [APPIA-32] - Add the Total Order switching protocol to the CVS head
+    * [APPIA-75] - Add JMX interfaces to the primary view protocol.
+
+** Task
+    * [APPIA-25] - Remove hand conversions from integer to byte[] and vice-versa on several protocols.
+    * [APPIA-51] - Update Javadoc on remote view protocol
+    * [APPIA-58] - Remove deprecated class org.continuent.appia.protocols.sslcomplete.SslCompleteConfig.
+    * [APPIA-63] - Remove deprecated class InetWithPort
+    * [APPIA-73] - Fix javadoc issues
+    * [APPIA-74] - Move the int to byte array conversions to an independent Util class.
+
+** Improvement
+    * [APPIA-23] - Reduce CPU consumption on TotalToken when not sending any messages.
+    * [APPIA-33] - Implement management interfaces in the TO switching protocol to change the TO protocol using JMX management. 
+    * [APPIA-49] - Change the retrievement method of the Appia ThreadFactory instance
+    * [APPIA-65] - Create an abstract Message factory
+    * [APPIA-66] - Thread and messages factories should be defined in the XML config file.
+    * [APPIA-67] - Make sleep time configurable in the token total order protocol.
+    * [APPIA-70] - Change the debug messages of the group communication protocols to use Log4j
+    * [APPIA-71] - Change the debug messages of several protocols to use Log4j
+    * [APPIA-72] - Filter block events on the primary view protocol when blocked on non-primary view.
+    * [APPIA-78] - Rewrite the uniform protocol.
+
+========================
 16/01/2007 Version 3.2.4
 ========================
 
