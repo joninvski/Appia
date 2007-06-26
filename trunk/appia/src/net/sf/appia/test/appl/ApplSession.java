@@ -500,7 +500,9 @@ public class ApplSession extends Session {
     
     private void handleChannelInit(ChannelInit e) {
         
-        e.getChannel().getThreadFactory().newThread(new ApplReader(this),"Appl Reader Thread").start();
+        final Thread t = e.getChannel().getThreadFactory().newThread(new ApplReader(this));
+        t.setName("Appl Reader Thread");
+        t.start();
          
                 /* Forwards channel init event. New events must follow this
                    one */

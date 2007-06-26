@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.LinkedList;
+import java.util.concurrent.ThreadFactory;
 
 import net.sf.appia.core.Appia;
 import net.sf.appia.core.AppiaDuplicatedSessionsException;
@@ -38,7 +39,6 @@ import net.sf.appia.core.Layer;
 import net.sf.appia.core.memoryManager.MemoryManager;
 import net.sf.appia.core.message.MessageFactory;
 import net.sf.appia.management.jmx.JMXConfiguration;
-import net.sf.appia.protocols.common.ThreadFactory;
 import net.sf.appia.xml.templates.ChannelTemplate;
 import net.sf.appia.xml.templates.SessionTemplate;
 import net.sf.appia.xml.utils.ChannelInfo;

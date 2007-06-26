@@ -21,6 +21,7 @@
 package net.sf.appia.core;
 
 import java.util.Hashtable;
+import java.util.concurrent.ThreadFactory;
 
 import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
@@ -36,7 +37,6 @@ import net.sf.appia.management.jmx.ChannelManager;
 import net.sf.appia.management.jmx.ConnectionServerFactory;
 import net.sf.appia.management.jmx.JMXConfiguration;
 import net.sf.appia.protocols.common.AppiaThreadFactory;
-import net.sf.appia.protocols.common.ThreadFactory;
 
 import org.apache.log4j.Logger;
 

@@ -26,10 +26,10 @@ package net.sf.appia.core;
 //(28-Feb-2003)
 
 import java.util.Vector;
+import java.util.concurrent.ThreadFactory;
 
 import net.sf.appia.core.events.channel.ExternalEvent;
 import net.sf.appia.protocols.common.AppiaThreadFactory;
-import net.sf.appia.protocols.common.ThreadFactory;
 
 
 /**

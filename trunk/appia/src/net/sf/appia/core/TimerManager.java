@@ -20,9 +20,10 @@
  
 package net.sf.appia.core;
 
+import java.util.concurrent.ThreadFactory;
+
 import net.sf.appia.core.events.channel.*;
 import net.sf.appia.protocols.common.AppiaThreadFactory;
-import net.sf.appia.protocols.common.ThreadFactory;
 
 
 /** <I>Appia</I> timers manager.
@@ -179,7 +180,9 @@ public class TimerManager implements Runnable, TimeProvider {
   /** Creates a new TimerManager
    */  
   public TimerManager(ThreadFactory thf) {
-    thread = thf.newThread(this,"Appia Timer Manager",true);
+    thread = thf.newThread(this);
+    thread.setName("Appia Timer Manager");
+    thread.setDaemon(true);
   }
   
   //////////////////////////////////////////////

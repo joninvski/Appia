@@ -23,10 +23,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ThreadFactory;
 
 import net.sf.appia.core.TimeProvider;
 import net.sf.appia.protocols.common.AppiaThreadFactory;
-import net.sf.appia.protocols.common.ThreadFactory;
 
 
 /**
@@ -66,7 +66,8 @@ public class Benchmark {
 	private Benchmark(TimeProvider tp, ThreadFactory threadFactory) {
 		shHook = new SHook(hash);
 		timeProvider = tp;
-		Thread hook = threadFactory.newThread(shHook,"Benchmark Shutdown Hook");
+		final Thread hook = threadFactory.newThread(shHook);
+        hook.setName("Benchmark Shutdown Hook");
 		Runtime.getRuntime().addShutdownHook(hook);
 	}		
 
@@ -79,7 +80,7 @@ public class Benchmark {
 	public void stopTagged(String s, String tag) {
 		//System.out.println("stop tagged start  " + s);
 		stopBench(s+tag);
-		Measure m = (Measure) hash.get(s+tag);
+		final Measure m = (Measure) hash.get(s+tag);
 		indepBench(s, m.totalTime);
 		hash.remove(s+tag);
 		//System.out.println("stop tagged end  " + s);

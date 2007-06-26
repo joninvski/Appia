@@ -19,6 +19,8 @@
  */
 package net.sf.appia.protocols.common;
 
+import java.util.concurrent.ThreadFactory;
+
 /**
  * This class defines a AppiaThreadFactory.
  * 

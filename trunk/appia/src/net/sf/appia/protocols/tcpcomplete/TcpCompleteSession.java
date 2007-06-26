@@ -232,7 +232,8 @@ public void init(SessionProperties params) {
         
         //create accept thread int the request port.
       acceptThread = new AcceptReader(ss,this,e.getChannel(),socketLock);
-      final Thread t = e.getChannel().getThreadFactory().newThread(acceptThread,"TCP Accept thread from port "+ourPort);
+      final Thread t = e.getChannel().getThreadFactory().newThread(acceptThread);
+      t.setName("TCP Accept thread from port "+ourPort);
       t.start();
       
       e.localHost=HostUtils.getLocalAddress();
@@ -424,8 +425,9 @@ public void init(SessionProperties params) {
   protected void addSocket(HashMap hr, InetSocketAddress iwp,Socket socket,Channel channel){
     synchronized(socketLock){
       final TcpReader reader = new TcpReader(socket,this,ourPort,iwp.getPort(),channel);
-      channel.getThreadFactory().newThread(reader, "TCP reader thread ["+iwp+"]").start();
-      
+      final Thread t = channel.getThreadFactory().newThread(reader);
+      t.setName("TCP reader thread ["+iwp+"]");
+      t.start();
 //      hm.put(iwp,socket);
       hr.put(iwp,reader);
     }

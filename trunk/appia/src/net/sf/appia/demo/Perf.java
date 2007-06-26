@@ -23,10 +23,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
+import java.util.concurrent.ThreadFactory;
 
 import net.sf.appia.core.*;
 import net.sf.appia.protocols.common.AppiaThreadFactory;
-import net.sf.appia.protocols.common.ThreadFactory;
 import net.sf.appia.test.perf.PerfLayer;
 import net.sf.appia.test.perf.PerfSession;
 import net.sf.appia.xml.utils.SessionProperties;
@@ -245,12 +245,14 @@ public class Perf {
       }
       
       if (instances > 1) {
-    	    threadFactory.newThread(new Runnable(){
+    	    final Thread t = threadFactory.newThread(new Runnable(){
     		  public void run() {
     			  System.out.println("Instance "+appiaInstance+" running on thread "+this);
     			  appiaInstance.instanceRun();
     		  }    		  
-    	    }, "Perf").start();
+    	    });
+            t.setName("Perf");
+            t.start();
       } else {
         System.out.println("Instance "+appiaInstance+" running on thread "+Thread.currentThread());
         appiaInstance.instanceRun();

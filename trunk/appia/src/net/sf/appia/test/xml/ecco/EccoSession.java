@@ -161,8 +161,9 @@ public class EccoSession extends Session implements InitializableSession {
         local = new InetSocketAddress(event.localHost,event.port);
         
         shell = new MyShell(channel);
-        event.getChannel().getThreadFactory().newThread(shell,"Ecco shell").start();
-
+        final Thread t = event.getChannel().getThreadFactory().newThread(shell);
+        t.setName("Ecco shell");
+        t.start();
     }
 
     /*

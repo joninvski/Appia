@@ -32,6 +32,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.concurrent.ThreadFactory;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
@@ -49,7 +50,6 @@ import net.sf.appia.core.message.Message;
 import net.sf.appia.core.message.MsgBuffer;
 import net.sf.appia.protocols.common.RegisterSocketEvent;
 import net.sf.appia.protocols.common.SendableNotDeliveredEvent;
-import net.sf.appia.protocols.common.ThreadFactory;
 import net.sf.appia.protocols.frag.MaxPDUSizeEvent;
 import net.sf.appia.protocols.utils.HostUtils;
 import net.sf.appia.protocols.utils.ParseUtils;
@@ -293,7 +293,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         final UdpSimpleReader multicastReader = 
           new UdpSimpleReader(this, multicastSock, ipMulticast, e.fullDuplex ? null : myAddress);
         final Thread thread = e.getChannel().getThreadFactory().
-                newThread(multicastReader,"MulticastReaderThread ["+ipMulticast+"]");
+                newThread(multicastReader);
+        thread.setName("MulticastReaderThread ["+ipMulticast+"]");
         multicastReader.setParentThread(thread);
         thread.start();
         
@@ -451,9 +452,9 @@ public class UdpSimpleSession extends Session implements InitializableSession {
 	}
 
     /* The socket is binded. Launch reader*/
-	//FIXME
     sockReader = new UdpSimpleReader(this, sock, myAddress);
-    Thread t = threadFactory.newThread(sockReader,"UdpSimpleReader ["+myAddress+"]");
+    final Thread t = threadFactory.newThread(sockReader);
+    t.setName("UdpSimpleReader ["+myAddress+"]");
     sockReader.setParentThread(t);
     t.start();
     
