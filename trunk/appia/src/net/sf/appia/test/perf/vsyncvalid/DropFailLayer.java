@@ -40,7 +40,7 @@ public class DropFailLayer extends Layer {
     evProvide=new Class[] {};
     evRequire=new Class[] {};
     evAccept=new Class[] {
-        SendableEvent.class
+        SendableEvent.class,
     }; 
   }
 
