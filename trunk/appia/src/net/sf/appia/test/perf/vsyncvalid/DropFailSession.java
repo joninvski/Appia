@@ -71,7 +71,7 @@ public class DropFailSession extends Session implements InitializableSession {
    * Possible parameters:
    * <ul>
    * <li><b>fail</b> number of messages before failing.
-   * <li><b>exit</b> number of messages after failing after wich it exit.
+   * <li><b>exit</b> number of messages after failing after which it exit.
    * <li><b>destination</b> The destination address in the form [IP:port].
    * </ul>
    * 
