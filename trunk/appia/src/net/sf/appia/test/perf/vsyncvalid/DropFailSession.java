@@ -50,7 +50,7 @@ public class DropFailSession extends Session implements InitializableSession {
   public static final int DEFAULT_MSGS_TO_FAIL=50;
   
   /**
-   * Default number of messages after failing after wich it exit.
+   * Default number of messages after failing after which it exit.
    */
   public static final int DEFAULT_MSGS_TO_EXIT=5;
     
@@ -62,7 +62,7 @@ public class DropFailSession extends Session implements InitializableSession {
   }
   
   private int msgsToFail=DEFAULT_MSGS_TO_FAIL;
-  private int msgs_to_exit=DEFAULT_MSGS_TO_EXIT;
+  private int msgsToExit=DEFAULT_MSGS_TO_EXIT;
   private int countMsgs=0;
   private InetSocketAddress destination=null;
 
@@ -81,7 +81,7 @@ public class DropFailSession extends Session implements InitializableSession {
     if (params.containsKey("fail"))
       msgsToFail=params.getInt("fail");
     if (params.containsKey("exit"))
-      msgs_to_exit=params.getInt("exit");
+      msgsToExit=params.getInt("exit");
     if (params.containsKey("destination")) {
       try {
         destination=ParseUtils.parseSocketAddress(params.getString("destination"), null, -1);
@@ -118,7 +118,7 @@ public class DropFailSession extends Session implements InitializableSession {
       System.out.println("Messages to "+event.dest+" = "+countMsgs+"("+msgsToFail+")");
       if (countMsgs >= msgsToFail) {
         System.out.println("Dropping Message");
-        if (countMsgs >= msgsToFail+msgs_to_exit) {
+        if (countMsgs >= msgsToFail+msgsToExit) {
           System.out.println("Exiting");
           System.exit(0);
         }
