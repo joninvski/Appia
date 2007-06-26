@@ -26,7 +26,13 @@ import net.sf.appia.core.Session;
 import net.sf.appia.core.message.Message;
 import net.sf.appia.protocols.common.ServiceEvent;
 
-
+/**
+ * 
+ * This class defines a RegularServiceEvent
+ * 
+ * @author Jose Mocito
+ * @version 1.0
+ */
 public class RegularServiceEvent extends ServiceEvent {
 
 	public RegularServiceEvent(Message mid) {
