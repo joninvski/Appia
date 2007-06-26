@@ -115,9 +115,9 @@ public class DropFailSession extends Session implements InitializableSession {
     
     if ((destination != null) && event.dest.equals(destination)) {
       ++countMsgs;
-      System.out.println("msgs to "+event.dest+" = "+countMsgs+"("+msgs_to_fail+")");
+      System.out.println("Messages to "+event.dest+" = "+countMsgs+"("+msgs_to_fail+")");
       if (countMsgs >= msgs_to_fail) {
-        System.out.println("Droping Message");
+        System.out.println("Dropping Message");
         if (countMsgs >= msgs_to_fail+msgs_to_exit) {
           System.out.println("Exiting");
           System.exit(0);
