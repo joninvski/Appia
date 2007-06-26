@@ -61,7 +61,7 @@ public class DropFailSession extends Session implements InitializableSession {
     super(layer);
   }
   
-  private int msgs_to_fail=DEFAULT_MSGS_TO_FAIL;
+  private int msgsToFail=DEFAULT_MSGS_TO_FAIL;
   private int msgs_to_exit=DEFAULT_MSGS_TO_EXIT;
   private int countMsgs=0;
   private InetSocketAddress destination=null;
@@ -79,7 +79,7 @@ public class DropFailSession extends Session implements InitializableSession {
    */
   public void init(SessionProperties params) {
     if (params.containsKey("fail"))
-      msgs_to_fail=params.getInt("fail");
+      msgsToFail=params.getInt("fail");
     if (params.containsKey("exit"))
       msgs_to_exit=params.getInt("exit");
     if (params.containsKey("destination")) {
@@ -115,10 +115,10 @@ public class DropFailSession extends Session implements InitializableSession {
     
     if ((destination != null) && event.dest.equals(destination)) {
       ++countMsgs;
-      System.out.println("Messages to "+event.dest+" = "+countMsgs+"("+msgs_to_fail+")");
-      if (countMsgs >= msgs_to_fail) {
+      System.out.println("Messages to "+event.dest+" = "+countMsgs+"("+msgsToFail+")");
+      if (countMsgs >= msgsToFail) {
         System.out.println("Dropping Message");
-        if (countMsgs >= msgs_to_fail+msgs_to_exit) {
+        if (countMsgs >= msgsToFail+msgs_to_exit) {
           System.out.println("Exiting");
           System.exit(0);
         }
