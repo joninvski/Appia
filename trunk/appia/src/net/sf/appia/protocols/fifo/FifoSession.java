@@ -361,7 +361,6 @@ public class FifoSession extends Session {
 		if (hasSynActive(msgBuf)) {
 			final int confirmation = byteToSeq(msgBuf);
 			confirmedUntil(p, confirmation);
-			p.mySynAck();
 			if (FifoConfig.DEBUG_ON && debugOutput != null)
 				debugOutput.println(
 					"FIFO: Ack received until sequence "
@@ -913,12 +912,6 @@ public class FifoSession extends Session {
 						debugOutput.println(
 							"Half-connection established " + "with peer");
 				}
-			}
-			/* synAck with p==null is not expected. Can only happens if this
-			   endpoint has failed after sending a SYN and resumed quickly. 
-			   Discarding this will result in a failed connection later. Ok */
-			if (synAck && p != null) {
-				p.mySynAck();
 			}
 		}
 		/* There is one special case: It is a new peer but the Syn flag

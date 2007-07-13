@@ -1,8 +1,8 @@
 APPIA README.txt
 
-Last Updated: 2006/03/20
+Last Updated: 2007/07/13
 
-Copyright (C) 2006-2007 University of Lisbon
+Copyright (C) 2006-2007 University of Lisboa
 
 Appia is a layered communication framework implemented in Java and
 providing extended configuration and programming possibilities. 
@@ -28,7 +28,7 @@ __________________________________________________________________________
 
 Appia is written in Java thus it requires a java virtual machine
 installed in your computer. Appia currently requires the JDK version
-1.4.2 or higher. Installing/Upgrading java is beyond the scope of this
+1.5 or higher. Installing/Upgrading java is beyond the scope of this
 document. See http://java.sun.com/ for more info about this
 subject.
 
@@ -43,7 +43,7 @@ __________________________________________________________________________
 (2) LICENSE
 __________________________________________________________________________
 
-From version 3.0, Appia is distributed under the Apache License
+Since version 3.0, Appia is distributed under the Apache License
 version 2.0 (ALv2). More details can be found in the LICENSE file and
 in the web page: http://www.apache.org/licenses/LICENSE-2.0
 
@@ -177,20 +177,9 @@ __________________________________________________________________________
 
 For additional documentation and tutorials see Appia web at:
  - http://appia.di.fc.ul.pt
-or
- - http://appia.continuent.org
 
 You can subscribe to the Appia mailing list, using one of the lists provided.
 The lists can be accessed on the GForge continuent.org site, where Appia is hosted. 
-More information:
- - http://appia.continuent.org
-
-
-
-
-
-
-
 
 
 

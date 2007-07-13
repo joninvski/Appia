@@ -242,13 +242,6 @@ public class PeerInfo {
 		isHisSynSent = true;
 	}
 
-    /**
-     * @deprecated
-     */
-	public void mySynAck() {
-//		isMySynAck = true;
-	}
-
 	public void forceAck() {
 		lastAckSent = lastAckSent == 0 ? 0x7fffffff : lastAckSent - 1;
 	}
