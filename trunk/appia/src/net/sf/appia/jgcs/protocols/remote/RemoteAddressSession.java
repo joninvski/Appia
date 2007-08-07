@@ -166,7 +166,7 @@ public class RemoteAddressSession extends Session implements
 	private void trySendMessages() throws AppiaEventException {
 		if(pendingEvents.isEmpty() || addresses == null)
 			return;
-		Iterator<SendableEvent> it = pendingEvents.iterator();
+		final Iterator<SendableEvent> it = pendingEvents.iterator();
 		SendableEvent ev = null;
 		while(it.hasNext()){
 			ev = it.next();

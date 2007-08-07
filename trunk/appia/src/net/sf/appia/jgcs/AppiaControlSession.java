@@ -239,9 +239,11 @@ public class AppiaControlSession extends AbstractBlockSession {
 
 }
 
-/*
- * CLASS THAT STATES A MEMBERSHIP
+/**
+ * This class defines an implementation of the jGCS Membership interface, using Appia.
  * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
  */
 class AppiaMembership implements Membership {
 
@@ -274,7 +276,7 @@ class AppiaMembership implements Membership {
 	 * @return
 	 */
 	public List<SocketAddress> getFailed(){
-		List<SocketAddress> failedMembers = new ArrayList<SocketAddress>();
+		final List<SocketAddress> failedMembers = new ArrayList<SocketAddress>();
 		for(int i=0; i<failed.length; i++)
 			if(failed[i])
 				failedMembers.add(addresses.get(i));
@@ -340,6 +342,11 @@ class AppiaMembership implements Membership {
 		return id;
 	}
 
+    /**
+     * Retrieves the membership list.
+     * 
+     * @see net.sf.jgcs.membership.Membership#getMembershipList()
+     */
 	public List<SocketAddress> getMembershipList() {
 		return addresses;
 	}
