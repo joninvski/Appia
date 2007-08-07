@@ -15,7 +15,7 @@
 <project basedir="." default="all" name="APPIA releases">
     <property name="APPIA.web" location="web"/>
 	<property name="APPIA.temp" location="tmp"/>
-	<property name="APPIA.cvsRoot" value="nunomrc@dialnp-gw.di.fc.ul.pt:/home/appiacvsroot/appia"/>	
+	<property name="APPIA.cvsRoot" value="nunomrc@dialnp-gw.di.fc.ul.pt:/home/appiacvsroot"/>	
 	
     <target name="init">
 		<mkdir dir="${APPIA.web}"/>
