@@ -19,6 +19,9 @@
  */
 package net.sf.appia.protocols.group.primary;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
 import net.sf.appia.core.Direction;
@@ -31,6 +34,7 @@ import net.sf.appia.management.ManagedSession;
 import net.sf.appia.protocols.group.Endpt;
 import net.sf.appia.protocols.group.LocalState;
 import net.sf.appia.protocols.group.ViewState;
+import net.sf.appia.protocols.group.events.GroupSendableEvent;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.leave.LeaveEvent;
 import net.sf.appia.protocols.group.sync.BlockOk;
@@ -66,6 +70,8 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     int[] newMembers;
     boolean newMembersState[];
     
+    List<GroupSendableEvent> pendingMessages=new ArrayList<GroupSendableEvent>();
+    
     public PrimaryViewSession(Layer layer) {
         super(layer);
     }
@@ -81,6 +87,8 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             handleView((View) event);
         else if (event instanceof BlockOk)
             handleBlockOk((BlockOk) event);
+        else if (event instanceof GroupSendableEvent)
+            handleGroupSendable((GroupSendableEvent)event);
         else if (event instanceof EchoEvent)
             handleEchoEvent((EchoEvent)event);
         else if (event instanceof ProbeEvent)
@@ -99,6 +107,18 @@ public class PrimaryViewSession extends Session implements InitializableSession,
                 e.printStackTrace();
             }
         }
+    }
+
+    private void handleGroupSendable(GroupSendableEvent event) {
+        if (blocked && event.getDir() == Direction.UP){
+            pendingMessages.add(event);
+        } else
+            try {
+                event.go();
+            } catch (AppiaEventException e) {
+                e.printStackTrace();
+            }
+        
     }
 
     private void handleEchoEvent(EchoEvent event) {
@@ -287,8 +307,19 @@ public class PrimaryViewSession extends Session implements InitializableSession,
         else
             return false;
     }
-    
+
     private void deliverView() {
+        if(!pendingMessages.isEmpty()){
+            for(GroupSendableEvent ev : pendingMessages){
+                try {
+                    ev.go();
+                } catch (AppiaEventException e) {
+                    e.printStackTrace();
+                }
+            }
+            pendingMessages.clear();
+        }
+        
         log.debug("Delivering Primary View");
         lastPrimaryView = this.view;
         isPrimary = true;
@@ -321,6 +352,8 @@ public class PrimaryViewSession extends Session implements InitializableSession,
         } catch (AppiaEventException e) {
             e.printStackTrace();
         }
+        if(!pendingMessages.isEmpty())
+            pendingMessages.clear();
     }
     
     public String getParameter(String parameter) throws AppiaManagementException {

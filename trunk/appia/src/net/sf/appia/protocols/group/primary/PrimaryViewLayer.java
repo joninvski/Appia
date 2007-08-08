@@ -22,6 +22,7 @@ package net.sf.appia.protocols.group.primary;
 import net.sf.appia.core.Layer;
 import net.sf.appia.core.Session;
 import net.sf.appia.core.events.channel.EchoEvent;
+import net.sf.appia.protocols.group.events.GroupSendableEvent;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.sync.BlockOk;
 
@@ -44,6 +45,7 @@ public class PrimaryViewLayer extends Layer {
                 DeliverViewEvent.class,
                 KickEvent.class,
                 EchoEvent.class,
+                GroupSendableEvent.class,
         };
         
         evRequire = new Class[]{
