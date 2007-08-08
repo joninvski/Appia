@@ -1,4 +1,12 @@
 ========================
+DD/MM/2007   Version 4.0
+========================
+
+Replaced package names.
+Added JMX interfaces to retrieve information about Membership and Throughput;
+Fixed an issue on the Primary View protocol.
+
+========================
 25/06/2007   Version 3.3
 ========================
 
