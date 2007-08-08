@@ -51,13 +51,13 @@ public class ChannelManager extends NotificationBroadcasterSupport
 implements ChannelManagerMBean, SensorSessionListener {
 	
 	private Channel channel;
-    private Map managedSessions;
+    private Map<String,Session> managedSessions;
 	
     /**
      * Creates a new ChannelManager.
      * @param ch the managed channel.
      */
-	public ChannelManager(Channel ch, Map sessions){
+	public ChannelManager(Channel ch, Map<String,Session> sessions){
 		channel = ch;
         managedSessions = sessions;
 	}
@@ -68,7 +68,7 @@ implements ChannelManagerMBean, SensorSessionListener {
      */
     public ChannelManager(Channel ch){
         channel = ch;
-        managedSessions = new Hashtable();
+        managedSessions = new Hashtable<String,Session>();
     }
 
     /**
@@ -136,7 +136,7 @@ implements ChannelManagerMBean, SensorSessionListener {
 	}
 
     /**
-     * Gets the name of the menaged channel.
+     * Gets the name of the managed channel.
      * 
      * @see net.sf.appia.management.jmx.ChannelManagerMBean#getChannelName()
      */
@@ -146,6 +146,13 @@ implements ChannelManagerMBean, SensorSessionListener {
 
     public boolean getStarted() {
         return channel.isStarted();
+    }
+    
+    public int getUsedMemory(){
+        if(channel.getMemoryManager() == null)
+            return -1;
+        else
+            return channel.getMemoryManager().used();
     }
 
 }

@@ -46,12 +46,12 @@ import net.sf.appia.core.Session;
  */
 public abstract class AbstractSensorSession extends Session implements SensorSession {
 	
-	private List listeners;
+	private List<SensorSessionListener> listeners;
 	private long sequenceNumber = 0;
 	
 	public AbstractSensorSession(Layer layer) {
 		super(layer);
-		listeners = new ArrayList();
+		listeners = new ArrayList<SensorSessionListener>();
 	}
 
 	/* (non-Javadoc)
