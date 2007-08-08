@@ -75,7 +75,7 @@ public class JMXClient {
         // Connect a JSR 160 JMXConnector to the server side
         final JMXConnector connector = JMXConnectorFactory.connect(url);        
         
-        log.info("Retieving MBean server connection...");
+        log.info("Retrieving MBean server connection...");
         // Retrieve an MBeanServerConnection that represent the MBeanServer the remote
         // connector server is bound to
         final MBeanServerConnection connection = connector.getMBeanServerConnection();

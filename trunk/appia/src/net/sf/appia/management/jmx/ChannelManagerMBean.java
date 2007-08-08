@@ -39,6 +39,7 @@ import net.sf.appia.management.AppiaManagementException;
 public interface ChannelManagerMBean {
 	public String getChannelName();
     public boolean getStarted();
+    public int getUsedMemory();
 	public void setParameter(String parameter, String value, String sessionID) throws AppiaManagementException ;
 	public String getParameter(String parameter, String sessionID) throws AppiaManagementException;
 }

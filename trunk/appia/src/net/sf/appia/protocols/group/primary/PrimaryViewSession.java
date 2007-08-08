@@ -324,6 +324,19 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     }
     
     public String getParameter(String parameter) throws AppiaManagementException {
+        if(parameter.equals("blocked"))
+            return (blocked)? "true":"false";
+        if(parameter.equals("view")){
+            String viewStr = "Membership: ";
+            if(vs != null){
+                viewStr += ("\nNumber of members: "+vs.view.length+"\nMembers:\n");
+                for (int i = 0; i < vs.view.length; i++)
+                    viewStr += view.vs.view[i] + "\n";
+            }
+            else 
+                viewStr += "NULL";
+            return viewStr;
+        }
         throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+this.getClass().getName());
     }
 

@@ -55,7 +55,6 @@ import org.apache.log4j.Logger;
  */    
 public class SetPrimaryProcess {
     
-    private static final long SECOND_IN_MILLIS = 1000;
     private static Logger log = Logger.getLogger(SetPrimaryProcess.class);
     
     private SetPrimaryProcess(){}
