@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
+import net.sf.appia.core.AppiaError;
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Direction;
 import net.sf.appia.core.Event;
@@ -50,6 +51,7 @@ import org.apache.log4j.Logger;
 public class CausalWaitingSession extends Session {
 
     private static Logger log = Logger.getLogger(CausalWaitingSession.class);
+    private static final boolean debugOn = false;
     
 	private LocalState ls;
 	private ViewState vs;
@@ -62,7 +64,7 @@ public class CausalWaitingSession extends Session {
 	/**
 	 * List of received events still to be delivered.
 	 */
-	private LinkedList pending = new LinkedList();
+	private LinkedList<EventContainer> pending = new LinkedList<EventContainer>();
 	
 	/**
 	 * Constructs a new waiting causal order protocol session.
@@ -109,8 +111,8 @@ public class CausalWaitingSession extends Session {
 		
 		// Sanity check
 		if (!pending.isEmpty()) {
-			System.err.println("CausalWaitingSession: received new view but pending messages still exist! View synchrony properties compromised!");
-			System.exit(1);
+			log.fatal("Received new view but pending messages still exist! View synchrony properties compromised!");
+            throw new AppiaError("Received new view but pending messages still exist! View synchrony properties compromised!");
 		}
 		
 		try {
@@ -129,7 +131,8 @@ public class CausalWaitingSession extends Session {
     }
     
 	private void handleGroupSendableEvent(GroupSendableEvent event) {
-        System.out.println("CAUSAL Processing event "+event);
+        if(debugOn && log.isDebugEnabled())
+            log.debug("CAUSAL Processing event "+event);
 		if (event.getDir() == Direction.DOWN) {
 			Message omsg = event.getMessage();
 			for (int i = 0; i < VC.length; i++)
