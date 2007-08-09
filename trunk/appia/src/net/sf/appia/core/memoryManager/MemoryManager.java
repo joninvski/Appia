@@ -43,7 +43,7 @@ public class MemoryManager {
 	 */
 	private int maxSize;
 	/*
-	 * contains the size of alocated memory
+	 * contains the size of allocated memory
 	 */
 	private int currentSize;
 	/*
@@ -78,7 +78,7 @@ public class MemoryManager {
 	
 	/**
 	 * Verifies if the channel is above the water mark specified 
-	 * by the user in the contructor.
+	 * by the user in the constructor.
 	 * @return true if the amount of memory reached the threshold.
 	 */
 	public boolean aboveThreshold(int direction) throws InvalidParameterException {
@@ -94,8 +94,8 @@ public class MemoryManager {
 	
 	/**
 	 * Block while the used bytes in this memory manager is above the threshold.
-	 * @return true if it is above the threshold, false otherwhise. 
-	 * This should return allways true, but is an open window for future modifications.
+	 * @return true if it is above the threshold, false otherwise. 
+	 * This should return always true, but is an open window for future modifications.
 	 * @throws InterruptedException
 	 * @see Object#wait()
 	 */
@@ -165,7 +165,7 @@ public class MemoryManager {
 	}
 	
 	/**
-	 * Sets the Maximun size of memory that the channel of this memory manager can hold.
+	 * Sets the Maximum size of memory that the channel of this memory manager can hold.
 	 *
 	 * If the new specified value is lower than 0 or lower than the current used size, throws
 	 * a {@link AppiaWrongSizeException}.
