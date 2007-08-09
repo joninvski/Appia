@@ -87,8 +87,6 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             handleView((View) event);
         else if (event instanceof BlockOk)
             handleBlockOk((BlockOk) event);
-        else if (event instanceof GroupSendableEvent)
-            handleGroupSendable((GroupSendableEvent)event);
         else if (event instanceof EchoEvent)
             handleEchoEvent((EchoEvent)event);
         else if (event instanceof ProbeEvent)
@@ -97,6 +95,8 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             handleDeliverViewEvent((DeliverViewEvent) event);
         else if (event instanceof KickEvent)
             handleKickEvent((KickEvent) event);
+        else if (event instanceof GroupSendableEvent)
+            handleGroupSendable((GroupSendableEvent)event);
         else {
             if (log.isDebugEnabled())
                 log.error("Received unexpected event: "+event);
