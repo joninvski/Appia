@@ -106,7 +106,7 @@ public class Appia {
   public void instanceRemoveListenRequest(ExternalEvent descriptor) {}
 
   public synchronized void instanceInsertedEvent() {
-    if ( nEvents == 0 )
+    if ( nEvents != 0 )
       notify();
     nEvents++;
   }
@@ -163,10 +163,6 @@ public class Appia {
         //so other threads can run
         Thread.yield();
       }
-      // notify threads that are blocked in asyncGo
-      //synchronized(Appia.class){
-      //  Appia.class.notifyAll();
-      //}
     }
 
   }
