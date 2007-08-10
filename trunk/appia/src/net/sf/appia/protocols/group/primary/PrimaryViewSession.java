@@ -110,7 +110,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     }
 
     private void handleGroupSendable(GroupSendableEvent event) {
-        if (blocked && event.getDir() == Direction.UP){
+        if (blocked && event.getDir() == Direction.UP && this.view != null && event.view_id.equals(vs.id)){
             pendingMessages.add(event);
         } else
             try {
@@ -319,6 +319,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
         } catch (AppiaEventException e) {
             e.printStackTrace();
         }
+        this.view = null;
         primaryCounter++;
         
         if(!pendingMessages.isEmpty()){
