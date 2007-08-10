@@ -309,17 +309,6 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     }
 
     private void deliverView() {
-        if(!pendingMessages.isEmpty()){
-            for(GroupSendableEvent ev : pendingMessages){
-                try {
-                    ev.go();
-                } catch (AppiaEventException e) {
-                    e.printStackTrace();
-                }
-            }
-            pendingMessages.clear();
-        }
-        
         log.debug("Delivering Primary View");
         lastPrimaryView = this.view;
         isPrimary = true;
@@ -331,6 +320,17 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             e.printStackTrace();
         }
         primaryCounter++;
+        
+        if(!pendingMessages.isEmpty()){
+            for(GroupSendableEvent ev : pendingMessages){
+                try {
+                    ev.go();
+                } catch (AppiaEventException e) {
+                    e.printStackTrace();
+                }
+            }
+            pendingMessages.clear();
+        }
     }
     
     private void kick(Channel ch, int dest) {
