@@ -53,6 +53,12 @@ import net.sf.jgcs.utils.Mailbox;
 
 import org.apache.log4j.Logger;
 
+/**
+ * This class defines a AppiaDataSession and implements the DataSession of jGCS.
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
+ */
 public class AppiaDataSession extends AbstractDataSession {
 
 	private static Logger logger = Logger.getLogger(AppiaDataSession.class);
@@ -119,14 +125,14 @@ public class AppiaDataSession extends AbstractDataSession {
 			if( ! (service instanceof AppiaService))
 				throw new UnsupportedServiceException("Service "+service+" is not supported.");
 			channel = channelsMap.get(service);
-			if(channel == null)
-				throw new UnsupportedServiceException("There is no Appia channel for the service "+service);
 		}
 		else
 			channel = channelsMap.get(defaultSendService);
+        if(channel == null)
+            throw new UnsupportedServiceException("There is no Appia channel for the service "+service);
 
 		try {
-			MessageSender event = new MessageSender(channel,Direction.DOWN,(AppiaMessage) msg,destination);
+			final MessageSender event = new MessageSender(channel, Direction.DOWN,(AppiaMessage)msg, destination);
 			event.asyncGo(channel,Direction.DOWN);
 		} catch (AppiaEventException e) {
 			throw new IOException("Failed to send message due to an Appia Event Exception:"+
@@ -136,8 +142,8 @@ public class AppiaDataSession extends AbstractDataSession {
 			logger.debug("Message "+msg+" delivered to the Appia channel with service "+service);
 	}
 
-	/*
-	 * Thread that reveives events from the mailbox and deliver them to 
+	/**
+	 * Thread that receives events from the mailbox and deliver them to 
 	 * the listeners.
 	 * @author nuno
 	 *
@@ -192,7 +198,7 @@ public class AppiaDataSession extends AbstractDataSession {
 					msg.setSenderAddress(sender_addr);
 					if(workerlog.isDebugEnabled())
 						workerlog.debug("Delivering message: "+msg);
-					Object ctx = notifyMessageListeners(msg);
+					final Object ctx = notifyMessageListeners(msg);
 					if(ctx != null){
 						servicesMap.put(msg,ctx);
 						if(workerlog.isDebugEnabled())

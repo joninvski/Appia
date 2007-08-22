@@ -53,6 +53,7 @@ public class AppiaService implements Service {
 		try {
 			value = AppiaServiceList.getValueForService(service);
 		} catch (JGCSException e) {
+            log.debug("Error getting the value for the service: "+service);
 			e.printStackTrace();
 		}
         if(log.isDebugEnabled())
@@ -66,7 +67,7 @@ public class AppiaService implements Service {
 	public int compare(Service serviceObject) throws UnsupportedServiceException {
 		if(! (serviceObject instanceof AppiaService))
 			throw new UnsupportedServiceException("Service not valid: "+service.getClass().getName());
-		AppiaService other = (AppiaService) serviceObject;
+		final AppiaService other = (AppiaService) serviceObject;
 		return value.compareTo(other.value);
 	}
 	
@@ -78,7 +79,7 @@ public class AppiaService implements Service {
 	@Override
 	public boolean equals(Object o){
 		if (o instanceof AppiaService) {
-			AppiaService as = (AppiaService) o;
+			final AppiaService as = (AppiaService) o;
 			return as.service.equals(this.service);
 		}
 		else
