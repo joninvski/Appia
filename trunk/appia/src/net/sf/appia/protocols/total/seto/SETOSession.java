@@ -218,9 +218,9 @@ public class SETOSession extends Session implements InitializableSession {
 		vs=view.vs;
 		
 		// Sends any pending messages before delivering the new view to other layers
-		deliverRegular();
+		//deliverRegular();
 		deliverUniform();
-		dumpPendingMessages();
+		//dumpPendingMessages();
 
 		log.debug(vs.toString());
 		log.debug(ls.toString());
