@@ -138,8 +138,20 @@ public class SendableEvent extends Event implements Cloneable {
  	 * @see net.sf.appia.core.Event#cloneEvent()
  	 */
 	public Event cloneEvent() throws CloneNotSupportedException {
-		final SendableEvent ev = (SendableEvent) super.cloneEvent();
-		ev.message = (Message) message.clone();
-		return ev;
+	    final SendableEvent ev = (SendableEvent) super.cloneEvent();
+	    ev.message = (Message) message.clone();
+	    return ev;
 	}
+
+	/**
+	 * Called when the garbage Collector runs and this object is going to
+	 * be destroyed.
+	 * @see java.lang.Object#finalize()
+	 */
+	protected void finalize() throws Throwable {
+	    super.finalize();
+        if(message!=null && message.length() > 0)
+	    detachFromMemory();
+	}
+
 }

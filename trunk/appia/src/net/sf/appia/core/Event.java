@@ -392,21 +392,4 @@ public class Event {
 	  this.priority = priority;
   }
   
-//  /**
-//   * Called when the garbage Collector runs and this object is going to
-//   * be destroyed.
-//   * This method yelds other threads that can be
-//   * blocked on asyncGo() method.
-//   * @see java.lang.Object#finalize()
-//   */
-//  protected void finalize() throws Throwable {
-//    super.finalize();
-//    if (channel != null) {
-//      MemoryManager mm=channel.getMemoryManager();
-//      if (mm != null)
-//        synchronized (mm) {
-//          mm.notifyAll();
-//        }
-//    }
-//  }
 }
