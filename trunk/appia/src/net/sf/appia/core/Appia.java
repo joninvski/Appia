@@ -161,7 +161,7 @@ public class Appia {
       if ( i >= eventSchedulers.size() ) {
         i=0;
         //so other threads can run
-        Thread.yield();
+        // Thread.yield();
       }
     }
 
