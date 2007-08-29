@@ -246,7 +246,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             // Last view was primary
             if (event.getMessage().popBoolean()) {
                 // Peer was in a primary partition at some point
-                if (ls.my_rank == vs.getRank(vs.getSurvivingMembers(vsOld)[0])) {
+                if (ls.my_rank == vs.getRank(vs.getSurvivingMembers(vsOld)[0]) && !blocked) {
                     // Process has the lowest rank from the surviving members. Kick peer! 
                     kick(event.getChannel(), event.orig);
                 }
@@ -254,7 +254,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             }
             else if (++ackCount == newMembers.length) {
                 // New peers were never in a primary partition and all new members probed
-                if (ls.my_rank == vs.getRank(vs.getSurvivingMembers(vsOld)[0])) {
+                if (ls.my_rank == vs.getRank(vs.getSurvivingMembers(vsOld)[0]) && ! blocked) {
                     // Process has the lowest rank from the surviving members. Order view delivery!
                     try {
                         final DeliverViewEvent deliver = new DeliverViewEvent(event.getChannel(), Direction.DOWN, this, vs.group, vs.id);
@@ -346,6 +346,9 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     }
     
     private void leave(Channel ch) {
+        if(blocked)
+            return;
+        
         log.debug("Leaving group...");
         try {
             final LeaveEvent leave = new LeaveEvent(ch, Direction.DOWN, this, vs.group, vs.id);

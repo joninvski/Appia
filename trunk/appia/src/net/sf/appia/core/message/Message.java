@@ -74,8 +74,7 @@ public class Message implements Cloneable {
 	
 	public static final int INCREASE = 512;
 	
-	// From ExtendedMessage:
-	public static final boolean CHECK = true;
+	public static final boolean CHECK = false;
 	private static boolean checked = false;
 	
 	private static final int SHORTSIZE = 2;
