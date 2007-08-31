@@ -241,7 +241,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     }
     
     private void handleProbeEvent(ProbeEvent event) {
-        log.debug("Received ProbeEvent");
+        log.debug("Received ProbeEvent from "+event.orig);
         if (isPrimary) {
             // Last view was primary
             if (event.getMessage().popBoolean()) {

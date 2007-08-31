@@ -21,6 +21,7 @@
 package net.sf.appia.protocols.total.seto;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
@@ -36,12 +37,14 @@ import net.sf.appia.core.TimeProvider;
 import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.core.message.Message;
+import net.sf.appia.protocols.group.Endpt;
 import net.sf.appia.protocols.group.LocalState;
 import net.sf.appia.protocols.group.ViewID;
 import net.sf.appia.protocols.group.ViewState;
 import net.sf.appia.protocols.group.events.GroupSendableEvent;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.leave.LeaveEvent;
+import net.sf.appia.protocols.group.primary.DeliverViewEvent;
 import net.sf.appia.protocols.group.sync.BlockOk;
 import net.sf.appia.protocols.total.common.RegularServiceEvent;
 import net.sf.appia.protocols.total.common.SETOServiceEvent;
@@ -82,8 +85,8 @@ public class SETOSession extends Session implements InitializableSession {
 	
 	private LinkedList R = new LinkedList(), // Received 
 		S = new LinkedList(),  // Sequence
-		G = new LinkedList(),  // Regular
-		O = new LinkedList();  // Optimistic
+        O = new LinkedList(),  // Optimistic
+		G = new LinkedList();  // Regular
 	private long [] delay = null, r_delay = null;
 	
 	private long[] lastOrderList;
@@ -137,6 +140,8 @@ public class SETOSession extends Session implements InitializableSession {
 			handleBlockOk((BlockOk)event);
 		else if(event instanceof View)
 			handleNewView((View)event);
+        else if(event instanceof AckViewEvent)
+            handleAckViewEvent((AckViewEvent) event);
 		else if(event instanceof SETOTimer)
 			handleTimer((SETOTimer)event);
 		else if(event instanceof SeqOrderEvent)
@@ -196,9 +201,6 @@ public class SETOSession extends Session implements InitializableSession {
 		log.debug("Impossible to send messages. Waiting for a new View");
 		isBlocked = true;
 		
-		if (vs.view.length > 1)
-			sendUniformInfo(ok.getChannel());
-		
 		try {
 			ok.go();
 		} catch (AppiaEventException e) {
@@ -206,55 +208,106 @@ public class SETOSession extends Session implements InitializableSession {
 		}
 	}
 
+    private void convertUniformInfo() {
+        long[] oldLOList = lastOrderList;
+        lastOrderList = new long[vs.view.length];
+        Arrays.fill(lastOrderList,0);
+        Endpt[] survivors = vs.getSurvivingMembers(vs_old);
+        for (int i = 0; i < survivors.length; i++) {
+            int oldRank = vs_old.getRank(survivors[i]);
+            int newRank = vs.getRank(survivors[i]);
+            lastOrderList[newRank] = oldLOList[oldRank];
+        }
+    }
+
+    private Endpt[] survivors;
+    private View pendingView;
+    
 	/**
 	 * New view.
 	 * @param view
 	 */
 	private void handleNewView(View view) {
-		vs_old = vs;
-		
-		isBlocked = false;
-		ls=view.ls;
-		vs=view.vs;
-		
-		// Sends any pending messages before delivering the new view to other layers
-		//deliverRegular();
-		deliverUniform();
-		//dumpPendingMessages();
+        System.out.println("NEW VIEW");
+        isBlocked = false;
+        
+        vs_old = vs;
+        
+        ls=view.ls;
+        vs=view.vs;
+        
+        pendingView = view;
+        
+        if (vs_old != null) {
+            survivors = vs.getSurvivingMembers(vs_old);
+            convertUniformInfo();
+            dumpPendingMessages();
+            ackView(view.getChannel());
+        }
+        else {
+            lastOrderList = new long[vs.addresses.length];
+            Arrays.fill(lastOrderList,0);
+            deliverPendingView();
+        }
 
+        reset();
+        delay = new long[vs.addresses.length];
+        Arrays.fill(delay,0);
+        r_delay = new long[vs.addresses.length];
+        Arrays.fill(r_delay,0);
+        
 		log.debug(vs.toString());
 		log.debug(ls.toString());
 		log.debug("NEW VIEW: My rank: "+ls.my_rank+" My ADDR: "+vs.addresses[ls.my_rank]);
-
-		// resets sequence numbers and information about delays
-		reset();
-		delay = new long[vs.addresses.length];
-		Arrays.fill(delay,0);
-		r_delay = new long[vs.addresses.length];
-		Arrays.fill(r_delay,0);
-
-		lastOrderList = new long[vs.view.length];
-		Arrays.fill(lastOrderList,0);
-
-		try {
-			view.go();
-		} catch (AppiaEventException e) {
-			e.printStackTrace();
-		}
-		
-		if (!utSet) {
-			try {
-				UniformTimer ut = new UniformTimer(UNIFORM_INFO_PERIOD,channel,Direction.DOWN,this,EventQualifier.ON);
-				ut.go();
-				utSet = true;
-			} catch (AppiaEventException e) {
-				e.printStackTrace();
-			} catch (AppiaException e) {
-				e.printStackTrace();
-			}
-		}
 	}
 	
+    private void ackView(Channel ch) {
+        try {
+            AckViewEvent ack = new AckViewEvent(ch, Direction.DOWN, this, vs.group, vs.id);
+//            int dest[] = new int[survivors.length];
+//            for (int i = 0; i < dest.length; i++)
+//                dest[i] = vs.getRank(survivors[i]);
+            //ack.dest = dest;
+            ack.go();
+        } catch (AppiaEventException e) {
+            e.printStackTrace();
+        }
+        ackCounter = 0;
+    }
+    
+    private int ackCounter;
+    
+    private void handleAckViewEvent(AckViewEvent ack) {
+        if (ack.view_id.equals(vs.id)) {
+            // Due to view synchrony sender and receiver have seen the same messages
+            lastOrderList[ack.orig] = lastOrderList[ls.my_rank];
+            ackCounter++;
+            if (ackCounter == vs.view.length) {
+                deliverUniform();
+                deliverPendingView();
+            }
+        }
+    }
+    
+    private void deliverPendingView() {
+        try {
+            pendingView.go();
+        } catch (AppiaEventException e) {
+            e.printStackTrace();
+        }
+        
+        if (!utSet) {
+            try {
+                UniformTimer ut = new UniformTimer(UNIFORM_INFO_PERIOD,channel,Direction.DOWN,this,EventQualifier.ON);
+                ut.go();
+                utSet = true;
+            } catch (AppiaEventException e) {
+                e.printStackTrace();
+            } catch (AppiaException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 	/**
 	 * @param event
 	 */
@@ -271,7 +324,8 @@ public class SETOSession extends Session implements InitializableSession {
 			reliableDATAMulticast(event, msgDelay);
 		}
 		// events from the network
-		else{
+		else{System.out.println("Received event while blocked:"+event.getClass().getName()+" from session: "+
+                event.getSource()+". Ignoring it.");
 			reliableDATADeliver(event);
 		}		
 	}
@@ -357,6 +411,8 @@ public class SETOSession extends Session implements InitializableSession {
 				delay[ls.my_rank] = max(r_delay);
 			}
 		}
+        else
+            O.remove(container);
 	}
 	
 	/**
@@ -429,11 +485,8 @@ public class SETOSession extends Session implements InitializableSession {
 		
 			if (orderedMsg != null) {
 				ListContainer msgContainer = getMessage(orderedMsg.header,R);
-				// uncomment next line to always deliver optimistic message before regular delivery.
-				//deliverOptimistic(msgContainer);
 				
 				if (msgContainer != null && !hasMessage(orderedMsg,G)) {
-					O.add(msgContainer);
 					log.debug("["+ls.my_rank+"] Delivering regular "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMillis());
 					try {
 						RegularServiceEvent rse = new RegularServiceEvent(channel, Direction.UP, this, msgContainer.event.getMessage());
@@ -442,7 +495,13 @@ public class SETOSession extends Session implements InitializableSession {
 						e1.printStackTrace();
 					}
 					G.addLast(orderedMsg);
-					
+				
+                    // Avoid delivery of optimistic service after the regular service
+                    if (O.contains(msgContainer))
+                        O.remove(msgContainer);
+                    else
+                        O.add(msgContainer);
+                    
 					// ADJUSTING DELAYS
 					log.debug(ls.my_rank+": Adjusting delays...");
 					long _final = orderedMsg.time;
@@ -567,7 +626,7 @@ public class SETOSession extends Session implements InitializableSession {
 	 * Resets all sequence numbers and auxiliary variables
 	 */
 	private void reset(){
-		globalSN = 0;
+//		globalSN = 0;
 		localSN = 0;
 		sendingLocalSN = 0;
 		lastfinal=-1;
@@ -580,37 +639,19 @@ public class SETOSession extends Session implements InitializableSession {
 	 * in a deterministic order. This can be done because VSync ensures that when a new View
 	 * arrives, all members have the same set of messages.
 	 */
-	private void dumpPendingMessages() { 
-		boolean deliverUniform = false;
-		if (hasMajority())
-			deliverUniform = true;
-	
-		boolean finnished = false;
-		while( !finnished){
-			ListContainer msgContainer = getNextDeterministic();
+	private void dumpPendingMessages() {
+		ListContainer container = null;
+		while((container = getNextDeterministic()) != null){
 			if(log.isDebugEnabled()){
-				log.debug("Message in deterministic order with SN="+(localSN+1)+" -> "+msgContainer);
+				log.debug("Message in deterministic order with SN="+(localSN+1)+" -> "+container);
 			}
-			if(msgContainer != null){
-				log.debug("Resending message to Appl: "+msgContainer.event);
-				delivery(msgContainer.event);
-				if (deliverUniform) {
-					try {
-						// deliver uniform notification
-						UniformServiceEvent use = new UniformServiceEvent(channel, Direction.UP, this, msgContainer.event.getMessage());
-						use.go();
-					} catch (AppiaEventException e) {
-						e.printStackTrace();
-					}
-				}
-				getRemoveMessage(msgContainer.header,R);
-				// This should not be necessary because the next step will be a view change
-				// and the localSN variable will be reset to 0
-				//localSN++;
-			}
-			else
-				finnished = true;
+			SEQHeader header = new SEQHeader(container.header.sender(), container.header.sn(), ++lastOrderList[ls.my_rank]);
+            lastOrderList[ls.my_rank] = header.order;
+			S.add(new ListSEQContainer(header,timeProvider.currentTimeMillis()));
+			log.debug("Resending message to Appl: "+container.event);
+			// getRemoveMessage(container.header,R);
 		}
+        deliverRegular();
 	}
 
 	private boolean hasMajority() {
@@ -655,7 +696,7 @@ public class SETOSession extends Session implements InitializableSession {
                 }
             }
         } 
-        return (ListContainer) R.remove(pos);
+        return (ListContainer) R.get(pos);
 	}
 
     /**

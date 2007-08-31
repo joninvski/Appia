@@ -47,6 +47,7 @@ public class SETOLayer extends Layer {
 				GroupSendableEvent.class,
 				View.class,
 				BlockOk.class,
+                AckViewEvent.class,
 				SeqOrderEvent.class,
 				SETOTimer.class,
 				UniformTimer.class,

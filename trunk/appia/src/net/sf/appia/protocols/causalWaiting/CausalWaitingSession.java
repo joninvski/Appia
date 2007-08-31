@@ -33,6 +33,7 @@ import net.sf.appia.core.message.Message;
 import net.sf.appia.protocols.group.LocalState;
 import net.sf.appia.protocols.group.ViewState;
 import net.sf.appia.protocols.group.events.GroupSendableEvent;
+import net.sf.appia.protocols.group.events.Send;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.leave.LeaveEvent;
 
@@ -133,33 +134,40 @@ public class CausalWaitingSession extends Session {
 	private void handleGroupSendableEvent(GroupSendableEvent event) {
         if(debugOn && log.isDebugEnabled())
             log.debug("CAUSAL Processing event "+event);
-		if (event.getDir() == Direction.DOWN) {
-			Message omsg = event.getMessage();
-			for (int i = 0; i < VC.length; i++)
-				omsg.pushLong(VC[i]);
-			try {
-				event.go();
-			} catch (AppiaEventException e) {
-				e.printStackTrace();
-			}
-			VC[ls.my_rank]++;
-		}
-		else {
-			if (event.orig != ls.my_rank) {
-				long[] VCm = new long[VC.length];
-				extractVCm(event.getMessage(), VCm);
-				pending.add(new EventContainer(event, VCm));
-				deliverPending();
-			}
-			else {
-				clearVC(event.getMessage());
-				try {
-					event.go();
-				} catch (AppiaEventException e) {
-					e.printStackTrace();
-				}
-			}
-		}
+        if (!(event instanceof Send)) {
+            if (event.getDir() == Direction.DOWN) {
+                Message omsg = event.getMessage();
+                for (int i = 0; i < VC.length; i++)
+                    omsg.pushLong(VC[i]);
+                try {
+                    event.go();
+                } catch (AppiaEventException e) {
+                    e.printStackTrace();
+                }
+                VC[ls.my_rank]++;
+            }
+            else {
+                if (event.orig != ls.my_rank) {
+                    long[] VCm = new long[VC.length];
+                    extractVCm(event.getMessage(), VCm);
+                    pending.add(new EventContainer(event, VCm));
+                    deliverPending();
+                }
+                else {
+                    clearVC(event.getMessage());
+                    try {
+                        event.go();
+                    } catch (AppiaEventException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        } else
+            try {
+                event.go();
+            } catch (AppiaEventException e) {
+                e.printStackTrace();
+            }
 	}
 	
 	/**
