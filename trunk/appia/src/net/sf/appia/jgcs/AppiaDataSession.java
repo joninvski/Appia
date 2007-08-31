@@ -23,6 +23,7 @@ package net.sf.appia.jgcs;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -82,7 +83,7 @@ public class AppiaDataSession extends AbstractDataSession {
 		worker = new PullPushWorker();
 		worker.start();
 		channelsMap = new HashMap<AppiaService,Channel>();
-		servicesMap = new HashMap<AppiaMessage,Object>();
+		servicesMap = new Hashtable<AppiaMessage,Object>();
 		logger.debug("Number of channels: "+channels.size());
 		for(Channel ch : channels){
 			logger.debug("Channel: "+ch.getChannelID());
@@ -176,12 +177,16 @@ public class AppiaDataSession extends AbstractDataSession {
 			Event event;
 			while(running.get()){
 				workerlog.debug("before receive");
+                System.out.println("LIST SIZE before: "+mailbox.getSize());
 				event = mailbox.removeNext();
-				workerlog.debug("after receive: "+event);
-				if(event == null){
-					workerlog.debug("Received null event from Appia mailbox");
-					continue;
-				}
+                System.out.println("LIST SIZE after: "+mailbox.getSize());
+                if(event == null){
+                    //if(workerlog.isDebugEnabled())
+                        workerlog.debug("Received null event from Appia mailbox");
+                    continue;
+                }
+                //if(workerlog.isDebugEnabled())
+                    workerlog.debug("after receive: "+event);
 				if(event instanceof JGCSGroupEvent || event instanceof JGCSSendEvent){
 					AppiaMessage msg;
 					if(event instanceof JGCSGroupEvent)
@@ -202,7 +207,8 @@ public class AppiaDataSession extends AbstractDataSession {
 					if(ctx != null){
 						servicesMap.put(msg,ctx);
 						if(workerlog.isDebugEnabled())
-							workerlog.debug("Received context for this message. Adding to the services map.");
+							workerlog.debug("Received context for this message. Adding to the services map:\nMessage:: "+msg+
+                                    " --> Context:: "+ctx+" [ SIZE OF MAP:: "+servicesMap.size()+" ]");
 					}
 				}
 				else if(event instanceof JGCSSendableEvent){
@@ -249,6 +255,10 @@ public class AppiaDataSession extends AbstractDataSession {
 				currentService = new AppiaService("uniform_total_order");
 				isLastService = true;
 			}
+            else if(event instanceof ServiceEvent){
+                currentService = new AppiaService("all");
+                isLastService = true;                
+            }
 			else{
 				notifyExceptionListeners(new JGCSException("Received unrecognized Service event from Appia: "+event));
 				if(workerlog.isDebugEnabled())
@@ -261,9 +271,10 @@ public class AppiaDataSession extends AbstractDataSession {
 			if(context != null){
 				notifyServiceListeners(context,currentService);
 				if(isLastService){
-					servicesMap.remove(event.getMessageID());
+					context = servicesMap.remove(event.getMessageID());
 					if(workerlog.isDebugEnabled())
-						workerlog.debug("Last service notified. removing entry from hashtable.");
+						workerlog.debug("Last service notified. Removing entry from hashtable --> Context removed: "+context+
+                                " MAP SIZE: "+servicesMap.size());
 				}
 			}			
 		}

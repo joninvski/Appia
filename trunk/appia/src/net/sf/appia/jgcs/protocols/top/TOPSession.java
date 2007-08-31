@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 
+import net.sf.appia.core.AppiaError;
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.AppiaException;
 import net.sf.appia.core.Channel;
@@ -52,9 +53,6 @@ import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.leave.ExitEvent;
 import net.sf.appia.protocols.group.leave.LeaveEvent;
 import net.sf.appia.protocols.group.sync.BlockOk;
-import net.sf.appia.protocols.total.common.RegularServiceEvent;
-import net.sf.appia.protocols.total.common.SETOServiceEvent;
-import net.sf.appia.protocols.total.common.UniformServiceEvent;
 import net.sf.appia.protocols.udpsimple.MulticastInitEvent;
 import net.sf.appia.protocols.utils.ParseUtils;
 import net.sf.appia.xml.interfaces.InitializableSession;
@@ -74,6 +72,8 @@ public class TOPSession extends Session implements InitializableSession {
 	
 	private static final int DEFAULT_MULTICAST_PORT = 7000;
 	private static final int DEFAULT_LOCAL_PORT     = 27752;
+    private static final int DEFAULT_GOSSIP_PORT     = 10000;
+    private static final int DEFAULT_TIME_PERIOD = 1000;
 	
 	private CountDownLatch openChannel, closeChannel, leaveChannel;
 	
@@ -140,7 +140,8 @@ public class TOPSession extends Session implements InitializableSession {
 		
 		if(params.containsKey("gossip_address")){
 			try {
-				gossips = ParseUtils.parseSocketAddressArray(params.getString("gossip_address"),InetAddress.getByName("224.0.0.1"),10000);
+				gossips = ParseUtils.parseSocketAddressArray(params.getString("gossip_address"),
+                        InetAddress.getByName("224.0.0.1"),DEFAULT_GOSSIP_PORT);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 			} catch (ParseException e) {
@@ -152,7 +153,7 @@ public class TOPSession extends Session implements InitializableSession {
 			try{
 				myAddress = ParseUtils.parseSocketAddress(params.getString("local_address"), null, DEFAULT_LOCAL_PORT);
 			}
-			catch (UnknownHostException e){
+			catch (UnknownHostException e){ 
 				e.printStackTrace();
 			}
 			catch (ParseException e){
@@ -177,11 +178,7 @@ public class TOPSession extends Session implements InitializableSession {
 			handleSendableEvent((JGCSSendableEvent)event);
 		else if(event instanceof MessageSender)
 			handleMessageSender((MessageSender)event);
-		else if(event instanceof RegularServiceEvent)
-			handleService((ServiceEvent)event);
-		else if(event instanceof SETOServiceEvent)
-			handleService((ServiceEvent)event);
-		else if(event instanceof UniformServiceEvent)
+		else if(event instanceof ServiceEvent)
 			handleService((ServiceEvent)event);
 		else if (event instanceof View)
 			handleNewView((View) event);
@@ -252,7 +249,7 @@ public class TOPSession extends Session implements InitializableSession {
 		if(numberOfChannels > 1){
 			final BlockOk myBlock = block.getBlockEvent(); 
 			for(Channel c : channels){
-				BlockOk copy = new BlockOk(myBlock.group,myBlock.view_id);
+				final BlockOk copy = new BlockOk(myBlock.group,myBlock.view_id);
 				copy.setDir(myBlock.getDir());
 				copy.setSource(this);
 				copy.setChannel(c);
@@ -325,7 +322,7 @@ public class TOPSession extends Session implements InitializableSession {
 		leaveChannel = event.getLatch();
 		try {
 			new LeaveEvent(event.getChannel(),Direction.DOWN,this,myGroup,vs.id).go();
-			new JGCSLeaveTimer(1000,event.getChannel(),this).go();
+			new JGCSLeaveTimer(DEFAULT_TIME_PERIOD,event.getChannel(),this).go();
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		} catch (AppiaException e) {
@@ -344,9 +341,7 @@ public class TOPSession extends Session implements InitializableSession {
 				timer.go();
 			} catch (AppiaEventException e) {
 				e.printStackTrace();
-			} catch (AppiaException e) {
-				e.printStackTrace();
-			}			
+            }
 		}
 	}
 	
@@ -396,7 +391,7 @@ public class TOPSession extends Session implements InitializableSession {
 		
 		// dump events that were received by the application during view change
 		while(!eventsPending.isEmpty()){
-			GroupSendableEvent event = eventsPending.remove();
+			final GroupSendableEvent event = eventsPending.remove();
 			try {
 				event.view_id = vs.id;
 				event.setSource(this);
@@ -483,19 +478,18 @@ public class TOPSession extends Session implements InitializableSession {
 		
 		if (receivedRSE && requestedJoin){
 			try {
-				InetSocketAddress[] addrs=new InetSocketAddress[1];
+				final InetSocketAddress[] addrs=new InetSocketAddress[1];
 				addrs[0]=myAddress;
-				Endpt[] view=new Endpt[1];
+				final Endpt[] view=new Endpt[1];
 				view[0] = new Endpt(jgcsGroupName+"@"+addrs[0].toString());
 				myGroup = new Group(jgcsGroupName);
-				ViewState vs = new ViewState("1",myGroup,new ViewID(0,view[0]),new ViewID[0], view, addrs);
-				GroupInit ginit=new GroupInit(vs,view[0],multicast,gossips,channel,Direction.DOWN, this);
+				final ViewState gvs = new ViewState("1",myGroup,new ViewID(0,view[0]),new ViewID[0], view, addrs);
+				final GroupInit ginit=new GroupInit(gvs,view[0],multicast,gossips,channel,Direction.DOWN, this);
 				ginit.go();
 				sentGroupInit = true;
 			} catch (AppiaException ex) {
 				ex.printStackTrace();
-				System.err.println("Impossible to initiate group communication. Aborting.");
-				System.exit(1);
+                throw new AppiaError("Impossible to initiate group communication. Aborting.",ex);
 			}
 		}
 	}
@@ -506,8 +500,8 @@ public class TOPSession extends Session implements InitializableSession {
 	 */
 	private void handleChannelInit(ChannelInit e) {
 		if(gossips == null || gossips.length == 0){
-			logger.fatal("Received channel init but no gossip is configured. Exiting...");
-			System.exit(1);
+			logger.fatal("Received channel init but no gossip is configured.");
+			throw new AppiaError("Received channel init but no gossip is configured.");
 		}    	
 		
 		/* Forwards channel init event. New events must follow this one */
@@ -548,11 +542,9 @@ public class TOPSession extends Session implements InitializableSession {
 			
 			if (multicast != null) {
 				try {
-					MulticastInitEvent amie=new MulticastInitEvent(multicast,false,e.getChannel(),Direction.DOWN,this);
-					amie.go();
+					new MulticastInitEvent(multicast,false,e.getChannel(),Direction.DOWN,this).go();
 				} catch (AppiaEventException ex) {
-					ex.printStackTrace();
-					System.exit(1);
+                    throw new AppiaError("Impossible to send Multicast Init Event.",ex);
 				}
 			}
 		} // end of if(!sentRSE)

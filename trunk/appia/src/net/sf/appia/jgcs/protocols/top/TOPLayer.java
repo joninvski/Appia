@@ -26,17 +26,22 @@ import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.jgcs.MessageSender;
 import net.sf.appia.protocols.common.RegisterSocketEvent;
+import net.sf.appia.protocols.common.ServiceEvent;
 import net.sf.appia.protocols.group.events.GroupInit;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.leave.ExitEvent;
 import net.sf.appia.protocols.group.leave.LeaveEvent;
 import net.sf.appia.protocols.group.sync.BlockOk;
-import net.sf.appia.protocols.total.common.RegularServiceEvent;
-import net.sf.appia.protocols.total.common.SETOServiceEvent;
-import net.sf.appia.protocols.total.common.UniformServiceEvent;
 import net.sf.appia.protocols.udpsimple.MulticastInitEvent;
 
 
+/**
+ * This class defines a TOPLayer. This protocol makes the bridge between the 
+ * Appia channels and the Data and Control Sessions.
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
+ */
 public class TOPLayer extends Layer {
 
 	public TOPLayer() {
@@ -69,9 +74,7 @@ public class TOPLayer extends Layer {
 				JGCSJoinEvent.class,
 				JGCSLeaveEvent.class,
 				JGCSReleaseBlock.class,
-				RegularServiceEvent.class,
-				SETOServiceEvent.class,
-				UniformServiceEvent.class,
+				ServiceEvent.class,
 				JGCSLeaveTimer.class,
 		};
 
