@@ -28,7 +28,7 @@ import net.sf.appia.protocols.group.intra.*;
 
 
 /**
- * Class LoopBackSession provides the dynamic behaviour for the
+ * Class LoopBackSession provides the dynamic behavior for the
  * LoopBack Protocol
  *
  * @author Hugo Miranda
