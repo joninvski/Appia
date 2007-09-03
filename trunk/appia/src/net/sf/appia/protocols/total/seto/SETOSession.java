@@ -54,7 +54,6 @@ import net.sf.appia.xml.utils.SessionProperties;
 
 import org.apache.log4j.Logger;
 
-
 /**
  * Optimistical total order protocol implementing the algorithm described in the paper
  * <i>Optimistic Total Order in Wide Area Networks</i> from A. Sousa, J. Pereira,
@@ -78,7 +77,7 @@ public class SETOSession extends Session implements InitializableSession {
 	
 	private LocalState ls = null;
 	private ViewState vs, vs_old = null;
-	private Channel channel = null;
+//	private Channel channel = null;
 	private TimeProvider timeProvider = null;
 	private final int seq = 0;
 	
@@ -123,15 +122,11 @@ public class SETOSession extends Session implements InitializableSession {
 		log.info("Initializing static parameter alfa. Set to "+alfa);
 	}
 
-	
 	/** 
 	 * Main handler of events.
 	 * @see net.sf.appia.core.Session#handle(Event)
 	 */
 	public void handle(Event event){
-		if(log.isDebugEnabled())
-			log.debug("MAIN Handle: "+event + " Direction is "+(event.getDir()==Direction.DOWN? "DOWN" : "UP"));
-
 		if(event instanceof ChannelInit)
 			handleChannelInit((ChannelInit) event);
 		else if(event instanceof ChannelClose)
@@ -173,8 +168,7 @@ public class SETOSession extends Session implements InitializableSession {
     }
 
 	private void handleChannelInit(ChannelInit init) {
-		channel = init.getChannel();
-		timeProvider = channel.getTimeProvider();
+		timeProvider = init.getChannel().getTimeProvider();
 		try {
 			init.go();
 		} catch (AppiaEventException e) {
@@ -184,7 +178,6 @@ public class SETOSession extends Session implements InitializableSession {
 	
 	private void handleChannelClose(ChannelClose close) {
 		log.warn("Channel is closing!");
-		channel = null;
 		try {
 			close.go();
 		} catch (AppiaEventException e) {
@@ -228,7 +221,6 @@ public class SETOSession extends Session implements InitializableSession {
 	 * @param view
 	 */
 	private void handleNewView(View view) {
-        System.out.println("NEW VIEW");
         isBlocked = false;
         
         vs_old = vs;
@@ -247,7 +239,8 @@ public class SETOSession extends Session implements InitializableSession {
         else {
             lastOrderList = new long[vs.addresses.length];
             Arrays.fill(lastOrderList,0);
-            deliverPendingView();
+            ackView(view.getChannel());
+//            deliverPendingView();
         }
 
         reset();
@@ -298,7 +291,7 @@ public class SETOSession extends Session implements InitializableSession {
         
         if (!utSet) {
             try {
-                UniformTimer ut = new UniformTimer(UNIFORM_INFO_PERIOD,channel,Direction.DOWN,this,EventQualifier.ON);
+                UniformTimer ut = new UniformTimer(UNIFORM_INFO_PERIOD,pendingView.getChannel(),Direction.DOWN,this,EventQualifier.ON);
                 ut.go();
                 utSet = true;
             } catch (AppiaEventException e) {
@@ -324,8 +317,7 @@ public class SETOSession extends Session implements InitializableSession {
 			reliableDATAMulticast(event, msgDelay);
 		}
 		// events from the network
-		else{System.out.println("Received event while blocked:"+event.getClass().getName()+" from session: "+
-                event.getSource()+". Ignoring it.");
+		else{
 			reliableDATADeliver(event);
 		}		
 	}
@@ -397,7 +389,7 @@ public class SETOSession extends Session implements InitializableSession {
 		if (!O.contains(container)) {
 			log.debug("Delivering optimistic message.");
 			try {
-				SETOServiceEvent sse = new SETOServiceEvent(channel, Direction.UP, this, container.event.getMessage());
+				SETOServiceEvent sse = new SETOServiceEvent(container.event.getChannel(), Direction.UP, this, container.event.getMessage());
 				sse.go();
 			} catch (AppiaEventException e1) {
 				e1.printStackTrace();
@@ -424,7 +416,7 @@ public class SETOSession extends Session implements InitializableSession {
 		SEQHeader header = new SEQHeader(container.header.sender(), container.header.sn(), globalSN);
 		SeqOrderEvent event;
 		try {
-			event = new SeqOrderEvent(channel,Direction.DOWN,this,vs.group,vs.id);
+			event = new SeqOrderEvent(container.event.getChannel(),Direction.DOWN,this,vs.group,vs.id);
 			SEQHeader.push(header,event.getMessage());
 			Message msg = event.getMessage();
 			for (int i = 0; i < lastOrderList.length; i++)
@@ -473,9 +465,8 @@ public class SETOSession extends Session implements InitializableSession {
 	 * Tries to deliver REGULAR message.
 	 */
 	private void deliverRegular() {
-		boolean finnished = false;
-		while (!finnished) {
-			ListSEQContainer orderedMsg = getOrderedMessage(localSN+1);
+        for (ListIterator li = S.listIterator(); li.hasNext(); ) {
+            ListSEQContainer orderedMsg = (ListSEQContainer) li.next();
 			if (log.isDebugEnabled()) {
 				log.debug("Message in order with SN="+(localSN+1)+" -> "+orderedMsg);
 				log.debug("Messages in S {");
@@ -483,13 +474,12 @@ public class SETOSession extends Session implements InitializableSession {
 				log.debug("}");
 			}
 		
-			if (orderedMsg != null) {
 				ListContainer msgContainer = getMessage(orderedMsg.header,R);
 				
 				if (msgContainer != null && !hasMessage(orderedMsg,G)) {
 					log.debug("["+ls.my_rank+"] Delivering regular "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMillis());
 					try {
-						RegularServiceEvent rse = new RegularServiceEvent(channel, Direction.UP, this, msgContainer.event.getMessage());
+						RegularServiceEvent rse = new RegularServiceEvent(msgContainer.event.getChannel(), Direction.UP, this, msgContainer.event.getMessage());
 						rse.go();
 					} catch (AppiaEventException e1) {
 						e1.printStackTrace();
@@ -526,18 +516,15 @@ public class SETOSession extends Session implements InitializableSession {
 					lastfinal = _final;
 					localSN++;
 				}
-			}
-			else {
-				log.debug("DeliverRegular is finnishing.");
-				finnished = true;
-			}
+                li.remove();
 		}
+        log.debug("DeliverRegular finished.");
 	}
 	
 	private void handleUniformTimer(UniformTimer timer) {
-		log.debug("Uniform timer expired. Now is: "+timeProvider.currentTimeMillis());
+		//log.debug("Uniform timer expired. Now is: "+timeProvider.currentTimeMillis());
 		if (!isBlocked && newUniformInfo && timeProvider.currentTimeMillis() - timeLastMsgSent >= UNIFORM_INFO_PERIOD) {
-			log.debug("Last message sent was at time "+timeLastMsgSent+". Will send Uniform info!");
+			//log.debug("Last message sent was at time "+timeLastMsgSent+". Will send Uniform info!");
 			sendUniformInfo(timer.getChannel());
 			newUniformInfo = false;
 		}
@@ -596,7 +583,7 @@ public class SETOSession extends Session implements InitializableSession {
 				log.debug("["+ls.my_rank+"] Delivering final "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMillis());
 				try {
 					// deliver uniform notification
-					UniformServiceEvent use = new UniformServiceEvent(channel, Direction.UP, this, msgContainer.event.getMessage());
+					UniformServiceEvent use = new UniformServiceEvent(msgContainer.event.getChannel(), Direction.UP, this, msgContainer.event.getMessage());
 					use.go();
 				} catch (AppiaEventException e) {
 					e.printStackTrace();
@@ -626,7 +613,7 @@ public class SETOSession extends Session implements InitializableSession {
 	 * Resets all sequence numbers and auxiliary variables
 	 */
 	private void reset(){
-//		globalSN = 0;
+		globalSN = 0;
 		localSN = 0;
 		sendingLocalSN = 0;
 		lastfinal=-1;
@@ -787,7 +774,7 @@ public class SETOSession extends Session implements InitializableSession {
 	private void setTimer(ListContainer container, long timeout, ViewID vid) {
 		try {
 			log.debug("TIME Container: "+container.header.getTime());
-			SETOTimer timer = new SETOTimer(timeout/1000, channel, 
+			SETOTimer timer = new SETOTimer(timeout/1000, container.event.getChannel(), 
 					Direction.DOWN, this, EventQualifier.ON, container, vid);
 				timer.go();
 				if(log.isDebugEnabled())

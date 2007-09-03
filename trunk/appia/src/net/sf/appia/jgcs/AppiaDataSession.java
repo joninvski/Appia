@@ -177,9 +177,7 @@ public class AppiaDataSession extends AbstractDataSession {
 			Event event;
 			while(running.get()){
 				workerlog.debug("before receive");
-                System.out.println("LIST SIZE before: "+mailbox.getSize());
 				event = mailbox.removeNext();
-                System.out.println("LIST SIZE after: "+mailbox.getSize());
                 if(event == null){
                     //if(workerlog.isDebugEnabled())
                         workerlog.debug("Received null event from Appia mailbox");

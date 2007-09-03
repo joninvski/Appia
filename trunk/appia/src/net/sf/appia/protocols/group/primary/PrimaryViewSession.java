@@ -77,11 +77,10 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     }
 
     public void init(SessionProperties params) {
-        if (params.containsKey("primary")) {
-            if (params.getBoolean("primary"))
-                primaryProcess = true;
-        }
+        if (params.containsKey("primary"))
+            primaryProcess = params.getBoolean("primary");
     }
+    
     public void handle(Event event) {
         if (event instanceof View)
             handleView((View) event);
@@ -252,7 +251,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
                 }
                 
             }
-            else if (++ackCount == newMembers.length) {
+            else if (newMembers != null && ++ackCount == newMembers.length) {
                 // New peers were never in a primary partition and all new members probed
                 if (ls.my_rank == vs.getRank(vs.getSurvivingMembers(vsOld)[0]) && canSendMessages()) {
                     // Process has the lowest rank from the surviving members. Order view delivery!
