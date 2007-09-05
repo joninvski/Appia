@@ -20,9 +20,11 @@
  */
 package net.sf.appia.protocols.total.seto;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ListIterator;
 
 import net.sf.appia.core.AppiaEventException;
@@ -94,6 +96,8 @@ public class SETOSession extends Session implements InitializableSession {
 	private boolean utSet; // Uniform timer is set?
 	private boolean newUniformInfo = false;
 	
+    List<GroupSendableEvent> pendingMessages=new ArrayList<GroupSendableEvent>();
+    
 	/**
 	 * Constructs a new SETOSession.
 	 * 
@@ -289,6 +293,14 @@ public class SETOSession extends Session implements InitializableSession {
             e.printStackTrace();
         }
         
+        if(!pendingMessages.isEmpty()){
+            log.debug("Delivering "+pendingMessages.size()+" pending messages");
+            for(GroupSendableEvent event : pendingMessages){
+                reliableDATADeliver(event);
+            }
+            pendingMessages.clear();
+        }
+        
         if (!utSet) {
             try {
                 UniformTimer ut = new UniformTimer(UNIFORM_INFO_PERIOD,pendingView.getChannel(),Direction.DOWN,this,EventQualifier.ON);
@@ -300,6 +312,8 @@ public class SETOSession extends Session implements InitializableSession {
                 e.printStackTrace();
             }
         }
+        
+        pendingView = null;
     }
 	/**
 	 * @param event
@@ -317,8 +331,15 @@ public class SETOSession extends Session implements InitializableSession {
 			reliableDATAMulticast(event, msgDelay);
 		}
 		// events from the network
-		else{
-			reliableDATADeliver(event);
+		else {
+            if (pendingView != null) {
+                log.debug("Received GroupSendableEvent but still haven't delivered pending view");
+                log.debug("Buffering event for future delivery");
+                pendingMessages.add(event);
+            }
+            else {
+                reliableDATADeliver(event);
+            }
 		}		
 	}
 	
