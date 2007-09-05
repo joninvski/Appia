@@ -62,13 +62,10 @@ public class JMXClient {
     
     public static void main(String[] args) throws Exception {
         
-        // The RMI server's host: this is actually ignored by JSR 160
-        // since this information is stored in the RMI stub.
-        final String serverHost = "host";
         // The host, port and path where the rmiregistry runs.
         final String namingHost = "localhost";
         final int namingPort = 1099;
-        final String strURL = "service:jmx:rmi://" + serverHost + "/jndi/rmi://" + namingHost + ":" + namingPort + "/appia";
+        final String strURL = "service:jmx:rmi:///jndi/rmi://"+namingHost+":"+namingPort+"/jmxrmi";
         final JMXServiceURL url = new JMXServiceURL(strURL);
 
         log.info("Connecting to URL: "+strURL);

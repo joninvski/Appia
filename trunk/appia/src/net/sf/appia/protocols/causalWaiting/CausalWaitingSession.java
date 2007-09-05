@@ -52,7 +52,7 @@ import org.apache.log4j.Logger;
 public class CausalWaitingSession extends Session {
 
     private static Logger log = Logger.getLogger(CausalWaitingSession.class);
-    private static final boolean debugOn = false;
+    private static final boolean debugOn = true;
     
 	private LocalState ls;
 	private ViewState vs;

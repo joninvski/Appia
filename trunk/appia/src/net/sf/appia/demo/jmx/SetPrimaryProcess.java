@@ -68,12 +68,13 @@ public class SetPrimaryProcess {
         // The host, port and path where the rmiregistry runs.
         final String namingHost = "localhost";
         final int namingPort = 1099;
-        final String strURL = "service:jmx:rmi://" + serverHost + "/jndi/rmi://" + namingHost + ":" + namingPort + "/appia";
+        final String strURL = "service:jmx:rmi:///jndi/rmi://"+namingHost+":"+namingPort+"/jmxrmi";
+//        final String strURL = "service:jmx:rmi://" + serverHost + "/jndi/rmi://" + namingHost + ":" + namingPort + "/";
         final JMXServiceURL url = new JMXServiceURL(strURL);
 
         log.info("Connecting to URL: "+strURL);
         // Connect a JSR 160 JMXConnector to the server side
-        final JMXConnector connector = JMXConnectorFactory.connect(url);        
+        final JMXConnector connector = JMXConnectorFactory.connect(url);
         
         log.info("Retrieving MBean server connection...");
         // Retrieve an MBeanServerConnection that represent the MBeanServer the remote
