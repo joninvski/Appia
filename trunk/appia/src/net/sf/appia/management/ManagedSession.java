@@ -52,4 +52,5 @@ public interface ManagedSession{
      */
     public String getParameter(String parameter) throws AppiaManagementException;
 
+    public String[] getAllParameters();
 }

@@ -497,4 +497,8 @@ public class SwitchingSession extends Session implements InitializableSession, M
             throw new AppiaManagementException("The session "+this.getClass().getName()
                     +" do not accept the parameter '"+parameter+"'.");
     }
+
+    public String[] getAllParameters() {
+        return new String[]{"currentChannel","topChannel",};
+    }
 }

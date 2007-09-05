@@ -131,6 +131,10 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
             notifySensorListeners(notif);
     }
 
+    public String[] getAllParameters() {
+        return new String[]{"suspect_sweep","suspect_time",};
+    }
+
     /**
      * Gets the value of a parameter.
      * Possible parameters:

@@ -221,4 +221,13 @@ public class ThroughputSession extends Session implements ManagedSession {
                 "set a new value. It is read only.");
     }
 
+    public String[] getAllParameters() {
+        return new String[]{
+                THRPUT_BYTES_PER_SECOND_DOWN,
+                THRPUT_BYTES_PER_SECOND_UP,
+                THRPUT_MSG_PER_SECOND_DOWN,
+                THRPUT_MSG_PER_SECOND_UP,
+        };
+    }
+
 }

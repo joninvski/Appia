@@ -30,9 +30,19 @@ package net.sf.appia.management.jmx;
 
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
+import javax.management.Attribute;
+import javax.management.AttributeList;
+import javax.management.AttributeNotFoundException;
+import javax.management.DynamicMBean;
+import javax.management.InvalidAttributeValueException;
+import javax.management.MBeanException;
+import javax.management.MBeanInfo;
 import javax.management.Notification;
 import javax.management.NotificationBroadcasterSupport;
+import javax.management.ReflectionException;
 
 import net.sf.appia.core.Channel;
 import net.sf.appia.core.Session;
@@ -48,10 +58,11 @@ import net.sf.appia.management.SensorSessionListener;
  * @version 1.0
  */
 public class ChannelManager extends NotificationBroadcasterSupport 
-implements ChannelManagerMBean, SensorSessionListener {
+implements DynamicMBean, SensorSessionListener {
 	
 	private Channel channel;
     private Map<String,Session> managedSessions;
+    private Map<String,String[]> parameters;
 	
     /**
      * Creates a new ChannelManager.
@@ -60,6 +71,11 @@ implements ChannelManagerMBean, SensorSessionListener {
 	public ChannelManager(Channel ch, Map<String,Session> sessions){
 		channel = ch;
         managedSessions = sessions;
+        parameters = new Hashtable<String,String[]>();
+        for(Entry<String,Session> e : managedSessions.entrySet()){
+            if(e.getValue() instanceof ManagedSession)
+                parameters.put(e.getKey(), ((ManagedSession)e.getValue()).getAllParameters());
+        }
 	}
 
     /**
@@ -153,6 +169,36 @@ implements ChannelManagerMBean, SensorSessionListener {
             return -1;
         else
             return channel.getMemoryManager().used();
+    }
+
+    public Object getAttribute(String arg0) throws AttributeNotFoundException, MBeanException, ReflectionException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public AttributeList getAttributes(String[] arg0) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public MBeanInfo getMBeanInfo() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Object invoke(String arg0, Object[] arg1, String[] arg2) throws MBeanException, ReflectionException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public void setAttribute(Attribute arg0) throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public AttributeList setAttributes(AttributeList arg0) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

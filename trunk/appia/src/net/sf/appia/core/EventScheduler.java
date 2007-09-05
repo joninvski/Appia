@@ -170,7 +170,20 @@ public class EventScheduler {
         
         mainLast=null;
         
-        session.handle(event);
+        try {
+            session.handle(event);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            System.err.println("--------------------------------"+
+                    "Exception report:"+
+                    "\nSession: "+session+
+                    "\nEvent: "+event+
+                    "\nDirection: "+((event.getDir()==Direction.UP)?"UP":"DOWN")+
+                    "\nSourceSession: "+event.getSource()+
+                    "\nChannel: "+event.getChannel()+
+                    "\n--------------------------------");
+            throw e;
+        }
         currentSession=null;
       }
     }

@@ -401,4 +401,8 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     private boolean canSendMessages(){
         return !blocked || (blocked && view != null);
     }
+
+    public String[] getAllParameters() {
+        return new String[]{"setPrimary","blocked","view",};
+    }
 }
