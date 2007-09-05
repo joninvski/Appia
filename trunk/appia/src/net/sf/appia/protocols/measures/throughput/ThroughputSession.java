@@ -77,7 +77,10 @@ public class ThroughputSession extends Session implements ManagedSession {
         }
         
         long get(){
-            return sum/((time.currentTimeMicros()-initialTime)/SECOND);
+            long t = ((time.currentTimeMicros()-initialTime)/SECOND);
+            if(t == 0)
+                t = 1;
+            return sum/t;
         }
         
         void add(long value){
