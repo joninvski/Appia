@@ -492,6 +492,7 @@ public class SETOSession extends Session implements InitializableSession {
                     else
                         O.add(msgContainer);
                     
+                    if (pendingView == null) {
 					// ADJUSTING DELAYS
 					log.debug(ls.my_rank+": Adjusting delays...");
 					long _final = orderedMsg.time;
@@ -515,6 +516,7 @@ public class SETOSession extends Session implements InitializableSession {
 					lastfast = _fast;
 					lastfinal = _final;
 					localSN++;
+                    }
 				}
                 li.remove();
 		}
@@ -628,6 +630,7 @@ public class SETOSession extends Session implements InitializableSession {
 	 */
 	private void dumpPendingMessages() {
 		ListContainer container = null;
+        nextDeterministicCounter = 0;
 		while((container = getNextDeterministic()) != null){
 			if(log.isDebugEnabled()){
 				log.debug("Message in deterministic order with SN="+(localSN+1)+" -> "+container);
@@ -636,7 +639,7 @@ public class SETOSession extends Session implements InitializableSession {
             lastOrderList[ls.my_rank] = header.order;
 			S.add(new ListSEQContainer(header,timeProvider.currentTimeMillis()));
 			log.debug("Resending message to Appl: "+container.event);
-			// getRemoveMessage(container.header,R);
+			//getRemoveMessage(container.header,R);
 		}
         deliverRegular();
 	}
@@ -654,15 +657,16 @@ public class SETOSession extends Session implements InitializableSession {
 		return false;
 	}
 	
+    private int nextDeterministicCounter;
     /**
      * Removes and returns an event from the buffer in a deterministic way.
      * Used when there are view changes in the group
      */
     private ListContainer getNextDeterministic(){
-    	
-    	if(R.size() == 0)
-    		return null;
-		
+    	if (nextDeterministicCounter == R.size()) {
+            return null;
+        }
+        
         ListContainer first = (ListContainer) R.getFirst();
     	
         long nSeqMin=first.header.sn;
@@ -671,18 +675,22 @@ public class SETOSession extends Session implements InitializableSession {
 
         for(int i=1; i<R.size(); i++){
             ListContainer current = (ListContainer) R.get(i);
-            if(nSeqMin > current.header.sn){
-                pos=i;
-                nSeqMin=current.header.sn;
-                emissor=current.header.id;
-            }
-            else if(nSeqMin == current.header.sn){
-                if(emissor > current.header.id){
+            if (!S.contains(current)) {
+                if(nSeqMin > current.header.sn){
                     pos=i;
+                    nSeqMin=current.header.sn;
                     emissor=current.header.id;
                 }
+                else if(nSeqMin == current.header.sn){
+                    if(emissor > current.header.id){
+                        pos=i;
+                        emissor=current.header.id;
+                    }
+                }
             }
-        } 
+        }
+
+        nextDeterministicCounter++;
         return (ListContainer) R.get(pos);
 	}
 

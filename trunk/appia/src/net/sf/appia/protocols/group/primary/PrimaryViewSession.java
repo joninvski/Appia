@@ -110,6 +110,8 @@ public class PrimaryViewSession extends Session implements InitializableSession,
 
     private void handleGroupSendable(GroupSendableEvent event) {
         if (blocked && event.getDir() == Direction.UP && this.view != null && event.view_id.equals(vs.id)){
+            log.debug("I'm blocked and received message to be delivered in the current view");
+            log.debug("Adding message to the pending buffer");
             pendingMessages.add(event);
         } else
             try {
@@ -322,6 +324,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
         primaryCounter++;
         
         if(!pendingMessages.isEmpty()){
+            log.debug("Delivering "+pendingMessages.size()+" pending messages");
             for(GroupSendableEvent ev : pendingMessages){
                 try {
                     ev.go();
