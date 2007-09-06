@@ -33,8 +33,6 @@ import net.sf.appia.core.Session;
  */
 public class EchoProbeEvent extends Event {
 
-    private ProbeEvent probeEvent=null;
-    
     /**
      * Creates a new EchoProbeEvent.
      */
@@ -53,11 +51,4 @@ public class EchoProbeEvent extends Event {
         super(channel, dir, src);
     }
 
-    public ProbeEvent getProbeEvent() {
-        return probeEvent;
-    }
-
-    public void setProbeEvent(ProbeEvent probeEvent) {
-        this.probeEvent = probeEvent;
-    }
 }

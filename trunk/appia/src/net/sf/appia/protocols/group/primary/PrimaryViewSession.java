@@ -311,7 +311,8 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     private void handleDeliverViewEvent(DeliverViewEvent deliver) {
         log.debug("Received DeliverViewEvent");
         primaryCounter = deliver.getMessage().popInt();
-        deliverView();
+        if(view != null)
+            deliverView();
     }
     
     private boolean hasMajority(View v1, View v2) {
@@ -393,7 +394,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
 
     public void setParameter(String parameter) throws AppiaManagementException {
         if(parameter.equals(SET_PRIMARY)){
-            if(view == null){
+            if(blocked && view == null){
                 log.warn("Process set to Primary by Management.");
                 primaryProcess = true;
             }
@@ -416,30 +417,26 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     
     private void handleEchoProbe(EchoProbeEvent ev) {
         if(blocked && view != null){
-            if(view.vs.view.length == 1){
-                deliverView();
+            // All primary processes can deliver their views
+            if(view.vs.view.length > 1){
+                try {
+                    final int[] dests = new int[view.vs.view.length-1];
+                    int i=0;
+                    while(i<dests.length)
+                        if(i==view.ls.my_rank)
+                            i++;
+                        else
+                            dests[i] = i++;
+                    
+                    final DeliverViewEvent deliver = new DeliverViewEvent(ev.getChannel(), Direction.DOWN, this, view.vs.group, view.vs.id);
+                    deliver.dest = dests;
+                    deliver.getMessage().pushInt(primaryCounter);
+                    deliver.go();
+                } catch (AppiaEventException e) {
+                    e.printStackTrace();
+                }
             }
-            else
-                if(ev.getProbeEvent() != null){
-                    ev.getProbeEvent().setSource(this);
-                    ev.getProbeEvent().setDir(Direction.DOWN);
-                    try {
-                        ev.getProbeEvent().init();
-                        ev.getProbeEvent().go();
-                    } catch (AppiaEventException e) {
-                        e.printStackTrace();
-                    }
-                }
-                else{
-                    try {
-                        final ProbeEvent event = new ProbeEvent(view.getChannel(), Direction.DOWN, this, vs.group, vs.id);
-                        event.getMessage().pushInt(primaryCounter);
-                        event.getMessage().pushBoolean(wasPrimary);
-                        event.go();
-                    } catch (AppiaEventException e) {
-                        e.printStackTrace();
-                    }
-                }
+            deliverView();
         }
         else
             log.warn("Management instruction "+SET_PRIMARY+" ignored.");
