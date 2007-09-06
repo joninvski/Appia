@@ -38,6 +38,7 @@ package net.sf.appia.core;
 public abstract class Session {
 
   protected Layer layer;
+  private String id="";
 
   public Session(Layer layer) {
     this.layer=layer;
@@ -51,9 +52,19 @@ public abstract class Session {
     } catch (AppiaEventException e) {
       throw new AppiaError(e.getMessage());
     }
+    
+    
   }
 
   public Layer getLayer() {
-    return layer;
+      return layer;
+  }
+
+  public String getId() {
+      return id;
+  }
+
+  public void setId(String id) {
+      this.id = id;
   }
 }

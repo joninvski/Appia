@@ -28,27 +28,16 @@
 
 package net.sf.appia.management.jmx;
 
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.net.MalformedURLException;
 import java.util.Hashtable;
 
-import javax.management.Attribute;
-import javax.management.AttributeNotFoundException;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
-import javax.management.InvalidAttributeValueException;
-import javax.management.MBeanException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
-import javax.management.remote.JMXConnectorServer;
-import javax.management.remote.JMXConnectorServerFactory;
-import javax.management.remote.JMXServiceURL;
 
 import net.sf.appia.core.Channel;
 import net.sf.appia.management.AppiaManagementException;
@@ -65,13 +54,13 @@ public class ConnectionServerFactory {
 
     private static Logger log = Logger.getLogger(ConnectionServerFactory.class);
 
-    private static final Hashtable FACTORIES = new Hashtable();
+    private static final Hashtable<JMXConfiguration,ConnectionServerFactory> FACTORIES = 
+        new Hashtable<JMXConfiguration,ConnectionServerFactory>();
     private MBeanServer mbeanServer = null;
-    private JMXConnectorServer connectorServer = null; 
-    private Hashtable managedChannels = null;
+    private Hashtable<Channel,Object> managedChannels = null;
     
     private ConnectionServerFactory(JMXConfiguration config) throws AppiaManagementException {
-        managedChannels = new Hashtable();
+        managedChannels = new Hashtable<Channel,Object>();
         createMBeanServer(config);
     }
     
@@ -95,61 +84,8 @@ public class ConnectionServerFactory {
             return;
         
         log.info("Creating MBean server for this Appia instance.");
-        // The MBeanServer
-        // mbeanServer = MBeanServerFactory.createMBeanServer();
+        // The default MBeanServer
         mbeanServer = ManagementFactory.getPlatformMBeanServer();
-        // Register and start the rmiregistry MBean, needed by JSR 160 RMIConnectorServer
-//        ObjectName namingName=null;
-//        try {
-//            namingName = ObjectName.getInstance("Naming:type=rmiregistry");
-//            mbeanServer.createMBean("mx4j.tools.naming.NamingService", namingName, null);
-//            log.info("Starting naming service...");
-//            
-//            // FIXME: This should discover a free port by default, without the need to be defined by the user.            
-//            mbeanServer.setAttribute(namingName,new Attribute("Port",new Integer(config.getNamingPort())));
-//            mbeanServer.invoke(namingName, "start", null, null);
-//        } catch (MalformedObjectNameException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (InstanceAlreadyExistsException e) {
-//            throw new AppiaManagementException("MBean "+namingName+" already exists",e);
-//        } catch (MBeanRegistrationException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (NotCompliantMBeanException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (InstanceNotFoundException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (ReflectionException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (MBeanException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (AttributeNotFoundException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (InvalidAttributeValueException e) {
-//            throw new AppiaManagementException(e);
-//        }
-//        
-//        // Create and start the RMIConnectorServer        
-//        try{
-//            log.info("Starting MBean Server...");
-//            final int namingPort = ((Integer)mbeanServer.getAttribute(namingName, "Port")).intValue();
-//            final String connectionServiceURL = "service:jmx:rmi://localhost/jndi/rmi://localhost:" + namingPort + "/appia";
-//            log.info("Starting RMI Connection server on the URL: "+connectionServiceURL);
-//            connectorServer = JMXConnectorServerFactory.newJMXConnectorServer(new JMXServiceURL(connectionServiceURL), 
-//                    null, mbeanServer);
-//            connectorServer.start();
-//        } catch (AttributeNotFoundException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (MalformedURLException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (IOException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (InstanceNotFoundException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (MBeanException e) {
-//            throw new AppiaManagementException(e);
-//        } catch (ReflectionException e) {
-//            throw new AppiaManagementException(e);
-//        }   
     }
     
     /**

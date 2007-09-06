@@ -46,6 +46,7 @@ public class PrimaryViewLayer extends Layer {
                 KickEvent.class,
                 EchoEvent.class,
                 GroupSendableEvent.class,
+                EchoProbeEvent.class,
         };
         
         evRequire = new Class[]{
@@ -57,6 +58,7 @@ public class PrimaryViewLayer extends Layer {
                 ProbeEvent.class,
                 DeliverViewEvent.class,
                 KickEvent.class,
+                EchoProbeEvent.class,
         };
     }
 

@@ -28,9 +28,9 @@
 
 package net.sf.appia.management.jmx;
 
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
 
 import javax.management.Attribute;
@@ -40,6 +40,7 @@ import javax.management.DynamicMBean;
 import javax.management.InvalidAttributeValueException;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
+import javax.management.MBeanOperationInfo;
 import javax.management.Notification;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.ReflectionException;
@@ -60,23 +61,23 @@ import net.sf.appia.management.SensorSessionListener;
 public class ChannelManager extends NotificationBroadcasterSupport 
 implements DynamicMBean, SensorSessionListener {
 	
-	private Channel channel;
-    private Map<String,Session> managedSessions;
-    private Map<String,String[]> parameters;
-	
-    /**
-     * Creates a new ChannelManager.
-     * @param ch the managed channel.
-     */
-	public ChannelManager(Channel ch, Map<String,Session> sessions){
-		channel = ch;
-        managedSessions = sessions;
-        parameters = new Hashtable<String,String[]>();
-        for(Entry<String,Session> e : managedSessions.entrySet()){
-            if(e.getValue() instanceof ManagedSession)
-                parameters.put(e.getKey(), ((ManagedSession)e.getValue()).getAllParameters());
+    private class Operation{
+        MBeanOperationInfo operation;
+        ManagedSession session;
+        Operation(MBeanOperationInfo op, ManagedSession s){
+            operation = op;
+            session = s;
         }
-	}
+    }
+    
+	private Channel channel;
+    // session name -> session
+    private Map<String,Session> managedSessions;
+    // session name -> operations inside session
+    // private Map<String,String[]> parameters;
+    // exported operation name -> session to call
+    private Map<String,Operation> operations;
+    private ArrayList<MBeanOperationInfo>mboi;
 
     /**
      * Creates a new ChannelManager.
@@ -85,6 +86,8 @@ implements DynamicMBean, SensorSessionListener {
     public ChannelManager(Channel ch){
         channel = ch;
         managedSessions = new Hashtable<String,Session>();
+        operations = new Hashtable<String,Operation>();
+        mboi = new ArrayList<MBeanOperationInfo>();
     }
 
     /**
@@ -92,7 +95,15 @@ implements DynamicMBean, SensorSessionListener {
      * @param s the session to manage.
      */
     public void addManagedSession(Session s){
-        managedSessions.put(getSessionID(s,channel),s);
+        managedSessions.put(s.getId(),s);
+        if(s instanceof ManagedSession){
+            final ManagedSession ms = (ManagedSession) s;
+            final MBeanOperationInfo[] ops = ms.getAllParameters(s.getId()+":");
+            for(int i=0; i<ops.length; i++){
+                operations.put(ops[i].getName(), new Operation(ops[i],ms));
+                mboi.add(ops[i]);
+            }
+        }
     }
 
     /**
@@ -101,43 +112,17 @@ implements DynamicMBean, SensorSessionListener {
      * @return the removed session, or null if no session was removed.
      */
     public Session removeManagedSession(Session s){
-        return (Session) managedSessions.remove(getSessionID(s,channel));
-    }
-    
-    private String getSessionID(Session s,Channel ch){
-        return s.getClass().getName()+":"+ch.getChannelID();
-    }
-    
-    /**
-     * Sets a parameter in one or more sessions of this channel.
-     * 
-     * @param parameter the parameter name
-     * @param value the parameter value
-     * @param sessionID the managed session
-     * @see net.sf.appia.management.jmx.ChannelManagerMBean#setParameter(String, String, String)
-     */
-	public void setParameter(String parameter, String value, String sessionID) 
-    throws AppiaManagementException {
-        final ManagedSession session = (ManagedSession) managedSessions.get(sessionID);
-        if(session == null)
-            throw new AppiaManagementException("Session with ID '"+sessionID+"' does not exist");
-        session.setParameter(parameter,value);
-	}
-
-    /**
-     * Get the value of a parameter.
-     * 
-     * @param parameter the parameter to query
-     * @param sessionID the managed session
-     * @return the value of the parameter.
-     * @see net.sf.appia.management.jmx.ChannelManagerMBean#getParameter(String, String)
-     */
-    public String getParameter(String parameter, String sessionID) throws AppiaManagementException {
-        final ManagedSession session = (ManagedSession) managedSessions.get(sessionID);
-        if(session == null)
-            throw new AppiaManagementException("Session with ID '"+sessionID+"' does not exist");
-        return session.getParameter(parameter);
-    }
+        final Session session = managedSessions.remove(s.getId());
+        if(session instanceof ManagedSession){
+            final ManagedSession ms = (ManagedSession) session;
+            final MBeanOperationInfo[] ops = ms.getAllParameters(s.getId()+":");
+            for(int i=0; i<ops.length; i++){
+                operations.remove(ops[i].getName());
+                mboi.remove(ops[i]);
+            }
+        }
+        return session;
+    }    
 
     /**
      * Callback that receives a notification from the channel. Received the notification and pushes it
@@ -182,13 +167,30 @@ implements DynamicMBean, SensorSessionListener {
     }
 
     public MBeanInfo getMBeanInfo() {
-        // TODO Auto-generated method stub
-        return null;
+        
+        MBeanOperationInfo[] opsArray = new MBeanOperationInfo[mboi.size()];
+        int i=0;
+        for(MBeanOperationInfo inf : mboi)
+            opsArray[i++] = inf;
+        return new MBeanInfo(this.getClass().getName(),
+                "Exported operations list",
+                null, // attributes
+                null, // constructors
+                opsArray, // operations
+                null); // notifications
     }
 
-    public Object invoke(String arg0, Object[] arg1, String[] arg2) throws MBeanException, ReflectionException {
-        // TODO Auto-generated method stub
-        return null;
+    public Object invoke(String actionName, Object[] params, String[] signature) throws MBeanException, ReflectionException {
+        Operation op = operations.get(actionName);
+        if (op == null)
+            return null;
+        else{
+            try {
+                return op.session.invoke(actionName,op.operation,params, signature);
+            } catch (AppiaManagementException e) {
+                throw new MBeanException(e);
+            }
+        }
     }
 
     public void setAttribute(Attribute arg0) throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException {

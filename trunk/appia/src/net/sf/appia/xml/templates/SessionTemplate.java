@@ -98,13 +98,18 @@ public class SessionTemplate {
 	 * 
 	 * @return the {@link Session} built from this template.
 	 */
-	public Session sessionInstance(String label, Hashtable sharedSessions) {
-		if (sharing == SharingState.PRIVATE)
-			return layerInstance.createSession();
+	public Session sessionInstance(String label, Hashtable<String,Session> sharedSessions) {
+        Session ns = null;
+		if (sharing == SharingState.PRIVATE){
+		    ns = layerInstance.createSession();
+            ns.setId(name);
+            return ns;
+        }
 		else if (sharedSessions.containsKey(name+label))
 			return (Session) sharedSessions.get(name+label);
 		else {
-			final Session ns = layerInstance.createSession();
+		    ns = layerInstance.createSession();
+            ns.setId(name);
 			sharedSessions.put(name+label,ns);
 			return ns;
 		}

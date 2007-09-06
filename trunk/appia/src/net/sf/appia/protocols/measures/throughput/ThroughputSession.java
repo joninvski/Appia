@@ -23,6 +23,9 @@ package net.sf.appia.protocols.measures.throughput;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanParameterInfo;
+
 import org.apache.log4j.Logger;
 
 import net.sf.appia.core.AppiaEventException;
@@ -221,13 +224,31 @@ public class ThroughputSession extends Session implements ManagedSession {
                 "set a new value. It is read only.");
     }
 
-    public String[] getAllParameters() {
-        return new String[]{
-                THRPUT_BYTES_PER_SECOND_DOWN,
-                THRPUT_BYTES_PER_SECOND_UP,
-                THRPUT_MSG_PER_SECOND_DOWN,
-                THRPUT_MSG_PER_SECOND_UP,
-        };
+    public MBeanOperationInfo[] getAllParameters(String sid) {
+        MBeanOperationInfo[] mboi = new MBeanOperationInfo[4];
+        mboi[0] = new MBeanOperationInfo(sid+THRPUT_BYTES_PER_SECOND_DOWN,"gets the value",
+                new MBeanParameterInfo[]{},
+                "long",
+                MBeanOperationInfo.INFO);
+        mboi[1] = new MBeanOperationInfo(sid+THRPUT_BYTES_PER_SECOND_UP,"gets the value",
+                new MBeanParameterInfo[]{},
+                "long",
+                MBeanOperationInfo.INFO);
+        mboi[2] = new MBeanOperationInfo(sid+THRPUT_MSG_PER_SECOND_DOWN,"gets the value",
+                new MBeanParameterInfo[]{},
+                "long",
+                MBeanOperationInfo.INFO);
+        mboi[3] = new MBeanOperationInfo(sid+THRPUT_MSG_PER_SECOND_UP,"gets the value",
+                new MBeanParameterInfo[]{},
+                "long",
+                MBeanOperationInfo.INFO);
+        return mboi;
     }
-
+    
+    public Object invoke(String action, MBeanOperationInfo info, Object[] params, String[] signature) 
+    throws AppiaManagementException {
+        return null;
+    }
+    
 }
+

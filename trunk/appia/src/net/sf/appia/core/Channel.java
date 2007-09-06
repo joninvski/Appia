@@ -32,6 +32,7 @@ import net.sf.appia.core.events.channel.Timer;
 import net.sf.appia.core.memoryManager.MemoryManager;
 import net.sf.appia.core.message.DefaultMessageFactory;
 import net.sf.appia.core.message.MessageFactory;
+import net.sf.appia.management.ManagedSession;
 import net.sf.appia.management.SensorSession;
 import net.sf.appia.management.jmx.ChannelManager;
 import net.sf.appia.management.jmx.ConnectionServerFactory;
@@ -570,7 +571,7 @@ public class Channel {
         log.info("Registering MBean for channel "+channelID);
         final ChannelManager manager = new ChannelManager(this);
         Session currentSession = null;
-        int numSensorSessions = 0;
+        int numSensorSessions = 0, numManagedSessions = 0;
         ConnectionServerFactory.getInstance(jmxConfiguration).registerMBean(this,manager);
 
         final ChannelCursor cc = getCursor();
@@ -579,12 +580,16 @@ public class Channel {
             currentSession = cc.getSession();
             if(currentSession instanceof SensorSession){
                 ((SensorSession)currentSession).addSensorListener(manager);
-                manager.addManagedSession(currentSession);
                 numSensorSessions++;
+            }
+            if(currentSession instanceof ManagedSession){
+                manager.addManagedSession(currentSession);
+                numManagedSessions++;
             }
             cc.down();
         }
-        log.info("MBean registered on channel "+channelID+". Listening on "+numSensorSessions+" SensorSession(s).");
+        log.info("MBean registered on channel "+channelID+". Listening on "+numSensorSessions+" SensorSession(s) and "+
+                numManagedSessions+" ManagedSession(s).");
     }
 
     private void unregisterMBean() throws AppiaException{

@@ -20,7 +20,12 @@
 package net.sf.appia.protocols.group.primary;
 
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
+
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanParameterInfo;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
@@ -58,6 +63,10 @@ public class PrimaryViewSession extends Session implements InitializableSession,
 
     private static Logger log = Logger.getLogger(PrimaryViewSession.class);
     
+    private static final String SET_PRIMARY="set_primary";
+    private static final String GET_BLOCKED="blocked";
+    private static final String GET_VIEW="view";
+    
     private boolean blocked=true;
     private View view, lastPrimaryView;
     private ViewState vs, vsOld;
@@ -69,6 +78,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     int primaryCounter;
     int[] newMembers;
     boolean newMembersState[];
+    private Map<String,String> operationsMap=new Hashtable<String,String>();
     
     List<GroupSendableEvent> pendingMessages=new ArrayList<GroupSendableEvent>();
     
@@ -96,6 +106,8 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             handleKickEvent((KickEvent) event);
         else if (event instanceof GroupSendableEvent)
             handleGroupSendable((GroupSendableEvent)event);
+        else if(event instanceof EchoProbeEvent)
+            handleEchoProbe((EchoProbeEvent)event);
         else {
             if (log.isDebugEnabled())
                 log.error("Received unexpected event: "+event);
@@ -362,15 +374,15 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             pendingMessages.clear();
     }
     
-    public String getParameter(String parameter) throws AppiaManagementException {
-        if(parameter.equals("blocked"))
-            return (blocked)? "true":"false";
-        if(parameter.equals("view")){
+    public Object getParameter(String parameter) throws AppiaManagementException {
+        if(parameter.equals(GET_BLOCKED))
+            return blocked;
+        if(parameter.equals(GET_VIEW)){
             String viewStr = "Membership: ";
             if(vs != null){
                 viewStr += ("\nNumber of members: "+vs.view.length+"\nMembers:\n");
                 for (int i = 0; i < vs.view.length; i++)
-                    viewStr += view.vs.view[i] + "\n";
+                    viewStr += vs.view[i] + "\n";
             }
             else 
                 viewStr += "NULL";
@@ -379,15 +391,19 @@ public class PrimaryViewSession extends Session implements InitializableSession,
         throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+this.getClass().getName());
     }
 
-    public void setParameter(String parameter, String value) throws AppiaManagementException {
-        if(parameter.equals("setPrimary")){
+    public void setParameter(String parameter) throws AppiaManagementException {
+        if(parameter.equals(SET_PRIMARY)){
             if(view == null){
                 log.warn("Process set to Primary by Management.");
                 primaryProcess = true;
             }
-            else if(blocked){
-                log.warn("View unblocked by Management. Process set to Primary");
-                deliverView();
+            else if(blocked && view != null){
+                primaryProcess = true;
+                try {
+                    new EchoProbeEvent().asyncGo(view.getChannel(), Direction.DOWN);
+                } catch (AppiaEventException e) {
+                    e.printStackTrace();
+                }
             }
             else{
                 log.warn("Management instruction "+parameter+" ignored.");
@@ -398,11 +414,76 @@ public class PrimaryViewSession extends Session implements InitializableSession,
                     +" do not accept the parameter '"+parameter+"'.");
     }
     
+    private void handleEchoProbe(EchoProbeEvent ev) {
+        if(blocked && view != null){
+            if(view.vs.view.length == 1){
+                deliverView();
+            }
+            else
+                if(ev.getProbeEvent() != null){
+                    ev.getProbeEvent().setSource(this);
+                    ev.getProbeEvent().setDir(Direction.DOWN);
+                    try {
+                        ev.getProbeEvent().init();
+                        ev.getProbeEvent().go();
+                    } catch (AppiaEventException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else{
+                    try {
+                        final ProbeEvent event = new ProbeEvent(view.getChannel(), Direction.DOWN, this, vs.group, vs.id);
+                        event.getMessage().pushInt(primaryCounter);
+                        event.getMessage().pushBoolean(wasPrimary);
+                        event.go();
+                    } catch (AppiaEventException e) {
+                        e.printStackTrace();
+                    }
+                }
+        }
+        else
+            log.warn("Management instruction "+SET_PRIMARY+" ignored.");
+
+    }
+    
     private boolean canSendMessages(){
         return !blocked || (blocked && view != null);
     }
 
-    public String[] getAllParameters() {
-        return new String[]{"setPrimary","blocked","view",};
+    public MBeanOperationInfo[] getAllParameters(String sessionID) {
+        MBeanOperationInfo[] mboi = new MBeanOperationInfo[3];
+        mboi[0] = new MBeanOperationInfo(sessionID+SET_PRIMARY,"sets the primary process",
+                new MBeanParameterInfo[]{},
+                "void",
+                MBeanOperationInfo.ACTION);
+        mboi[1] = new MBeanOperationInfo(sessionID+GET_BLOCKED,"verifies if is blocked",
+                new MBeanParameterInfo[]{},
+                "java.lang.Boolean",
+                MBeanOperationInfo.INFO);
+        mboi[2] = new MBeanOperationInfo(sessionID+GET_VIEW,"gets the view",
+                new MBeanParameterInfo[]{},
+                "java.lang.String",
+                MBeanOperationInfo.INFO);
+        operationsMap.put(sessionID+SET_PRIMARY, SET_PRIMARY);
+        operationsMap.put(sessionID+GET_BLOCKED, GET_BLOCKED);
+        operationsMap.put(sessionID+GET_VIEW, GET_VIEW);
+        return mboi;
     }
+    
+    public Object invoke(String action, MBeanOperationInfo info, Object[] params, String[] signature) 
+        throws AppiaManagementException {
+        log.debug("Calling action: "+action);
+        if(info.getImpact() == MBeanOperationInfo.ACTION){
+            if(params.length == 0){
+                setParameter(operationsMap.get(action));
+                return null;
+            }
+            else throw new AppiaManagementException("Action "+action+" called with the wrong parameters");
+        }
+        else if(info.getImpact() == MBeanOperationInfo.INFO){
+            return getParameter(operationsMap.get(action));
+        }
+        else throw new AppiaManagementException("Action "+action+" is not accepted");
+    }
+
 }

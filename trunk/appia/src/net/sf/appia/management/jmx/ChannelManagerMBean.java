@@ -35,6 +35,7 @@ import net.sf.appia.management.AppiaManagementException;
  * 
  * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
  * @version 1.0
+ * @deprecated
  */
 public interface ChannelManagerMBean {
 	public String getChannelName();

@@ -17,31 +17,47 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- /**
- * Title:        Appia<p>
- * Description:  Protocol development and composition framework<p>
- * Copyright:    Copyright (c) Nuno Carvalho and Luis Rodrigues<p>
- * Company:      F.C.U.L.<p>
- * @author Nuno Carvalho and Luis Rodrigues
- * @version 1.0
- */
 
-package net.sf.appia.management;
+package net.sf.appia.protocols.group.primary;
 
-import javax.management.MBeanOperationInfo;
-
+import net.sf.appia.core.AppiaEventException;
+import net.sf.appia.core.Channel;
+import net.sf.appia.core.Event;
+import net.sf.appia.core.Session;
 
 /**
- * This class defines a ManagedSession. A managed session is a session that can receive new
- * property values from the respective managed channel.
+ * This class defines a EchoProbeEvent
  * 
  * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
  * @version 1.0
  */
-public interface ManagedSession{
+public class EchoProbeEvent extends Event {
 
-    public Object invoke(String action, MBeanOperationInfo info, Object[] params, String[] signature) 
-        throws AppiaManagementException;
+    private ProbeEvent probeEvent=null;
     
-    public MBeanOperationInfo[] getAllParameters(String sessionID);
+    /**
+     * Creates a new EchoProbeEvent.
+     */
+    public EchoProbeEvent() {
+    }
+
+    /**
+     * Creates a new EchoProbeEvent.
+     * @param channel
+     * @param dir
+     * @param src
+     * @throws AppiaEventException
+     */
+    public EchoProbeEvent(Channel channel, int dir, Session src)
+            throws AppiaEventException {
+        super(channel, dir, src);
+    }
+
+    public ProbeEvent getProbeEvent() {
+        return probeEvent;
+    }
+
+    public void setProbeEvent(ProbeEvent probeEvent) {
+        this.probeEvent = probeEvent;
+    }
 }

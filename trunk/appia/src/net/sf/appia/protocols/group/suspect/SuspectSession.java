@@ -24,9 +24,15 @@ package net.sf.appia.protocols.group.suspect;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Map;
 
 import javax.management.AttributeChangeNotification;
+import javax.management.MBeanException;
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanParameterInfo;
 import javax.management.Notification;
+import javax.management.ReflectionException;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.AppiaException;
@@ -70,6 +76,13 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
      * This value is converted in number of rounds
      */
     public static final long DEFAULT_SUSPECT_TIME=30000; //in milliseconds
+    
+    private static final String GET_TIME="get_suspect_time";
+    private static final String GET_SWEEP="get_suspect_sweep";
+    private static final String SET_TIME="set_suspect_time";
+    private static final String SET_SWEEP="set_suspect_sweep";
+    MBeanOperationInfo[] mboi = null;
+    private Map<String,String> operationsMap=new Hashtable<String,String>();
 
     /** Creates a new Suspect session.
      */  
@@ -109,18 +122,17 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
      * 
      * @see net.sf.appia.management.ManagedSession#setParameter(java.lang.String, java.lang.String)
      */
-    public void setParameter(String parameter, String value) throws AppiaManagementException {
+    public void setParameter(String parameter, Long value) throws AppiaManagementException {
         Notification notif = null;
-        if (parameter.equals("suspect_sweep")){
+        if (parameter.equals(SET_SWEEP)){
             final Long oldValue = new Long(suspect_sweep);
-            final Long newValue = new Long(value);
-            suspect_sweep=newValue.longValue();
+            suspect_sweep=value.longValue();
             notif = new AttributeChangeNotification(this,1,time.currentTimeMillis(),"Suspect sweep Changed",
-                    "suspect_sweep",Long.class.getName(),oldValue,newValue);
+                    "suspect_sweep",Long.class.getName(),oldValue,value);
         }
-        else if (parameter.equals("suspect_time")){
+        else if (parameter.equals(SET_TIME)){
             final Long oldValue = new Long(rounds_idle);
-            rounds_idle=(new Long(value).longValue()/suspect_sweep)+1;
+            rounds_idle=(value.longValue()/suspect_sweep)+1;
             notif = new AttributeChangeNotification(this,1,time.currentTimeMillis(),"Rounds idle Changed",
                     "rounds_idle",Long.class.getName(),oldValue,new Long(rounds_idle));
         }
@@ -131,11 +143,54 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
             notifySensorListeners(notif);
     }
 
-    public String[] getAllParameters() {
-        return new String[]{"suspect_sweep","suspect_time",};
+    public Object invoke(String action, MBeanOperationInfo info, Object[] params, String[] signature) 
+        throws AppiaManagementException{
+
+        if(info.getImpact() == MBeanOperationInfo.ACTION){
+            if(params.length == 1 && signature[0].equals("java.lang.Long")){
+                setParameter(operationsMap.get(action), (Long)params[0]);
+                return null;
+            }
+            else throw new AppiaManagementException("Action "+action+" called with the wrong parameters");
+        }
+        else if(info.getImpact() == MBeanOperationInfo.INFO){
+            return getParameter(operationsMap.get(action));
+        }
+        else throw new AppiaManagementException("Action "+action+" is not accepted");
+    }
+    
+    public MBeanOperationInfo[] getAllParameters(String sessionID) {
+        createMBeanOperations(sessionID);
+        return mboi;
     }
 
-    /**
+    private void createMBeanOperations(String sessionID){
+        if(mboi != null)
+            return;
+        mboi = new MBeanOperationInfo[4];
+        mboi[0] = new MBeanOperationInfo(sessionID+GET_SWEEP,"gets the suspect sweep",
+                new MBeanParameterInfo[]{},
+                "long",
+                MBeanOperationInfo.INFO);
+        mboi[1] = new MBeanOperationInfo(sessionID+GET_TIME,"gets the suspect time",
+                new MBeanParameterInfo[]{},
+                "long",
+                MBeanOperationInfo.INFO);        
+        mboi[2] = new MBeanOperationInfo(sessionID+SET_SWEEP,"sets the suspect sweep",
+                new MBeanParameterInfo[]{new MBeanParameterInfo("sweep","java.lang.Long","sets the suspect sweep")},
+                "void",
+                MBeanOperationInfo.ACTION);
+        mboi[3] = new MBeanOperationInfo(sessionID+SET_TIME,"sets the suspect time",
+                new MBeanParameterInfo[]{new MBeanParameterInfo("time","java.lang.Long","sets the suspect time")},
+                "void",
+                MBeanOperationInfo.ACTION);        
+        operationsMap.put(sessionID+GET_SWEEP, GET_SWEEP);
+        operationsMap.put(sessionID+SET_SWEEP, SET_SWEEP);
+        operationsMap.put(sessionID+GET_TIME, GET_TIME);
+        operationsMap.put(sessionID+SET_TIME, SET_TIME);
+    }
+    
+    /*
      * Gets the value of a parameter.
      * Possible parameters:
      * <ul>
@@ -147,10 +202,10 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
      * 
      * @see net.sf.appia.management.ManagedSession#getParameter(java.lang.String)
      */
-    public String getParameter(String parameter) throws AppiaManagementException{
-        if (parameter.equals("suspect_sweep"))
+    public Object getParameter(String parameter) throws AppiaManagementException{
+        if (parameter.equals(GET_SWEEP))
             return ""+suspect_sweep;          
-        if (parameter.equals("suspect_time"))
+        if (parameter.equals(GET_TIME))
             return "" + (rounds_idle*suspect_sweep);
         throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+SuspectSession.class.getName());
     }
