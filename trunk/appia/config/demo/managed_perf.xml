@@ -123,8 +123,11 @@
 	<session name="vsl" sharing="private">
 		<protocol>net.sf.appia.protocols.group.sync.VSyncLayer</protocol>
 	</session>
-	<session name="throughput_top" sharing="private">
+	<!-- session name="throughput_top" sharing="private">
 		<protocol>net.sf.appia.protocols.measures.throughput.ThroughputLayer</protocol>
+	</session -->
+	<session name="primary" sharing="private">
+		<protocol>net.sf.appia.protocols.group.primary.PrimaryViewLayer</protocol>
 	</session>
 	<session name="perf" sharing="private">
 		<protocol>net.sf.appia.test.perf.PerfLayer</protocol>
@@ -173,13 +176,13 @@
 	</session>
 	</template>
 	
-	<management naming_port="1099" />
+	<management />
 
-	<channel name="Perf Channel" template="Perf Udp+NakFifoMulticast Template" initialized="yes" managed="yes">
+	<channel name="Perf Channel" template="Perf Tcp Template" initialized="yes" managed="yes">
 	<memorymanagement size="100000000" up_threshold="60000000" down_threshold="30000000" />
 		<chsession name="perf">
 			<!-- Example for ring test with two members and IP-Multicast address for gossip dissemination. -->
-			<parameter name="n">2</parameter>
+			<parameter name="n">4</parameter>
 			<parameter name="k">100</parameter>
 			<parameter name="r">10</parameter>
 			<parameter name="m">100</parameter>
