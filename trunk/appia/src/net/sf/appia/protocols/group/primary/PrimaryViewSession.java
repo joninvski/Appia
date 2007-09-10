@@ -24,6 +24,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 
@@ -421,17 +422,23 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             if(view.vs.view.length > 1){
                 try {
                     final int[] dests = new int[view.vs.view.length-1];
-                    int i=0;
-                    while(i<dests.length)
-                        if(i==view.ls.my_rank)
-                            i++;
-                        else
-                            dests[i] = i++;
+                    int viewLen=0, destsLen=0, rank = -1;
+                    while(viewLen<view.vs.view.length){
+                        rank = view.vs.getRank(view.vs.view[viewLen]);
+                        if (rank != view.ls.my_rank){
+                            dests[destsLen++] = rank;
+                        }
+                        viewLen++;
+                    }
                     
                     final DeliverViewEvent deliver = new DeliverViewEvent(ev.getChannel(), Direction.DOWN, this, view.vs.group, view.vs.id);
                     deliver.dest = dests;
                     deliver.getMessage().pushInt(primaryCounter);
                     deliver.go();
+//                    System.out.println("sent deliver to processes: ");
+//                    for(int dest : dests)
+//                        System.out.println("->"+dest);
+                    
                 } catch (AppiaEventException e) {
                     e.printStackTrace();
                 }
@@ -447,7 +454,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
         return !blocked || (blocked && view != null);
     }
 
-    public MBeanOperationInfo[] getAllParameters(String sessionID) {
+    public MBeanOperationInfo[] getOperations(String sessionID) {
         MBeanOperationInfo[] mboi = new MBeanOperationInfo[3];
         mboi[0] = new MBeanOperationInfo(sessionID+SET_PRIMARY,"sets the primary process",
                 new MBeanParameterInfo[]{},
@@ -467,6 +474,10 @@ public class PrimaryViewSession extends Session implements InitializableSession,
         return mboi;
     }
     
+    public MBeanAttributeInfo[] getAttributes(String sessionID){
+        return null;
+    }
+    
     public Object invoke(String action, MBeanOperationInfo info, Object[] params, String[] signature) 
         throws AppiaManagementException {
         log.debug("Calling action: "+action);
@@ -481,6 +492,10 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             return getParameter(operationsMap.get(action));
         }
         else throw new AppiaManagementException("Action "+action+" is not accepted");
+    }
+
+    public Object invoke(String attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+        return null;
     }
 
 }

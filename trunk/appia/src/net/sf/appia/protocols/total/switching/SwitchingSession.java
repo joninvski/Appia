@@ -23,6 +23,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 
@@ -501,7 +502,7 @@ public class SwitchingSession extends Session implements InitializableSession, M
                     +" do not accept the parameter '"+parameter+"'.");
     }
 
-    public MBeanOperationInfo[] getAllParameters(String sid) {
+    public MBeanOperationInfo[] getOperations(String sid) {
         MBeanOperationInfo[] mboi = new MBeanOperationInfo[3];
         mboi[0] = new MBeanOperationInfo(sid+"setCurrentChannel","sets the current channel",
                 new MBeanParameterInfo[]{new MBeanParameterInfo("channel","java.lang.String","channel name")},
@@ -520,6 +521,16 @@ public class SwitchingSession extends Session implements InitializableSession, M
     
     public Object invoke(String action, MBeanOperationInfo info, Object[] params, String[] signature) 
     throws AppiaManagementException {
+        return null;
+    }
+
+    public MBeanAttributeInfo[] getAttributes(String sessionID) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Object invoke(String attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+        // TODO Auto-generated method stub
         return null;
     }
 

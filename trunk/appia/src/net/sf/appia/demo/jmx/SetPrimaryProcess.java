@@ -28,6 +28,7 @@
 
 package net.sf.appia.demo.jmx;
 
+import javax.management.DynamicMBean;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectName;
@@ -36,7 +37,6 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
 import net.sf.appia.core.Channel;
-import net.sf.appia.management.jmx.ChannelManagerMBean;
 import net.sf.appia.protocols.group.primary.PrimaryViewSession;
 
 import org.apache.log4j.Logger;
@@ -84,11 +84,11 @@ public class SetPrimaryProcess {
         log.info("Getting instance of MBean for channel: "+channelName);
         final ObjectName delegateName = ObjectName.getInstance(Channel.class.getName()+":"+"name="+channelName);
         final Object proxy = MBeanServerInvocationHandler.newProxyInstance(connection, delegateName, 
-                        ChannelManagerMBean.class, true);
-        final ChannelManagerMBean bean = (ChannelManagerMBean) proxy;
-        final String sessionID = PrimaryViewSession.class.getName()+":"+channelName;
+                        DynamicMBean.class, true);
+        final DynamicMBean bean = (DynamicMBean) proxy;
         
-        log.info("Setting process to primary...");
-        bean.setParameter("setPrimary","",sessionID);
+        log.info("Setting process on "+namingHost+":"+namingPort+" to primary on Channel: "+channelName);
+        bean.invoke("primary:set_primary", new Object[]{}, new String[]{});
+        log.info("Done.");
     }
 }

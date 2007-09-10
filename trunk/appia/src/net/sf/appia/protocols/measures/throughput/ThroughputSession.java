@@ -21,12 +21,12 @@
 package net.sf.appia.protocols.measures.throughput;
 
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
-import javax.management.MBeanParameterInfo;
-
-import org.apache.log4j.Logger;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.AppiaException;
@@ -42,6 +42,8 @@ import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.management.AppiaManagementException;
 import net.sf.appia.management.ManagedSession;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class defines a ThroughputSession
@@ -62,6 +64,7 @@ public class ThroughputSession extends Session implements ManagedSession {
     private boolean created = false;
     private List<Channel> channels = new ArrayList<Channel>();
     private Channel timerChannel = null;
+    private Map<String,String>jmxFeaturesMap = new Hashtable<String,String>();
 
     /**
      * This class defines a Throughput.
@@ -207,47 +210,51 @@ public class ThroughputSession extends Session implements ManagedSession {
         }
     }
 
-    public String getParameter(String parameter) throws AppiaManagementException {
+    public Long getParameter(String parameter) throws AppiaManagementException {
         if(parameter.equals(THRPUT_MSG_PER_SECOND_UP))
-            return msgPerSecondUp.toString();
+            return msgPerSecondUp.get();
         if(parameter.equals(THRPUT_MSG_PER_SECOND_DOWN))
-            return msgPerSecondDown.toString();
+            return msgPerSecondDown.get();
         if(parameter.equals(THRPUT_BYTES_PER_SECOND_UP))
-            return bytesPerSecondUp.toString();
+            return bytesPerSecondUp.get();
         if(parameter.equals(THRPUT_BYTES_PER_SECOND_DOWN))
-            return bytesPerSecondDown.toString();
+            return bytesPerSecondDown.get();
         throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+this.getClass().getName());
     }
 
-    public void setParameter(String parameter, String value) throws AppiaManagementException {
-        throw new AppiaManagementException("The Session "+this.getClass().getName()+" does not accept any parameter to "+
-                "set a new value. It is read only.");
-    }
-
-    public MBeanOperationInfo[] getAllParameters(String sid) {
-        MBeanOperationInfo[] mboi = new MBeanOperationInfo[4];
-        mboi[0] = new MBeanOperationInfo(sid+THRPUT_BYTES_PER_SECOND_DOWN,"gets the value",
-                new MBeanParameterInfo[]{},
-                "long",
-                MBeanOperationInfo.INFO);
-        mboi[1] = new MBeanOperationInfo(sid+THRPUT_BYTES_PER_SECOND_UP,"gets the value",
-                new MBeanParameterInfo[]{},
-                "long",
-                MBeanOperationInfo.INFO);
-        mboi[2] = new MBeanOperationInfo(sid+THRPUT_MSG_PER_SECOND_DOWN,"gets the value",
-                new MBeanParameterInfo[]{},
-                "long",
-                MBeanOperationInfo.INFO);
-        mboi[3] = new MBeanOperationInfo(sid+THRPUT_MSG_PER_SECOND_UP,"gets the value",
-                new MBeanParameterInfo[]{},
-                "long",
-                MBeanOperationInfo.INFO);
-        return mboi;
+    public MBeanOperationInfo[] getOperations(String sid) {
+        return null;
     }
     
     public Object invoke(String action, MBeanOperationInfo info, Object[] params, String[] signature) 
     throws AppiaManagementException {
-        return null;
+        throw new AppiaManagementException("The Session "+this.getClass().getName()+" does not accept any parameter to "+
+        "set a new value. It is read only.");
+    }
+
+    public MBeanAttributeInfo[] getAttributes(String sid) {
+        jmxFeaturesMap.put(sid+THRPUT_BYTES_PER_SECOND_DOWN,THRPUT_BYTES_PER_SECOND_DOWN);
+        jmxFeaturesMap.put(sid+THRPUT_BYTES_PER_SECOND_UP,THRPUT_BYTES_PER_SECOND_UP);
+        jmxFeaturesMap.put(sid+THRPUT_MSG_PER_SECOND_DOWN,THRPUT_MSG_PER_SECOND_DOWN);
+        jmxFeaturesMap.put(sid+THRPUT_MSG_PER_SECOND_UP,THRPUT_MSG_PER_SECOND_UP);
+        return new MBeanAttributeInfo[]{
+                new MBeanAttributeInfo(sid+THRPUT_BYTES_PER_SECOND_DOWN,
+                        this.getClass().getName(),"gets the throughput value",
+                        true,false,false),
+                        new MBeanAttributeInfo(sid+THRPUT_BYTES_PER_SECOND_UP,
+                                this.getClass().getName(),"gets the throughput value",
+                                true,false,false),
+                                new MBeanAttributeInfo(sid+THRPUT_MSG_PER_SECOND_DOWN,
+                                        this.getClass().getName(),"gets the throughput value",
+                                        true,false,false),
+                                        new MBeanAttributeInfo(sid+THRPUT_MSG_PER_SECOND_UP,
+                                                this.getClass().getName(),"gets the throughput value",
+                                                true,false,false),
+        };
+    }
+
+    public Object invoke(String attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+        return getParameter(jmxFeaturesMap.get(attribute));
     }
     
 }

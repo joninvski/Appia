@@ -28,11 +28,10 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import javax.management.AttributeChangeNotification;
-import javax.management.MBeanException;
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.Notification;
-import javax.management.ReflectionException;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.AppiaException;
@@ -153,41 +152,52 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
             }
             else throw new AppiaManagementException("Action "+action+" called with the wrong parameters");
         }
-        else if(info.getImpact() == MBeanOperationInfo.INFO){
-            return getParameter(operationsMap.get(action));
-        }
         else throw new AppiaManagementException("Action "+action+" is not accepted");
     }
     
-    public MBeanOperationInfo[] getAllParameters(String sessionID) {
+    public MBeanOperationInfo[] getOperations(String sessionID) {
         createMBeanOperations(sessionID);
         return mboi;
     }
-
+    
+    public Object invoke(String parameter, MBeanAttributeInfo info) throws AppiaManagementException {
+            return getParameter(operationsMap.get(parameter));        
+    }
+    
     private void createMBeanOperations(String sessionID){
         if(mboi != null)
             return;
-        mboi = new MBeanOperationInfo[4];
-        mboi[0] = new MBeanOperationInfo(sessionID+GET_SWEEP,"gets the suspect sweep",
-                new MBeanParameterInfo[]{},
-                "long",
-                MBeanOperationInfo.INFO);
-        mboi[1] = new MBeanOperationInfo(sessionID+GET_TIME,"gets the suspect time",
-                new MBeanParameterInfo[]{},
-                "long",
-                MBeanOperationInfo.INFO);        
-        mboi[2] = new MBeanOperationInfo(sessionID+SET_SWEEP,"sets the suspect sweep",
+        mboi = new MBeanOperationInfo[2];
+        mboi[0] = new MBeanOperationInfo(sessionID+SET_SWEEP,"sets the suspect sweep",
                 new MBeanParameterInfo[]{new MBeanParameterInfo("sweep","java.lang.Long","sets the suspect sweep")},
                 "void",
                 MBeanOperationInfo.ACTION);
-        mboi[3] = new MBeanOperationInfo(sessionID+SET_TIME,"sets the suspect time",
+        mboi[1] = new MBeanOperationInfo(sessionID+SET_TIME,"sets the suspect time",
                 new MBeanParameterInfo[]{new MBeanParameterInfo("time","java.lang.Long","sets the suspect time")},
                 "void",
                 MBeanOperationInfo.ACTION);        
-        operationsMap.put(sessionID+GET_SWEEP, GET_SWEEP);
         operationsMap.put(sessionID+SET_SWEEP, SET_SWEEP);
-        operationsMap.put(sessionID+GET_TIME, GET_TIME);
         operationsMap.put(sessionID+SET_TIME, SET_TIME);
+    }
+
+    public MBeanAttributeInfo[] getAttributes(String sessionID){
+        MBeanAttributeInfo[] mbai = new MBeanAttributeInfo[2];
+        mbai[0] = new MBeanAttributeInfo(sessionID+GET_SWEEP,this.getClass().getName(),
+                "gets the suspect sweep",true,false,false);
+        mbai[1] = new MBeanAttributeInfo(sessionID+GET_TIME,this.getClass().getName(),
+                "gets the suspect time",true,false,false);
+        operationsMap.put(sessionID+GET_SWEEP, GET_SWEEP);
+        operationsMap.put(sessionID+GET_TIME, GET_TIME);
+        return mbai;
+    }
+
+
+    public long getSuspectSweep(){
+        return suspect_sweep;
+    }
+    
+    public long getSuspectTime(){
+        return rounds_idle*suspect_sweep;
     }
     
     /*
@@ -204,9 +214,9 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
      */
     public Object getParameter(String parameter) throws AppiaManagementException{
         if (parameter.equals(GET_SWEEP))
-            return ""+suspect_sweep;          
+            return getSuspectSweep();
         if (parameter.equals(GET_TIME))
-            return "" + (rounds_idle*suspect_sweep);
+            return getSuspectTime();
         throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+SuspectSession.class.getName());
     }
 

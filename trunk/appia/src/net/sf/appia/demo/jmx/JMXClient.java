@@ -28,6 +28,10 @@
 
 package net.sf.appia.demo.jmx;
 
+import javax.management.AttributeList;
+import javax.management.DynamicMBean;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectName;
@@ -80,16 +84,21 @@ public class JMXClient {
         final String channelName ="Perf Channel";
         log.info("Getting instance of MBean for channel: "+channelName);
         final ObjectName delegateName = ObjectName.getInstance(Channel.class.getName()+":"+"name="+channelName);
-        final Object proxy = MBeanServerInvocationHandler.newProxyInstance(connection, delegateName, ChannelManagerMBean.class, true);
-        final ChannelManagerMBean bean = (ChannelManagerMBean) proxy;
-        final String sessionID = SuspectSession.class.getName()+":Perf Channel";
+        final Object proxy = MBeanServerInvocationHandler.newProxyInstance(connection, delegateName, DynamicMBean.class, true);
+        final DynamicMBean bean = (DynamicMBean) proxy;
+//        final String sessionID = SuspectSession.class.getName()+":"+channelName;
         
         // Make some example calls to the MBean
-        final Long previousTime = new Long(bean.getParameter("suspect_sweep",sessionID));
-        log.info("Channel "+channelName+" has suspect_sweep: " + previousTime.longValue());
-        final long nextTime = previousTime.longValue()+SECOND_IN_MILLIS;
-        log.info("Channel "+channelName+": changing suspect_sweep to: " + nextTime);
-        bean.setParameter("suspect_sweep",""+nextTime,SuspectSession.class.getName()+":Perf Channel");
-        log.info("Channel "+channelName+" has suspect_sweep: " + bean.getParameter("suspect_sweep",sessionID));
+        
+        MBeanInfo mbi = bean.getMBeanInfo();
+        for(MBeanAttributeInfo info : mbi.getAttributes())
+            System.out.println("ATT: "+info.getName());
+        
+        final Long previousTime = (Long) bean.getAttribute("suspectl:suspect_sweep");
+        log.info("Channel "+channelName+" has suspect_sweep: " + previousTime);
+//        final long nextTime = previousTime.longValue()+SECOND_IN_MILLIS;
+//        log.info("Channel "+channelName+": changing suspect_sweep to: " + nextTime);
+//        bean.setParameter("suspect_sweep",""+nextTime,SuspectSession.class.getName()+":Perf Channel");
+//        log.info("Channel "+channelName+" has suspect_sweep: " + bean.getParameter("suspect_sweep",sessionID));
     }
 }

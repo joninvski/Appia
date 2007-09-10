@@ -30,15 +30,17 @@ package net.sf.appia.management.jmx;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.ListIterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
 import javax.management.DynamicMBean;
 import javax.management.InvalidAttributeValueException;
+import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanException;
+import javax.management.MBeanFeatureInfo;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.Notification;
@@ -51,6 +53,8 @@ import net.sf.appia.management.AppiaManagementException;
 import net.sf.appia.management.ManagedSession;
 import net.sf.appia.management.SensorSessionListener;
 
+import org.apache.log4j.Logger;
+
 
 /**
  * This class defines a ChannelManager.
@@ -61,10 +65,14 @@ import net.sf.appia.management.SensorSessionListener;
 public class ChannelManager extends NotificationBroadcasterSupport 
 implements DynamicMBean, SensorSessionListener {
 	
-    private class Operation{
-        MBeanOperationInfo operation;
+    private static Logger log = Logger.getLogger(ChannelManager.class);
+    
+    private static final String LOCALATT_USED_MEMORY = "usedMemory";
+    
+    private class Operation<T extends MBeanFeatureInfo>{
+        T operation;
         ManagedSession session;
-        Operation(MBeanOperationInfo op, ManagedSession s){
+        Operation(T op, ManagedSession s){
             operation = op;
             session = s;
         }
@@ -73,11 +81,13 @@ implements DynamicMBean, SensorSessionListener {
 	private Channel channel;
     // session name -> session
     private Map<String,Session> managedSessions;
-    // session name -> operations inside session
-    // private Map<String,String[]> parameters;
     // exported operation name -> session to call
-    private Map<String,Operation> operations;
+    private Map<String,Operation<MBeanOperationInfo>> operations;
+    private Map<String,Operation<MBeanAttributeInfo>> attributes;
+    
+    private MBeanInfo mbeanInfo;
     private ArrayList<MBeanOperationInfo>mboi;
+    private ArrayList<MBeanAttributeInfo>mbai;
 
     /**
      * Creates a new ChannelManager.
@@ -86,8 +96,13 @@ implements DynamicMBean, SensorSessionListener {
     public ChannelManager(Channel ch){
         channel = ch;
         managedSessions = new Hashtable<String,Session>();
-        operations = new Hashtable<String,Operation>();
+        operations = new Hashtable<String,Operation<MBeanOperationInfo>>();
+        attributes = new Hashtable<String,Operation<MBeanAttributeInfo>>();
         mboi = new ArrayList<MBeanOperationInfo>();
+        mbai = new ArrayList<MBeanAttributeInfo>();
+        mbai.add(new MBeanAttributeInfo(LOCALATT_USED_MEMORY,"gets the memory used by this channel",
+                this.getClass().getName(),true,false,false));
+        updateMBeanInfo();
     }
 
     /**
@@ -98,11 +113,22 @@ implements DynamicMBean, SensorSessionListener {
         managedSessions.put(s.getId(),s);
         if(s instanceof ManagedSession){
             final ManagedSession ms = (ManagedSession) s;
-            final MBeanOperationInfo[] ops = ms.getAllParameters(s.getId()+":");
-            for(int i=0; i<ops.length; i++){
-                operations.put(ops[i].getName(), new Operation(ops[i],ms));
-                mboi.add(ops[i]);
+            final MBeanOperationInfo[] ops = ms.getOperations(s.getId()+":");
+            if(ops != null){
+                for(int i=0; i<ops.length; i++){
+                    operations.put(ops[i].getName(), new Operation<MBeanOperationInfo>(ops[i],ms));
+                    mboi.add(ops[i]);
+                }
             }
+            final MBeanAttributeInfo[] atts = ms.getAttributes(s.getId()+":");
+            if(atts != null){
+                for(int i=0; i<atts.length;i++){
+                    attributes.put(atts[i].getName(), new Operation<MBeanAttributeInfo>(atts[i],ms));
+                    mbai.add(atts[i]);
+                }
+                
+            }
+            updateMBeanInfo();
         }
     }
 
@@ -115,11 +141,21 @@ implements DynamicMBean, SensorSessionListener {
         final Session session = managedSessions.remove(s.getId());
         if(session instanceof ManagedSession){
             final ManagedSession ms = (ManagedSession) session;
-            final MBeanOperationInfo[] ops = ms.getAllParameters(s.getId()+":");
-            for(int i=0; i<ops.length; i++){
-                operations.remove(ops[i].getName());
-                mboi.remove(ops[i]);
+            final MBeanOperationInfo[] ops = ms.getOperations(s.getId()+":");
+            if(ops != null){
+                for(int i=0; i<ops.length; i++){
+                    operations.remove(ops[i].getName());
+                    mboi.remove(ops[i]);
+                }
             }
+            final MBeanAttributeInfo[] atts = ms.getAttributes(s.getId()+":");
+            if(atts != null){
+                for(int i=0; i<atts.length;i++){
+                    attributes.remove(atts[i].getName());
+                    mbai.remove(atts[i]);
+                }
+            }
+            updateMBeanInfo();
         }
         return session;
     }    
@@ -156,34 +192,72 @@ implements DynamicMBean, SensorSessionListener {
             return channel.getMemoryManager().used();
     }
 
-    public Object getAttribute(String arg0) throws AttributeNotFoundException, MBeanException, ReflectionException {
-        // TODO Auto-generated method stub
-        return null;
+    public Object getAttribute(String att) throws AttributeNotFoundException, MBeanException, ReflectionException {
+        if(log.isDebugEnabled())
+            log.debug("GET from DynamicMBean: "+att);
+        if(att.equals(LOCALATT_USED_MEMORY))
+            return getUsedMemory();
+        
+        Operation<MBeanAttributeInfo> op = attributes.get(att);
+        if(op != null){
+            try {
+                Object obj =op.session.invoke(att, op.operation); 
+                return obj;
+            } catch (AppiaManagementException e) {
+                throw new MBeanException(e,"unable to invoke operation");
+            }
+        }
+        throw new AttributeNotFoundException("cannot find attribute "+att);
     }
 
-    public AttributeList getAttributes(String[] arg0) {
-        // TODO Auto-generated method stub
-        return null;
+    public AttributeList getAttributes(String[] attrs) {
+        final AttributeList attrList = new AttributeList();
+        for(String att : attrs){
+            if(att != null){
+                try {
+                    attrList.add(new Attribute(att,getAttribute(att)));
+                } catch (AttributeNotFoundException e1) {
+                    e1.printStackTrace();
+                } catch (MBeanException e1) {
+                    e1.printStackTrace();
+                } catch (ReflectionException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        }
+        return attrList;
     }
 
     public MBeanInfo getMBeanInfo() {
-        
-        MBeanOperationInfo[] opsArray = new MBeanOperationInfo[mboi.size()];
+        return mbeanInfo;
+    }
+    
+    private void updateMBeanInfo(){
+        final MBeanOperationInfo[] opsArray = new MBeanOperationInfo[mboi.size()];
         int i=0;
         for(MBeanOperationInfo inf : mboi)
             opsArray[i++] = inf;
-        return new MBeanInfo(this.getClass().getName(),
-                "Exported operations list",
-                null, // attributes
+        final MBeanAttributeInfo[] attsArray = new MBeanAttributeInfo[mbai.size()];
+        i=0;
+        for(MBeanAttributeInfo inf : mbai){
+            attsArray[i++] = inf;
+        }
+        mbeanInfo = new MBeanInfo(this.getClass().getName(),
+                "Exported operations and attributes list",
+                attsArray, // attributes
                 null, // constructors
                 opsArray, // operations
-                null); // notifications
+                null); // notifications        
     }
 
     public Object invoke(String actionName, Object[] params, String[] signature) throws MBeanException, ReflectionException {
-        Operation op = operations.get(actionName);
+        if(log.isDebugEnabled())
+            log.debug("Invoking: "+actionName+" params "+params.length);
+        if (actionName.equals("invoke") && params.length == 3)
+            return invoke((String)params[0], (Object[])params[1], (String[])params[2]);
+        final Operation<MBeanOperationInfo> op = operations.get(actionName);
         if (op == null)
-            return null;
+            throw new MBeanException(new AppiaManagementException("Operation "+actionName+" not found."));
         else{
             try {
                 return op.session.invoke(actionName,op.operation,params, signature);
@@ -193,14 +267,38 @@ implements DynamicMBean, SensorSessionListener {
         }
     }
 
-    public void setAttribute(Attribute arg0) throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException {
-        // TODO Auto-generated method stub
-        
+    public void setAttribute(Attribute att) throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException {
+        throw new AttributeNotFoundException("Attribute "+att+" does not exist or does not have a setter method.");
     }
 
-    public AttributeList setAttributes(AttributeList arg0) {
-        // TODO Auto-generated method stub
-        return null;
+    public AttributeList setAttributes(AttributeList attList) {
+        final ListIterator<Attribute> it = attList.listIterator();
+        Attribute att = null;
+        final String[] attrs = new String[attList.size()];
+        int i=0;
+        while(it.hasNext()){
+            att = it.next();
+            try {
+                setAttribute(att);
+                attrs[i] = att.getName();
+            } catch (AttributeNotFoundException e) {
+                attrs[i] = null;
+                e.printStackTrace();
+            } catch (InvalidAttributeValueException e) {
+                attrs[i] = null;
+                e.printStackTrace();
+            } catch (MBeanException e) {
+                attrs[i] = null;
+                e.printStackTrace();
+            } catch (ReflectionException e) {
+                attrs[i] = null;
+                e.printStackTrace();
+            }
+            finally{
+                i++;
+            }
+        }
+        return getAttributes(attrs);
     }
 
 }
