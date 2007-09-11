@@ -28,7 +28,6 @@
 
 package net.sf.appia.demo.jmx;
 
-import javax.management.AttributeList;
 import javax.management.DynamicMBean;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
@@ -40,8 +39,6 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
 import net.sf.appia.core.Channel;
-import net.sf.appia.management.jmx.ChannelManagerMBean;
-import net.sf.appia.protocols.group.suspect.SuspectSession;
 
 import org.apache.log4j.Logger;
 
