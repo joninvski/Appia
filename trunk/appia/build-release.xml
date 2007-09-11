@@ -5,17 +5,12 @@
 
 	USAGE:
 		ant -DAPPIA.release=<release_tag> -f build-release.xml
-	
-	TO GET CHANGE LOG:
-	cvs log -r<previous_tag>:: -S * > file.txt
-	
 #################################################################
 -->
 
 <project basedir="." default="all" name="APPIA releases">
     <property name="APPIA.web" location="web"/>
 	<property name="APPIA.temp" location="tmp"/>
-	<property name="APPIA.cvsRoot" value="nunomrc@dialnp-gw.di.fc.ul.pt:/home/appiacvsroot"/>	
 	
     <target name="init">
 		<mkdir dir="${APPIA.web}"/>
@@ -34,7 +29,10 @@
           target: export              
          ================================= -->
     <target name="export" depends="init" description=" ">
-        <cvs command="export" cvsroot="${APPIA.cvsRoot}" package="appia" dest="${APPIA.temp}" tag="${APPIA.release}"/>
+    	<exec dir="." executable="svn">
+    	  <arg line="co https://appia.svn.sourceforge.net/svnroot/appia/trunk ${APPIA.temp}"/>
+    	</exec>
+    	<!--cvs command="export" cvsroot="${APPIA.cvsRoot}" package="appia" dest="${APPIA.temp}" tag="${APPIA.release}"/-->
     </target>
 		
     <!-- ================================= 

@@ -74,7 +74,7 @@
         	<header>Appia Documentation</header>
         	<doctitle>Appia version ${APPIA.version}</doctitle>
         	<bottom>
-        		<![CDATA[COPYRIGHT 2006, University of Lisbon<BR>For updates and related information please see <A HREF="http://appia.di.fc.ul.pt/">Appia Home Page</A> or <A HREF="http://appia.continuent.org">Continuent GForge</A><BR>Send questions, sugestions or remarks to <A HREF="mailto:appia@di.fc.ul.pt">appia@di.fc.ul.pt</A>]]>
+        		<![CDATA[COPYRIGHT 2006-2007, University of Lisbon<BR>For updates and related information please see <A HREF="http://appia.di.fc.ul.pt/">Appia Home Page</A><BR>Send questions, sugestions or remarks to the <A HREF="mailto:appia-users@lists.sourceforge.net">appia-users mailing list</A>]]>
         	</bottom>
 			<classpath>
 		    	<fileset dir="${APPIA.libs}">
