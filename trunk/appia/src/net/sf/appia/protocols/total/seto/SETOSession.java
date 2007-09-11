@@ -486,66 +486,66 @@ public class SETOSession extends Session implements InitializableSession {
 	 * Tries to deliver REGULAR message.
 	 */
 	private void deliverRegular() {
-        for (ListIterator li = S.listIterator(); li.hasNext(); ) {
-            ListSEQContainer orderedMsg = (ListSEQContainer) li.next();
-			if (log.isDebugEnabled()) {
-				log.debug("Message in order with SN="+(localSN+1)+" -> "+orderedMsg);
-				log.debug("Messages in S {");
-				listOrderedMessage();
-				log.debug("}");
-			}
-		
-				ListContainer msgContainer = getMessage(orderedMsg.header,R);
-				
-				if (msgContainer != null && !hasMessage(orderedMsg,G)) {
-					log.debug("["+ls.my_rank+"] Delivering regular "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMillis());
-					try {
-						RegularServiceEvent rse = new RegularServiceEvent(msgContainer.event.getChannel(), Direction.UP, this, msgContainer.event.getMessage());
-						rse.go();
-					} catch (AppiaEventException e1) {
-						e1.printStackTrace();
-					}
-					G.addLast(orderedMsg);
-				
-                    // Avoid delivery of optimistic service after the regular service
-                    if (O.contains(msgContainer))
-                        O.remove(msgContainer);
-                    else
-                        O.add(msgContainer);
-                    
-                    if (pendingView == null) {
-					// ADJUSTING DELAYS
-					log.debug(ls.my_rank+": Adjusting delays...");
-					long _final = orderedMsg.time;
-					long _fast = msgContainer.header.getTime();
-					int _sender = msgContainer.header.id;
-					if(lastsender != -1){
-						log.debug("continueing adjusting the delays!");
-						log.debug("_final:"+_final+" | lastfinal:"+lastfinal+" | _fast:"+_fast+" | lastfast:"+lastfast);
-						long delta = (_final - lastfinal) - (_fast - lastfast);
-						log.debug("DELTA: "+delta);
-						if(delta > 0) {
-							log.debug("adjust("+lastsender+","+_sender+","+delta+")");
-							adjust(lastsender,_sender,delta);
-						}
-						else if (delta < 0) {
-							log.debug("adjust("+_sender+","+lastsender+","+delta+")");
-							adjust(_sender,lastsender,-delta);
-						}
-					}
-					lastsender = _sender;
-					lastfast = _fast;
-					lastfinal = _final;
-					localSN++;
-                    }
-				}
-                li.remove();
-		}
-        log.debug("DeliverRegular finished.");
+	    for (ListIterator li = S.listIterator(); li.hasNext(); ) {
+	        ListSEQContainer orderedMsg = (ListSEQContainer) li.next();
+	        if (log.isDebugEnabled()) {
+	            log.debug("Message in order with SN="+(localSN+1)+" -> "+orderedMsg);
+	            log.debug("Messages in S {");
+	            listOrderedMessage();
+	            log.debug("}");
+	        }
+
+	        ListContainer msgContainer = getMessage(orderedMsg.header,R);
+
+	        if (msgContainer != null && !hasMessage(orderedMsg,G)) {
+	            log.debug("["+ls.my_rank+"] Delivering regular "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMillis());
+	            try {
+	                RegularServiceEvent rse = new RegularServiceEvent(msgContainer.event.getChannel(), Direction.UP, this, msgContainer.event.getMessage());
+	                rse.go();
+	            } catch (AppiaEventException e1) {
+	                e1.printStackTrace();
+	            }
+	            G.addLast(orderedMsg);
+
+	            // Avoid delivery of optimistic service after the regular service
+	            if (O.contains(msgContainer))
+	                O.remove(msgContainer);
+	            else
+	                O.add(msgContainer);
+
+	            if (pendingView == null) {
+	                // ADJUSTING DELAYS
+	                log.debug(ls.my_rank+": Adjusting delays...");
+	                long _final = orderedMsg.time;
+	                long _fast = msgContainer.header.getTime();
+	                int _sender = msgContainer.header.id;
+	                if(lastsender != -1){
+	                    log.debug("continuing adjusting the delays!");
+	                    log.debug("_final:"+_final+" | lastfinal:"+lastfinal+" | _fast:"+_fast+" | lastfast:"+lastfast);
+	                    long delta = (_final - lastfinal) - (_fast - lastfast);
+	                    log.debug("DELTA: "+delta);
+	                    if(delta > 0) {
+	                        log.debug("adjust("+lastsender+","+_sender+","+delta+")");
+	                        adjust(lastsender,_sender,delta);
+	                    }
+	                    else if (delta < 0) {
+	                        log.debug("adjust("+_sender+","+lastsender+","+delta+")");
+	                        adjust(_sender,lastsender,-delta);
+	                    }
+	                }
+	                lastsender = _sender;
+	                lastfast = _fast;
+	                lastfinal = _final;
+	                localSN++;
+	            }
+	        }
+	        li.remove();
+	    }
+	    log.debug("DeliverRegular finished.");
 	}
-	
+
 	private void handleUniformTimer(UniformTimer timer) {
-		//log.debug("Uniform timer expired. Now is: "+timeProvider.currentTimeMillis());
+	    //log.debug("Uniform timer expired. Now is: "+timeProvider.currentTimeMillis());
 		if (!isBlocked && newUniformInfo && timeProvider.currentTimeMillis() - timeLastMsgSent >= UNIFORM_INFO_PERIOD) {
 			//log.debug("Last message sent was at time "+timeLastMsgSent+". Will send Uniform info!");
 			sendUniformInfo(timer.getChannel());
@@ -613,6 +613,8 @@ public class SETOSession extends Session implements InitializableSession {
 				}
 				it.remove();
 			}
+            else
+                return;
 		}
 	}
 	
