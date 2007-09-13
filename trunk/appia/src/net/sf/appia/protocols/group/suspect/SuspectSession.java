@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Map;
 
+import javax.management.Attribute;
 import javax.management.AttributeChangeNotification;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
@@ -160,7 +161,7 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
         return mboi;
     }
     
-    public Object invoke(String parameter, MBeanAttributeInfo info) throws AppiaManagementException {
+    public Object attributeGetter(String parameter, MBeanAttributeInfo info) throws AppiaManagementException {
             return getParameter(operationsMap.get(parameter));        
     }
     
@@ -542,5 +543,8 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
     /** Major debug mode.
      */
     public static final boolean debugFull=false;
+
+    public void attributeSetter(Attribute attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+    }
 
 }

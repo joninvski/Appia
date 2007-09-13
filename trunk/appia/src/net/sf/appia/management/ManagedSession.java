@@ -28,6 +28,7 @@
 
 package net.sf.appia.management;
 
+import javax.management.Attribute;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 
@@ -43,8 +44,10 @@ public interface ManagedSession{
 
     public Object invoke(String action, MBeanOperationInfo info, Object[] params, String[] signature) 
         throws AppiaManagementException;
-    public Object invoke(String attribute, MBeanAttributeInfo info)
+    public Object attributeGetter(String attribute, MBeanAttributeInfo info)
         throws AppiaManagementException;
+    public void attributeSetter(Attribute attribute, MBeanAttributeInfo info)
+    throws AppiaManagementException;
     
     public MBeanOperationInfo[] getOperations(String sessionID);
     public MBeanAttributeInfo[] getAttributes(String sessionID);

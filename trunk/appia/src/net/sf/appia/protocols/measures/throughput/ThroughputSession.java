@@ -25,6 +25,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import javax.management.Attribute;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 
@@ -59,13 +60,19 @@ public class ThroughputSession extends Session implements ManagedSession {
     public static final String THRPUT_MSG_PER_SECOND_DOWN = "msg_per_second_down";
     public static final String THRPUT_BYTES_PER_SECOND_UP = "bytes_per_second_up";
     public static final String THRPUT_BYTES_PER_SECOND_DOWN = "bytes_per_second_down";
-    
+    public static final String REFRESH_INTERVAL = "refresh_interval";
+
+    private static final float MINIMUM_VALUE = 0.05F;
+    private static final long DEFAULT_REFRESH_INTERVAL = 5000;
+
     private Throughput msgPerSecondUp, msgPerSecondDown, bytesPerSecondUp, bytesPerSecondDown;
     private boolean created = false;
     private List<Channel> channels = new ArrayList<Channel>();
     private Channel timerChannel = null;
     private Map<String,String>jmxFeaturesMap = new Hashtable<String,String>();
 
+    private long refreshInterval = DEFAULT_REFRESH_INTERVAL;
+    
     /**
      * This class defines a Throughput.
      * 
@@ -73,24 +80,32 @@ public class ThroughputSession extends Session implements ManagedSession {
      * @version 1.0
      */
     class Throughput {
-        private static final long SECOND=1000000;
-        private TimeProvider time = null;
-        private long sum=0, initialTime=0;
+        private static final long SECOND_IN_MILLIS=1000;
+        private TimeProvider timer = null;
+        private long counter=0, lastTime=0;
+        private float rate = 0F;
         
         Throughput(TimeProvider time){
-            this.time = time;
-            initialTime = time.currentTimeMicros();
+            this.timer = time;
+            lastTime = time.currentTimeMillis();
         }
         
-        long get(){
-            long t = ((time.currentTimeMicros()-initialTime)/SECOND);
-            if(t == 0)
-                t = 1;
-            return sum/t;
+        float get(){
+            long currentTime = timer.currentTimeMillis();
+            long diff = currentTime - lastTime;
+
+            if(diff > refreshInterval && diff > 0){
+                float myRate = ((float)counter/(float)diff)*SECOND_IN_MILLIS;
+                myRate = (myRate<MINIMUM_VALUE)? 0 : myRate;
+                rate = myRate;
+                counter = 0;
+                lastTime = currentTime;
+            }
+            return rate;
         }
         
         void add(long value){
-            sum += value;
+            counter += value;
         }
         
         @Override
@@ -210,7 +225,7 @@ public class ThroughputSession extends Session implements ManagedSession {
         }
     }
 
-    public Long getParameter(String parameter) throws AppiaManagementException {
+    public Object getParameter(String parameter) throws AppiaManagementException {
         if(parameter.equals(THRPUT_MSG_PER_SECOND_UP))
             return msgPerSecondUp.get();
         if(parameter.equals(THRPUT_MSG_PER_SECOND_DOWN))
@@ -219,6 +234,16 @@ public class ThroughputSession extends Session implements ManagedSession {
             return bytesPerSecondUp.get();
         if(parameter.equals(THRPUT_BYTES_PER_SECOND_DOWN))
             return bytesPerSecondDown.get();
+        if(parameter.equals(REFRESH_INTERVAL))
+            return refreshInterval;
+        throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+this.getClass().getName());
+    }
+
+    public void setParameter(String parameter, Object newValue) throws AppiaManagementException {
+        if(parameter.equals(REFRESH_INTERVAL)){
+            refreshInterval = (Long) newValue;
+            return;
+        }            
         throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+this.getClass().getName());
     }
 
@@ -237,25 +262,35 @@ public class ThroughputSession extends Session implements ManagedSession {
         jmxFeaturesMap.put(sid+THRPUT_BYTES_PER_SECOND_UP,THRPUT_BYTES_PER_SECOND_UP);
         jmxFeaturesMap.put(sid+THRPUT_MSG_PER_SECOND_DOWN,THRPUT_MSG_PER_SECOND_DOWN);
         jmxFeaturesMap.put(sid+THRPUT_MSG_PER_SECOND_UP,THRPUT_MSG_PER_SECOND_UP);
+        jmxFeaturesMap.put(sid+REFRESH_INTERVAL,REFRESH_INTERVAL);
         return new MBeanAttributeInfo[]{
                 new MBeanAttributeInfo(sid+THRPUT_BYTES_PER_SECOND_DOWN,
-                        this.getClass().getName(),"gets the throughput value",
+                        "float","gets the throughput value",
                         true,false,false),
                         new MBeanAttributeInfo(sid+THRPUT_BYTES_PER_SECOND_UP,
-                                this.getClass().getName(),"gets the throughput value",
+                                "float","gets the throughput value",
                                 true,false,false),
                                 new MBeanAttributeInfo(sid+THRPUT_MSG_PER_SECOND_DOWN,
-                                        this.getClass().getName(),"gets the throughput value",
+                                        "float","gets the throughput value",
                                         true,false,false),
                                         new MBeanAttributeInfo(sid+THRPUT_MSG_PER_SECOND_UP,
-                                                this.getClass().getName(),"gets the throughput value",
+                                                "float","gets the throughput value",
                                                 true,false,false),
+                new MBeanAttributeInfo(sid+REFRESH_INTERVAL,
+                        "long","gets and sets the refresh interval",
+                        true,true,false),
         };
     }
 
-    public Object invoke(String attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+    public Object attributeGetter(String attribute, MBeanAttributeInfo info) throws AppiaManagementException {
         return getParameter(jmxFeaturesMap.get(attribute));
     }
     
+    public void attributeSetter(Attribute attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+        String att = jmxFeaturesMap.get(attribute.getName());
+        System.out.println("call: "+attribute.getName()+" att "+att);
+        setParameter(att, attribute.getValue());
+    }
+
 }
 

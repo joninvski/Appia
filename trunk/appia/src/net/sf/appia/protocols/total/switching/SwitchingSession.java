@@ -23,6 +23,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import javax.management.Attribute;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
@@ -529,9 +530,14 @@ public class SwitchingSession extends Session implements InitializableSession, M
         return null;
     }
 
-    public Object invoke(String attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+    public Object attributeGetter(String attribute, MBeanAttributeInfo info) throws AppiaManagementException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    public void attributeSetter(Attribute attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+        // TODO Auto-generated method stub
+        
     }
 
     

@@ -24,6 +24,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import javax.management.Attribute;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
@@ -494,8 +495,12 @@ public class PrimaryViewSession extends Session implements InitializableSession,
         else throw new AppiaManagementException("Action "+action+" is not accepted");
     }
 
-    public Object invoke(String attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+    public Object attributeGetter(String attribute, MBeanAttributeInfo info) throws AppiaManagementException {
         return null;
+    }
+
+    public void attributeSetter(Attribute attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+        throw new AppiaManagementException("Attribute "+attribute+" does not have a setter");
     }
 
 }

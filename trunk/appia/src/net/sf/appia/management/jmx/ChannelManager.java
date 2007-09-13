@@ -198,11 +198,10 @@ implements DynamicMBean, SensorSessionListener {
         if(att.equals(LOCALATT_USED_MEMORY))
             return getUsedMemory();
         
-        Operation<MBeanAttributeInfo> op = attributes.get(att);
-        if(op != null){
+        final Operation<MBeanAttributeInfo> op = attributes.get(att);
+        if(op != null && (op.operation.isIs() || op.operation.isReadable())){
             try {
-                Object obj =op.session.invoke(att, op.operation); 
-                return obj;
+                return op.session.attributeGetter(att, op.operation); 
             } catch (AppiaManagementException e) {
                 throw new MBeanException(e,"unable to invoke operation");
             }
@@ -268,7 +267,20 @@ implements DynamicMBean, SensorSessionListener {
     }
 
     public void setAttribute(Attribute att) throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException {
-        throw new AttributeNotFoundException("Attribute "+att+" does not exist or does not have a setter method.");
+        if(log.isDebugEnabled())
+            log.debug("SET from DynamicMBean: "+att);
+        
+        final Operation<MBeanAttributeInfo> op = attributes.get(att.getName());
+        System.out.println("---> "+att.getName()+" OP="+op.operation.isWritable());
+        if(op != null && op.operation.isWritable()){
+            try {
+                op.session.attributeSetter(att, op.operation);
+            } catch (AppiaManagementException e) {
+                throw new MBeanException(e,"unable to invoke operation");
+            }
+        }
+        else
+            throw new AttributeNotFoundException("cannot find attribute "+att);
     }
 
     public AttributeList setAttributes(AttributeList attList) {
