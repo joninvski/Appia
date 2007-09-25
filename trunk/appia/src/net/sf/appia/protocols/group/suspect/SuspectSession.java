@@ -77,6 +77,20 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
      */
     public static final long DEFAULT_SUSPECT_TIME=30000; //in milliseconds
     
+    /** 
+     * Major debug mode.
+     */
+    public static final boolean debugFull=false;
+    
+    private ViewState vs;
+    private LocalState ls;
+
+    private long suspect_sweep=DEFAULT_SUSPECT_SWEEP;
+    private long rounds_idle=calcRoundsIdle(DEFAULT_SUSPECT_SWEEP, DEFAULT_SUSPECT_TIME);
+    private long round=0;
+    private long[] last_recv=new long[0];
+    private TimeProvider time = null;
+    
     private static final String GET_TIME="get_suspect_time";
     private static final String GET_SWEEP="get_suspect_sweep";
     private static final String SET_TIME="set_suspect_time";
@@ -265,15 +279,6 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
         time = init.getChannel().getTimeProvider();
     }
 
-    private ViewState vs;
-    private LocalState ls;
-
-    private long suspect_sweep=DEFAULT_SUSPECT_SWEEP;
-    private long rounds_idle=calcRoundsIdle(DEFAULT_SUSPECT_SWEEP, DEFAULT_SUSPECT_TIME);
-    private long round=0;
-    private long[] last_recv=new long[0];
-    private TimeProvider time = null;
-
     private void handleView(View ev) {
         vs=ev.vs;
         ls=ev.ls;
@@ -321,6 +326,7 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
 
     private void handleSuspect(Suspect ev) {
 
+        log.debug("Received Suspect from "+ev.orig);
         if (ev.getDir() == Direction.UP) {
             if ( ls.failed[ev.orig] ) {
                 log.debug("Invalid (failed) message source");
@@ -328,6 +334,12 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
             }
 
             ev.failed=ArrayOptimized.popArrayBoolean(ev.getMessage());
+            if(log.isDebugEnabled()){
+                log.debug("Failed on suspect: ");
+                for(int i=0; i<ev.failed.length; i++)
+                    log.debug("Member "+i+" failed="+ev.failed[i]);
+            }
+
         }
 
         if (ev.failed[ls.my_rank]) {
@@ -346,13 +358,14 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
                     Arrays.fill(new_failed,false);
                 }
                 new_failed[i]=true;
+                if(log.isDebugEnabled())
+                    log.debug("Member "+i+" has failed. Setting its flag in the array.");
             }
         }
 
         if (new_failed != null) {
             if (ev.getDir() == Direction.DOWN) {
                 ArrayOptimized.pushArrayBoolean(ls.failed,ev.getMessage());
-                //ev.getObjectsMessage().push(ls.failed);
                 try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
             }
 
@@ -407,7 +420,7 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
             sendSuspect(new_failed,ev.getChannel());
             sendFail(new_failed,ev.getChannel());
 
-            if (debugFull) {
+            if (log.isDebugEnabled()) {
                 String s="New failed members: ";
                 for (int j=0 ; j < new_failed.length ; j++)
                     if (new_failed[j])
@@ -428,6 +441,7 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
 
         round++;
 
+        // this should be here because after a long time, this value can reach Long.MAX_VALUE
         if (round < 0) {
             round=1;
             for (i=0 ; i < last_recv.length ; i++)
@@ -500,7 +514,6 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
         try {
             Suspect ev=new Suspect(failed,channel,Direction.DOWN,this,vs.group,vs.id);
             ArrayOptimized.pushArrayBoolean(ls.failed,ev.getMessage());
-            //ev.getObjectsMessage().push(ls.failed);
             ev.go();
         } catch (AppiaEventException ex) {
             ex.printStackTrace();
@@ -535,14 +548,9 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
     private long calcRoundsIdle(long suspect_sweep, long suspect_time) {
         long r=suspect_time/suspect_sweep; // number of rounds that corresponds to the time given
         if ((suspect_time % suspect_sweep) != 0)
-            r++; // correction if suspect time is not divedable by suspect sweep
+            r++; // correction if suspect time is not dividable by suspect sweep
         return r;
     }
-
-    // DEBUG
-    /** Major debug mode.
-     */
-    public static final boolean debugFull=false;
 
     public void attributeSetter(Attribute attribute, MBeanAttributeInfo info) throws AppiaManagementException {
     }
