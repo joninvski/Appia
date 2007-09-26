@@ -183,8 +183,8 @@
 		<chsession name="perf">
 			<!-- Example for ring test with two members and IP-Multicast address for gossip dissemination. -->
 			<parameter name="n">4</parameter>
-			<parameter name="k">100</parameter>
-			<parameter name="r">10</parameter>
+			<parameter name="k">10</parameter>
+			<parameter name="r">1000000</parameter>
 			<parameter name="m">100</parameter>
 			<parameter name="gossip">224.0.0.3:10001</parameter>
 		</chsession>
