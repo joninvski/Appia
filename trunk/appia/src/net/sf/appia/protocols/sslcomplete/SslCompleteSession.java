@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.KeyStore;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Random;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -42,9 +43,9 @@ import net.sf.appia.core.Event;
 import net.sf.appia.core.Layer;
 import net.sf.appia.core.events.AppiaMulticast;
 import net.sf.appia.core.events.SendableEvent;
-import net.sf.appia.protocols.common.AppiaThreadFactory;
 import net.sf.appia.protocols.common.RegisterSocketEvent;
 import net.sf.appia.protocols.tcpcomplete.AcceptReader;
+import net.sf.appia.protocols.tcpcomplete.SocketInfoContainer;
 import net.sf.appia.protocols.tcpcomplete.TcpCompleteSession;
 import net.sf.appia.protocols.utils.HostUtils;
 import net.sf.appia.protocols.utils.ParseUtils;
@@ -186,19 +187,19 @@ public class SslCompleteSession extends TcpCompleteSession implements Initializa
               System.arraycopy(dests, 0, valids, 0, i);
             }
             valids[i]=null;
-            sendUndelivered(e.getChannel(), dests[i]);
+            sendUndelivered(e.getChannel(), (InetSocketAddress) dests[i]);
           } else {
             if (valids != null)
               valids[i]=dests[i];
           }
         } else
-          sendUndelivered(e.getChannel(),dests[i]);
+          sendUndelivered(e.getChannel(),(InetSocketAddress) dests[i]);
       }
     } else if (e.dest instanceof InetSocketAddress) {
       if (!validate((InetSocketAddress)e.dest, e.getChannel()))
-        sendUndelivered(e.getChannel(), e.dest);
+        sendUndelivered(e.getChannel(), (InetSocketAddress) e.dest);
     } else {
-      sendUndelivered(e.getChannel(),e.dest);
+      sendUndelivered(e.getChannel(),(InetSocketAddress) e.dest);
     }
     
     if (valids != null) {
@@ -436,7 +437,8 @@ public class SslCompleteSession extends TcpCompleteSession implements Initializa
    * @return the new socket or null if an error occurred.
    * @throws IOException
    */
-  protected Socket createSSLSocket(HashMap hm,InetSocketAddress iwp,Channel channel) throws IOException{
+  protected Socket createSSLSocket(Hashtable<InetSocketAddress,SocketInfoContainer> hm,
+          InetSocketAddress iwp,Channel channel) throws IOException{
     synchronized(socketLock){
       Socket newSocket = null;
       

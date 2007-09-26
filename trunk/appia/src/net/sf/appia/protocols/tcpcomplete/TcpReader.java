@@ -77,8 +77,10 @@ public class TcpReader implements Runnable {
 		} catch (IOException ex) {
 			InetSocketAddress iwp = new InetSocketAddress(s.getInetAddress(),remotePort);
 
-			if(TcpCompleteConfig.debugOn)	
-				debug("message reception from "+iwp+" failed. Sending Undelivered event back.");
+			if(TcpCompleteConfig.debugOn){
+				debug("message reception from "+iwp+" failed. Sending Undelivered event back. Exception:");
+                ex.printStackTrace();
+            }            
 	
 			try {
 				TcpUndeliveredEvent undelivered = new TcpUndeliveredEvent(iwp);    

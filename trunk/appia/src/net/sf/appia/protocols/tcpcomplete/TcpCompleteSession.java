@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Random;
 
@@ -73,15 +73,15 @@ public class TcpCompleteSession extends Session implements InitializableSession{
   	param_SOTIMEOUT=SOTIMEOUT;
   
   //Channels
-  protected HashMap channels;
+  protected Hashtable<String,Channel> channels;
   
   //Open Sockets created by this node
 //  protected HashMap ourSockets;
-  protected HashMap ourReaders;
+  protected Hashtable<InetSocketAddress,SocketInfoContainer> ourReaders;
   
   //Sockets opened to us
 //  protected HashMap otherSockets;
-  protected HashMap otherReaders;
+  protected Hashtable<InetSocketAddress,SocketInfoContainer> otherReaders;
   
   //Accept Thread
   protected AcceptReader acceptThread;
@@ -103,14 +103,14 @@ public class TcpCompleteSession extends Session implements InitializableSession{
     super(layer);
     
     //init all
-    channels = new HashMap();
+    channels = new Hashtable<String,Channel>();
 //    ourSockets = new HashMap();
-    ourReaders = new HashMap();
+    ourReaders = new Hashtable<InetSocketAddress,SocketInfoContainer>();
 //    otherSockets = new HashMap();
-    otherReaders = new HashMap();
+    otherReaders = new Hashtable<InetSocketAddress,SocketInfoContainer>();
     
     socketLock = new Object();
-    channelLock = new Object();    
+    channelLock = new Object();
   }
   
   /**
@@ -171,12 +171,12 @@ public void init(SessionProperties params) {
         if (dests[i] instanceof InetSocketAddress)
           send(data, (InetSocketAddress)dests[i], e.getChannel());
         else
-          sendUndelivered(e.getChannel(),dests[i]);
+          sendUndelivered(e.getChannel(),(InetSocketAddress) dests[i]);
       }
     } else if (e.dest instanceof InetSocketAddress) {
       send(data, (InetSocketAddress)e.dest, e.getChannel());
     } else {
-      sendUndelivered(e.getChannel(),e.dest);
+      sendUndelivered(e.getChannel(),(InetSocketAddress) e.dest);
     }
     
     try {
@@ -342,47 +342,41 @@ public void init(SessionProperties params) {
   }
   
   protected void send(byte[] data, InetSocketAddress dest, Channel channel) {
-    Socket s = null;
-    
+    SocketInfoContainer container = null;
     try {
       //check if the socket exist int the opensockets created by us
       if(existsSocket(ourReaders,dest)){
         //if so use that socket
-        s = getSocket(ourReaders,dest);
+        container = getSocket(ourReaders,dest);
         if(TcpCompleteConfig.debugOn)
           debug("our socket, sending...");
       }
-      else{//if not
-        //check if socket exist in sockets created by the other
-        if(existsSocket(otherReaders,dest)){
+//    check if socket exist in sockets created by the other
+      else if(existsSocket(otherReaders,dest)){
           //if so	use that socket
-          s = getSocket(otherReaders,dest);
+          container = getSocket(otherReaders,dest);
           if(TcpCompleteConfig.debugOn)
             debug("other socket, sending...");
         }
         else{//if not
-          //create new socket and put it opensockets created by us
-          s = createSocket(ourReaders,dest,channel);
+          //create new socket and put it open sockets created by us
+          container = createSocket(ourReaders,dest,channel);
           if(TcpCompleteConfig.debugOn)
             debug("created new socket, sending...");
         }
-      }
       //send event by the chosen socket -> formatAndSend()
       if (TcpCompleteConfig.debugOn)
-        debug("Sending through "+s);
-      s.getOutputStream().write(data);
-      s.getOutputStream().flush();
+        debug("Sending through "+container.sender);
+      container.sender.getQueue().add(new MessageContainer(data,dest,channel));
     } catch (IOException ex) {
       if(TcpCompleteConfig.debugOn) {
         ex.printStackTrace();
         debug("Node "+dest+" failed.");
       }
-      sendUndelivered(channel,dest);
-      removeSocket(dest);
     }
   }
   
-  protected boolean existsSocket(HashMap hr, InetSocketAddress iwp){
+  protected boolean existsSocket(Hashtable<InetSocketAddress,SocketInfoContainer> hr, InetSocketAddress iwp){
     synchronized(socketLock){
       if(hr.containsKey(iwp))
         return true;
@@ -391,16 +385,16 @@ public void init(SessionProperties params) {
     }
   }
   
-  protected Socket getSocket(HashMap hm, InetSocketAddress iwp){
+  protected SocketInfoContainer getSocket(Hashtable<InetSocketAddress,SocketInfoContainer> hm, InetSocketAddress iwp){
     synchronized(socketLock){
-    	TcpReader reader = (TcpReader) hm.get(iwp); 
-    	reader.clearInactiveCounter();
-      return reader.getSocket();
+    	SocketInfoContainer container = hm.get(iwp);
+      return container;
     }
   }
   
   //create socket, put in hashmap and create thread
-  protected Socket createSocket(HashMap hr, InetSocketAddress iwp,Channel channel) throws IOException{
+  protected SocketInfoContainer createSocket(Hashtable<InetSocketAddress,SocketInfoContainer> hr, 
+          InetSocketAddress iwp,Channel channel) throws IOException{
     synchronized(socketLock){
       Socket newSocket = null;
       
@@ -409,36 +403,40 @@ public void init(SessionProperties params) {
       newSocket = new Socket(iwp.getAddress(),iwp.getPort());
       newSocket.setTcpNoDelay(true);
       
-      byte bPort[]= ParseUtils.intToByteArray(ourPort);
+      final byte bPort[]= ParseUtils.intToByteArray(ourPort);
       
       
       newSocket.getOutputStream().write(bPort);
       if(TcpCompleteConfig.debugOn)
         debug("Sending our original port "+ourPort);
-      
-      addSocket(hr, iwp, newSocket, channel);
-      
-      return newSocket;
+
+      return addSocket(hr, iwp, newSocket, channel);
     }
   }
   
-  protected void addSocket(HashMap hr, InetSocketAddress iwp,Socket socket,Channel channel){
+  protected SocketInfoContainer addSocket(Hashtable<InetSocketAddress,SocketInfoContainer> hr, 
+          InetSocketAddress iwp,Socket socket,Channel channel){
     synchronized(socketLock){
       final TcpReader reader = new TcpReader(socket,this,ourPort,iwp.getPort(),channel);
-      final Thread t = channel.getThreadFactory().newThread(reader);
-      t.setName("TCP reader thread ["+iwp+"]");
-      t.start();
-//      hm.put(iwp,socket);
-      hr.put(iwp,reader);
+      final Thread tr = channel.getThreadFactory().newThread(reader);
+      final TcpSender sender = new TcpSender(socket,new SenderQueue<MessageContainer>());
+      final Thread ts = channel.getThreadFactory().newThread(sender);
+      final SocketInfoContainer container = new SocketInfoContainer(reader,sender);
+      tr.setName("TCP reader thread ["+iwp+"]");
+      tr.start();
+      ts.setName("TCP sender thread ["+iwp+"]");
+      ts.start();
+      hr.put(iwp,container);
+      return container;
     }
   }
   
   protected void removeSocket(InetSocketAddress iwp){
     synchronized(socketLock){
       if(existsSocket(ourReaders,iwp))
-        ((TcpReader)(ourReaders.remove(iwp))).setRunning(false);
+        ourReaders.remove(iwp).close();
       else if(existsSocket(otherReaders,iwp))
-          ((TcpReader)(otherReaders.remove(iwp))).setRunning(false);
+          otherReaders.remove(iwp).close();
       else{
         if(TcpCompleteConfig.debugOn)
           debug("no socket anywhere?");
@@ -495,17 +493,90 @@ public void init(SessionProperties params) {
     return msg.toByteArray();
   }
   
-  protected void sendUndelivered(Channel channel, Object who) {
-    try {
-      TcpUndeliveredEvent undelivered = new TcpUndeliveredEvent(channel,Direction.UP,this,who);
-      undelivered.go();
-    } catch (AppiaEventException exception) {
-      exception.printStackTrace();
-    }
+  protected void sendASyncUndelivered(Channel channel, InetSocketAddress who) {
+      try {
+          new TcpUndeliveredEvent(channel,Direction.UP,this,who).asyncGo(channel, Direction.UP);
+      } catch (AppiaEventException exception) {
+          exception.printStackTrace();
+      }
+      removeSocket(who);
+  }
+
+  protected void sendUndelivered(Channel channel, InetSocketAddress who) {
+      try {
+          new TcpUndeliveredEvent(channel,Direction.UP,this,who).go();
+      } catch (AppiaEventException exception) {
+          exception.printStackTrace();
+      }
+      removeSocket(who);
   }
 
   private void debug(String msg){
-  	if (TcpCompleteConfig.debugOn)
   		System.out.println("[TcpComplete] ::"+msg);
   }
+
+  /**
+   * This class defines a TcpSender
+   * 
+   * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+   * @version 1.0
+   */
+  class TcpSender implements Runnable {
+      private Socket socket;
+      private SenderQueue<MessageContainer> queue;
+      private boolean running=true;
+      TcpSender(Socket s, SenderQueue<MessageContainer> sq){
+          socket = s;
+          queue = sq;
+      }
+      public void run() {
+          MessageContainer container = null;
+          while(isRunning()){
+              container = queue.removeNext();
+              try {
+                  socket.getOutputStream().write(container.data);
+                  socket.getOutputStream().flush();
+              } catch (IOException e) {
+                  sendASyncUndelivered(container.channel, container.who);
+                  e.printStackTrace();
+              }
+          }
+          try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+      }
+      
+      SenderQueue<MessageContainer> getQueue(){
+          return queue;
+      }
+      
+    public synchronized void setRunning(boolean r){
+        running = r;
+    }
+    
+    private synchronized boolean isRunning(){
+        return running;
+    }
+  }
+
+  /**
+   * 
+   * This class defines a MessageContainer
+   * 
+   * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+   * @version 1.0
+   */
+  class MessageContainer {
+      byte[] data;
+      InetSocketAddress who;
+      Channel channel;
+      MessageContainer(byte[] b, InetSocketAddress sa, Channel c){
+          data = b;
+          who = sa;
+          channel = c;
+      }
+  }
+  
 }
