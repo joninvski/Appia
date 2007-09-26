@@ -70,12 +70,12 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
 
     /** Default duration of a round.
      */
-    public static final long DEFAULT_SUSPECT_SWEEP=5000; //in milliseconds
+    public static final long DEFAULT_SUSPECT_SWEEP=2000; //in milliseconds
     /** Default time to suspect a member.
      * <br>
      * This value is converted in number of rounds
      */
-    public static final long DEFAULT_SUSPECT_TIME=30000; //in milliseconds
+    public static final long DEFAULT_SUSPECT_TIME=5000; //in milliseconds
     
     /** 
      * Major debug mode.
