@@ -56,11 +56,6 @@ public class TcpReader implements Runnable {
 	public TcpReader(Socket socket,TcpCompleteSession session, int originalPort, int remotePort, Channel channel){
 		super();
 		s = socket;
-		try {
-			socket.setSoTimeout(session.param_SOTIMEOUT);
-		} catch (SocketException e) {
-			e.printStackTrace();
-		}
 		parentSession = session;
 		this.originalPort = originalPort;
 		this.remotePort = remotePort;
@@ -108,6 +103,7 @@ public class TcpReader implements Runnable {
 				} catch (AppiaEventException ex) {
 					log.debug("Could not insert event: "+ex);
 		        } catch(SocketTimeoutException ste){
+                    log.debug("TIMEOUT EXCEPTION");
 				} catch (IOException ex) {
 					//send_undelivered :(
 					try {

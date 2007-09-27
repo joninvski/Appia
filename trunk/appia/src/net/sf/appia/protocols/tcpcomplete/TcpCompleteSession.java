@@ -323,9 +323,9 @@ public void init(SessionProperties params) {
 		e1.printStackTrace();
 	}
 	
-  	Iterator it = ourReaders.values().iterator();
+  	Iterator<SocketInfoContainer> it = ourReaders.values().iterator();
 	while(it.hasNext()){
-		TcpReader reader = (TcpReader) it.next();
+		TcpReader reader = it.next().reader;
 		if(reader.sumInactiveCounter() > param_MAX_INACTIVITY){
 			reader.setRunning(false);
 			it.remove();
@@ -333,7 +333,7 @@ public void init(SessionProperties params) {
 	}
 	it = otherReaders.values().iterator();
 	while(it.hasNext()){
-		TcpReader reader = (TcpReader) it.next();
+		TcpReader reader = it.next().reader;
 		if(reader.sumInactiveCounter() > param_MAX_INACTIVITY){
 			reader.setRunning(false);
 			it.remove();
@@ -366,7 +366,7 @@ public void init(SessionProperties params) {
         }
       //send event by the chosen socket -> formatAndSend()
       if (TcpCompleteConfig.debugOn)
-        debug("Sending through "+container.sender);
+        debug("Adding to socket Queue of "+container.sender);
       container.sender.getQueue().add(new MessageContainer(data,dest,channel));
     } catch (IOException ex) {
       if(TcpCompleteConfig.debugOn) {
@@ -402,6 +402,7 @@ public void init(SessionProperties params) {
       
       newSocket = new Socket(iwp.getAddress(),iwp.getPort());
       newSocket.setTcpNoDelay(true);
+      newSocket.setSoTimeout(param_SOTIMEOUT);
       
       final byte bPort[]= ParseUtils.intToByteArray(ourPort);
       
@@ -515,27 +516,39 @@ public void init(SessionProperties params) {
   		System.out.println("[TcpComplete] ::"+msg);
   }
 
+  interface TimeoutListener{
+      void timeout();
+  }
   /**
    * This class defines a TcpSender
    * 
    * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
    * @version 1.0
    */
-  class TcpSender implements Runnable {
+  class TcpSender implements Runnable, TimeoutListener {
       private Socket socket;
       private SenderQueue<MessageContainer> queue;
       private boolean running=true;
+      private NetTimer timer;
       TcpSender(Socket s, SenderQueue<MessageContainer> sq){
           socket = s;
           queue = sq;
       }
       public void run() {
+          timer = new NetTimer(3000,this);
+          timer.setActive(false);
+          timer.start();
           MessageContainer container = null;
           while(isRunning()){
               container = queue.removeNext();
               try {
+                  timer.setActive(true);
+                  timer.reset();
                   socket.getOutputStream().write(container.data);
                   socket.getOutputStream().flush();
+                  timer.setActive(false);
+                  if (TcpCompleteConfig.debugOn)
+                      debug("Sent message through "+container.who);
               } catch (IOException e) {
                   sendASyncUndelivered(container.channel, container.who);
                   e.printStackTrace();
@@ -559,6 +572,15 @@ public void init(SessionProperties params) {
     private synchronized boolean isRunning(){
         return running;
     }
+    
+    public void timeout() {
+        try {
+            socket.shutdownOutput();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        setRunning(false);
+    }
   }
 
   /**
@@ -577,6 +599,78 @@ public void init(SessionProperties params) {
           who = sa;
           channel = c;
       }
+  }
+  
+  class NetTimer extends Thread{
+    /** Rate at which timer is checked */
+    protected int rate = 100;
+    /** Length of timeout */
+    private int length;
+
+    /** Time elapsed */
+    private int elapsed;
+    
+    /** only calls timeout if active */
+    private boolean active=false;
+    private boolean running=true;
+    
+    private TimeoutListener listener;
+
+    /**
+      * Creates a timer of a specified length
+      * @param  length  Length of time before timeout occurs
+      */
+    public NetTimer (int length, TimeoutListener list){
+        // Assign to member variable
+        this.length = length;
+        // Set time elapsed
+        this.elapsed = 0;
+        listener = list;
+    }
+    
+    /** Resets the timer back to zero */
+    public synchronized void reset() {
+        elapsed = 0;
+    }
+    
+    public synchronized void setActive(boolean act){
+        active = act;
+    }
+
+    /** Performs timer specific code */
+    public void run() {
+        // Keep looping
+        while (isRunning()){
+            // Put the timer to sleep
+            try{ 
+                Thread.sleep(rate);
+            }
+            catch (InterruptedException ioe) {
+                continue;
+            }
+
+            // Use 'synchronized' to prevent conflicts
+            synchronized ( this ){
+                // Increment time remaining
+                elapsed += rate;
+
+                // Check to see if the time has been exceeded
+                if (active && elapsed > length){
+                    // Trigger a timeout
+                    listener.timeout();
+                }
+            }
+        }
+    }
+    
+    public synchronized void setRunning(boolean r){
+        running = r;
+    }
+    
+    private synchronized boolean isRunning(){
+        return running;
+    }
+
   }
   
 }
