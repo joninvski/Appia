@@ -167,13 +167,13 @@ public class Appia {
 
   }
 
-//  public void instanceStop() {
-//      synchronized (this) {
-//      	running = false;
-//      	timerManager.stop();
+  public void instanceStop() {
+      synchronized (this) {
+      	running = false;
+      	timerManager.stop();
 //      	instanceGetAppiaThread().interrupt();
-//  	}
-//  }
+  	}
+  }
   
   /* the instance of Appia! */
   protected static Appia appia=new Appia();
@@ -214,7 +214,7 @@ public class Appia {
   }
   
   /**
-   * Deregisters a {@link net.sf.appia.core.EventScheduler EventScheduler}.
+   * Unregisters a {@link net.sf.appia.core.EventScheduler EventScheduler}.
    *
    * @param eventScheduler the {@link net.sf.appia.core.EventScheduler EventScheduler} to deregister.
    * It does nothing if the given {@link net.sf.appia.core.EventScheduler EventScheduler} is not registered.
