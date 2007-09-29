@@ -113,7 +113,7 @@ public class ThroughputSession extends Session implements ManagedSession {
             return ""+get();
         }
     }
-    
+
     /**
      * Creates a new ThroughputSession.
      * @param layer
@@ -288,7 +288,7 @@ public class ThroughputSession extends Session implements ManagedSession {
     
     public void attributeSetter(Attribute attribute, MBeanAttributeInfo info) throws AppiaManagementException {
         String att = jmxFeaturesMap.get(attribute.getName());
-        System.out.println("call: "+attribute.getName()+" att "+att);
+//        System.out.println("call: "+attribute.getName()+" att "+att);
         setParameter(att, attribute.getValue());
     }
 
