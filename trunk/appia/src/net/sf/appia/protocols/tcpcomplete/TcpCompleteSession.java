@@ -23,9 +23,16 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+
+import javax.management.Attribute;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanOperationInfo;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.AppiaException;
@@ -41,6 +48,8 @@ import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.core.message.Message;
 import net.sf.appia.core.message.MsgBuffer;
+import net.sf.appia.management.AppiaManagementException;
+import net.sf.appia.management.ManagedSession;
 import net.sf.appia.protocols.common.RegisterSocketEvent;
 import net.sf.appia.protocols.utils.HostUtils;
 import net.sf.appia.protocols.utils.ParseUtils;
@@ -61,7 +70,8 @@ import org.apache.log4j.Logger;
  * 
  * @author Pedro Vicente, Alexandre Pinto
  */
-public class TcpCompleteSession extends Session implements InitializableSession{
+public class TcpCompleteSession extends Session 
+    implements InitializableSession,ManagedSession{
   
     private static Logger log = Logger.getLogger(TcpCompleteSession.class);
 
@@ -94,6 +104,8 @@ public class TcpCompleteSession extends Session implements InitializableSession{
 //  private Benchmark bench=null;
   
   private Channel timerChannel=null;
+  
+  private Measures measures=new Measures();
   
   /**
    * Constructor for NewTcpSession.
@@ -266,6 +278,7 @@ public void init(SessionProperties params) {
   private void handleChannelInit(ChannelInit e){
     //add channel to hash map
     putChannel(e.getChannel());
+    measures.setTimeProvider(e.getChannel().getTimeProvider());
     try {
       e.go();
     } catch (AppiaEventException ex) {
@@ -367,6 +380,8 @@ public void init(SessionProperties params) {
       //send event by the chosen socket -> formatAndSend()
       if (TcpCompleteConfig.debugOn)
         debug("Adding to socket Queue of "+container.sender);
+      measures.countBytesDown(data.length);
+      measures.countMessagesDown(1);
       container.sender.getQueue().add(new MessageContainer(data,dest,channel));
     } catch (IOException ex) {
       if(TcpCompleteConfig.debugOn) {
@@ -402,7 +417,7 @@ public void init(SessionProperties params) {
       
       newSocket = new Socket(iwp.getAddress(),iwp.getPort());
       newSocket.setTcpNoDelay(true);
-      newSocket.setSoTimeout(param_SOTIMEOUT);
+//      newSocket.setSoTimeout(param_SOTIMEOUT);
       
       final byte bPort[]= ParseUtils.intToByteArray(ourPort);
       
@@ -418,7 +433,7 @@ public void init(SessionProperties params) {
   protected SocketInfoContainer addSocket(Hashtable<InetSocketAddress,SocketInfoContainer> hr, 
           InetSocketAddress iwp,Socket socket,Channel channel){
     synchronized(socketLock){
-      final TcpReader reader = new TcpReader(socket,this,ourPort,iwp.getPort(),channel);
+      final TcpReader reader = new TcpReader(socket,this,ourPort,iwp.getPort(),channel, measures);
       final Thread tr = channel.getThreadFactory().newThread(reader);
       final TcpSender sender = new TcpSender(socket,new SenderQueue<MessageContainer>());
       final Thread ts = channel.getThreadFactory().newThread(sender);
@@ -516,42 +531,33 @@ public void init(SessionProperties params) {
   		System.out.println("[TcpComplete] ::"+msg);
   }
 
-  interface TimeoutListener{
-      void timeout();
-  }
   /**
    * This class defines a TcpSender
    * 
    * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
    * @version 1.0
    */
-  class TcpSender implements Runnable, TimeoutListener {
+  class TcpSender implements Runnable {
       private Socket socket;
       private SenderQueue<MessageContainer> queue;
       private boolean running=true;
-      private NetTimer timer;
       TcpSender(Socket s, SenderQueue<MessageContainer> sq){
           socket = s;
           queue = sq;
       }
       public void run() {
-          timer = new NetTimer(3000,this);
-          timer.setActive(false);
-          timer.start();
           MessageContainer container = null;
           while(isRunning()){
               container = queue.removeNext();
               try {
-                  timer.setActive(true);
-                  timer.reset();
                   socket.getOutputStream().write(container.data);
                   socket.getOutputStream().flush();
-                  timer.setActive(false);
                   if (TcpCompleteConfig.debugOn)
-                      debug("Sent message through "+container.who);
+                      debug("Added to Queue of peer "+container.who);
               } catch (IOException e) {
                   sendASyncUndelivered(container.channel, container.who);
-                  e.printStackTrace();
+                  if(TcpCompleteConfig.debugOn)
+                      e.printStackTrace();
               }
           }
           try {
@@ -573,14 +579,6 @@ public void init(SessionProperties params) {
         return running;
     }
     
-    public void timeout() {
-        try {
-            socket.shutdownOutput();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        setRunning(false);
-    }
   }
 
   /**
@@ -600,77 +598,25 @@ public void init(SessionProperties params) {
           channel = c;
       }
   }
-  
-  class NetTimer extends Thread{
-    /** Rate at which timer is checked */
-    protected int rate = 100;
-    /** Length of timeout */
-    private int length;
 
-    /** Time elapsed */
-    private int elapsed;
-    
-    /** only calls timeout if active */
-    private boolean active=false;
-    private boolean running=true;
-    
-    private TimeoutListener listener;
+  public Object attributeGetter(String attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+      return measures.attributeGetter(attribute, info);
+  }
 
-    /**
-      * Creates a timer of a specified length
-      * @param  length  Length of time before timeout occurs
-      */
-    public NetTimer (int length, TimeoutListener list){
-        // Assign to member variable
-        this.length = length;
-        // Set time elapsed
-        this.elapsed = 0;
-        listener = list;
-    }
-    
-    /** Resets the timer back to zero */
-    public synchronized void reset() {
-        elapsed = 0;
-    }
-    
-    public synchronized void setActive(boolean act){
-        active = act;
-    }
+  public void attributeSetter(Attribute attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+      measures.attributeSetter(attribute, info);
+  }
 
-    /** Performs timer specific code */
-    public void run() {
-        // Keep looping
-        while (isRunning()){
-            // Put the timer to sleep
-            try{ 
-                Thread.sleep(rate);
-            }
-            catch (InterruptedException ioe) {
-                continue;
-            }
+  public MBeanAttributeInfo[] getAttributes(String sessionID) {
+      return measures.getAttributes(sessionID);
+  }
 
-            // Use 'synchronized' to prevent conflicts
-            synchronized ( this ){
-                // Increment time remaining
-                elapsed += rate;
+  public MBeanOperationInfo[] getOperations(String sessionID) {
+      return null;
+  }
 
-                // Check to see if the time has been exceeded
-                if (active && elapsed > length){
-                    // Trigger a timeout
-                    listener.timeout();
-                }
-            }
-        }
-    }
-    
-    public synchronized void setRunning(boolean r){
-        running = r;
-    }
-    
-    private synchronized boolean isRunning(){
-        return running;
-    }
-
+  public Object invoke(String action, MBeanOperationInfo info, Object[] params, String[] signature) throws AppiaManagementException {
+      return measures.invoke(action, info, params, signature);
   }
   
 }

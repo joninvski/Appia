@@ -29,5 +29,5 @@
  */
 public class TcpCompleteConfig {
 
-	public static final boolean debugOn = true;
+	public static final boolean debugOn = false;
 }

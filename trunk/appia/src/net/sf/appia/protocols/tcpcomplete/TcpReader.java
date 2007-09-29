@@ -48,18 +48,21 @@ public class TcpReader implements Runnable {
 	private int originalPort; //port of the accept socket
 	private Channel channel;
 	private Benchmark bench;
+    private Measures measures;
 	
 	private int inactiveCounter=0;
 	
 	private boolean running;
 	
-	public TcpReader(Socket socket,TcpCompleteSession session, int originalPort, int remotePort, Channel channel){
+	public TcpReader(Socket socket,TcpCompleteSession session, int originalPort, int remotePort, 
+            Channel channel, Measures m){
 		super();
 		s = socket;
 		parentSession = session;
 		this.originalPort = originalPort;
 		this.remotePort = remotePort;
 		this.channel = channel;
+        measures = m;
 		setRunning(true);
 	}
 
@@ -98,7 +101,9 @@ public class TcpReader implements Runnable {
 					if(event != null){
 						if(TcpCompleteConfig.debugOn)	
 							debug("received an event sending it to the appia stack: "+event+" Channel: "+event.getChannel());
-						event.asyncGo(event.getChannel(), Direction.UP);						
+						event.asyncGo(event.getChannel(), Direction.UP);
+                        measures.countBytesUp(event.getMessage().length());
+                        measures.countMessagesUp(1);
 					}
 				} catch (AppiaEventException ex) {
 					log.debug("Could not insert event: "+ex);
