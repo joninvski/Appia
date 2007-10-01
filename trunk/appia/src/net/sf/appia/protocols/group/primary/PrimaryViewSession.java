@@ -222,13 +222,16 @@ public class PrimaryViewSession extends Session implements InitializableSession,
                     else {
                         // Deliver view
                         deliverView();
-                    }                 
+                    }
                 }
                 else {
                     // Left the primary partition...
                     log.debug("Left the primary partition");
                     isPrimary = false;
                     wasPrimary = true;
+                    // leaves as soon as it knows that left the primary partition.
+                    // TODO fix this!!!
+                    leave(view.getChannel());
                 }
             }
             else {
