@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE appia PUBLIC "-//DTDName//DTD//EN"
-	"http://appia.di.fc.ul.pt/xml/3.2.1/appiaxml.dtd">
+	"../xml/appiaxml.dtd">
 <appia>
 	<template name="Perf Udp+Fifo Template">
 	<session name="udp" sharing="private">
@@ -203,6 +203,9 @@
 	</session>
 	</template>
 
+	<management />
+
+
 	<channel name="Perf Channel" template="Perf Udp+NakFifoMulticast Template" initialized="no">
 		<chsession name="perf">
 			<!-- Example for ring test with two members and IP-Multicast address for gossip dissemination. -->
@@ -215,7 +218,7 @@
 	</channel>
 
 
-	<channel name="Perf Channel" template="Perf Tcp Template" initialized="yes">
+	<channel name="Perf Channel" template="Perf Tcp Template" initialized="yes" managed="yes">
 		<chsession name="perf">
 			<parameter name="lo">false</parameter>
 			<parameter name="n">2</parameter>

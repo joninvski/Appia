@@ -231,7 +231,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
                     wasPrimary = true;
                     // leaves as soon as it knows that left the primary partition.
                     // TODO fix this!!!
-                    leave(view.getChannel());
+                    // leave(view.getChannel());
                 }
             }
             else {

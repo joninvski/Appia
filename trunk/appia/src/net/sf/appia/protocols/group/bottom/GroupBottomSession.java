@@ -161,7 +161,7 @@ public class GroupBottomSession extends Session {
 
             ev.orig=omsg.popInt();
 
-            if ((ev.orig < 0) || (ev.orig >= vs.view.length) && (ev.orig == ls.my_rank)) {
+            if ((ev.orig < 0) || (ev.orig >= vs.view.length) || (ev.orig == ls.my_rank)) {
                 log.debug("Event discarded due to bad origin "+ev.orig);
                 return;
             }
@@ -277,7 +277,7 @@ public class GroupBottomSession extends Session {
         ls=ev.ls;
 
         if (debugFull)
-            log.debug("Recived new view: group="+groupHashCode+" view="+viewHashCode);
+            log.debug("Received new view: group="+groupHashCode+" view="+viewHashCode);
 
         // Checks if the channel support AppiaMulticast
         supportsAppiaMulticast=false;
@@ -317,7 +317,7 @@ public class GroupBottomSession extends Session {
         // Emptying buffer
         GroupSendableEvent e;
         while ((e=buffer.get()) != null) {
-            if (debugFull)
+            if (log.isDebugEnabled())
                 log.debug("Debuffering event "+e);
             handleUpGroupSendableEvent(e);
         }

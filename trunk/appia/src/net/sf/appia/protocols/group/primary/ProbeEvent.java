@@ -52,4 +52,8 @@ public class ProbeEvent extends GroupSendableEvent {
         super(omsg);
     }
     
+    public String toString(){
+        return this.getClass().getName() + "with orig "+this.orig+", src "+this.source+" ,dest "+this.dest+super.toString();
+    }
+    
 }
