@@ -414,7 +414,7 @@ public class SETOSession extends Session implements InitializableSession {
 				sse.go();
 			} catch (AppiaEventException e1) {
 				e1.printStackTrace();
-			} 
+			}
 			O.add(container);
 			if(coordinator() && !isBlocked) {
 				log.debug("I'm the coordinator. Sending message to order");
@@ -602,7 +602,7 @@ public class SETOSession extends Session implements InitializableSession {
 			ListSEQContainer nextMsg = (ListSEQContainer)it.next();
 			if (isUniform(nextMsg.header)) {
 				ListContainer msgContainer = getRemoveMessage(nextMsg.header,R);
-				log.debug("Resending message to Appl: "+msgContainer.event);
+				log.debug("Delivering message: "+msgContainer.event);
 				log.debug("["+ls.my_rank+"] Delivering final "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMillis());
 				try {
 					// deliver uniform notification

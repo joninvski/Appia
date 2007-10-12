@@ -127,7 +127,7 @@ public class Buffer{
      *    @return true if the buffer is empty and false otherwise
      */
     public boolean isEmpty(){
-        return (lista.size()==0);
+        return lista.isEmpty();
     }
 
     public int size(){
