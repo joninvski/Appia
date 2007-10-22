@@ -75,8 +75,7 @@ public class AppiaGroup implements GroupConfiguration {
 			AppiaGroup ag = (AppiaGroup) o;
 			return ag.groupName.equals(this.groupName);
 		}
-		else
-			return false;
+		else return false;
 	}
 	
 	@Override
