@@ -60,5 +60,11 @@ public class AppiaMessage extends Message implements net.sf.jgcs.Message, Clonea
 		senderAddress = sender;
 	}
 
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+	    AppiaMessage m = (AppiaMessage)super.clone();
+	    m.senderAddress = senderAddress;
+	    return m;
+	}
 	
 }

@@ -53,7 +53,7 @@ public class StableSession extends Session {
     private static Logger log = Logger.getLogger(StableSession.class);
 
     /**
-     * Default number of messages between gossip dessimination.
+     * Default number of messages between gossip dissemination.
      */
     public static final long DEFAULT_GOSSIP_INTERVAL=32;
     public static final long DEFAULT_GOSSIP_TIME=5000;

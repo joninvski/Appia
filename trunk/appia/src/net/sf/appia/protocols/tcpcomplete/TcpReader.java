@@ -201,8 +201,8 @@ public class TcpReader implements Runnable {
 		        e.source=new InetSocketAddress(s.getInetAddress(),remotePort);
 			
 			e.dest=new InetSocketAddress(s.getLocalAddress(),originalPort);
-			
-			e.getMessage().setByteArray(data,curPos,total-curPos);
+			e.setMessage(msgChannel.getMessageFactory().newMessage(data,curPos,total-curPos));
+//			e.getMessage().setByteArray(data,curPos,total-curPos);
 
 			if (bench != null) bench.stopBench("readandformat");			
 			

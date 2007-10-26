@@ -28,6 +28,7 @@ import net.sf.appia.core.Channel;
 import net.sf.appia.core.ChannelCursor;
 import net.sf.appia.core.Event;
 import net.sf.appia.core.Layer;
+import net.sf.appia.core.message.MessageFactory;
 import net.sf.appia.jgcs.protocols.top.SimpleTOPLayer;
 import net.sf.appia.jgcs.protocols.top.SimpleTOPSession;
 import net.sf.appia.jgcs.protocols.top.TOPLayer;
@@ -58,6 +59,7 @@ public class jGCSAppiaRunnable extends AbstractAppiaRunnable {
 		if(channels.length == 0)
 			throw new AppiaXMLException("There are no Channels in the given configuration");
 		
+		MessageFactory msgFactory = new MessageFactoryImpl();
 		for(int i=0; i<channels.length; i++){
 			ChannelCursor cc = channels[i].getCursor();
 			cc.top();
@@ -69,6 +71,7 @@ public class jGCSAppiaRunnable extends AbstractAppiaRunnable {
 							" and should be "+TOPLayer.class.getName()+" or "+SimpleTOPLayer.class.getName());
 			if(channels[i].isStarted())
 				throw new AppiaXMLException("Channels should not be started in the XML configuration file when used with jGCS.");
+			channels[i].setMessageFactory(msgFactory);
 			if(cc.getSession() == null){
 				if(layer instanceof TOPLayer){
 					TOPSession s = (TOPSession) layer.createSession();

@@ -174,69 +174,82 @@ public class AppiaDataSession extends AbstractDataSession {
 		}
 		
 		public void run() {
-			Event event;
-			while(running.get()){
-				workerlog.debug("before receive");
-				event = mailbox.removeNext();
-                if(event == null){
-                    //if(workerlog.isDebugEnabled())
-                        workerlog.debug("Received null event from Appia mailbox");
-                    continue;
-                }
-                //if(workerlog.isDebugEnabled())
-                    workerlog.debug("after receive: "+event);
-				if(event instanceof JGCSGroupEvent || event instanceof JGCSSendEvent){
-					AppiaMessage msg;
-					if(event instanceof JGCSGroupEvent)
-						msg = (AppiaMessage) ((JGCSGroupEvent) event).getMessage();
-					else
-						msg = (AppiaMessage) ((JGCSSendEvent) event).getMessage();
-					SocketAddress sender_addr=null;
-					try {
-						sender_addr = controlSession.getMembership().getMemberAddress(((GroupSendableEvent)event).orig);
-					} catch (NotJoinedException e1) {
-						workerlog.debug("Received message but I'm not in the group: "+event,e1);
-						notifyExceptionListeners(new JGCSException("Received message but I'm not in the group: "+event,e1));
-					}
-					msg.setSenderAddress(sender_addr);
-					if(workerlog.isDebugEnabled())
-						workerlog.debug("Delivering message: "+msg);
-					final Object ctx = notifyMessageListeners(msg);
-					if(ctx != null){
-						servicesMap.put(msg,ctx);
-						if(workerlog.isDebugEnabled())
-							workerlog.debug("Received context for this message. Adding to the services map:\nMessage:: "+msg+
-                                    " --> Context:: "+ctx+" [ SIZE OF MAP:: "+servicesMap.size()+" ]");
-					}
-				}
-				else if(event instanceof JGCSSendableEvent){
-					final JGCSSendableEvent sendableEvent = (JGCSSendableEvent) event;
-					AppiaMessage msg = (AppiaMessage) sendableEvent.getMessage();
-					msg.setSenderAddress((SocketAddress) sendableEvent.source);
-					if(workerlog.isDebugEnabled())
-						workerlog.debug("Delivering message coming from outside of the group: "+msg);
-					Object ctx = notifyMessageListeners(msg);
-					if(ctx != null){
-						logger.warn("The Service feature is not supported for this kind of messages. Ignoring it.");
-						notifyExceptionListeners(new JGCSException("The Service feature is not supported for this kind of messages. Ignoring it."));
-					}
-				}
-				else if(event instanceof GroupEvent){
-					if(logger.isDebugEnabled())
-						workerlog.debug("Received group event.");
-					// This could be a View or a BlockOk.
-					// the event received that contains the view is READ ONLY.
-					// deliver to control session
-					controlSession.notifyListeners((GroupEvent) event);
-				}
-				else if(event instanceof ServiceEvent)
-					handleServiceEvent((ServiceEvent)event);
-				else if(event instanceof ExitEvent){
-					controlSession.notifyMemberRemoved();
-				}
-				else
-					notifyExceptionListeners(new JGCSException("Received unrecognized event from Appia: "+event));
-			}
+            Event event=null;
+		    try{
+		        while(running.get()){
+		            workerlog.debug("before receive");
+		            event = mailbox.removeNext();
+		            if(event == null){
+		                if(workerlog.isDebugEnabled())
+		                    workerlog.debug("Received null event from Appia mailbox");
+		                continue;
+		            }
+		            if(workerlog.isDebugEnabled())
+		                workerlog.debug("after receive: "+event);
+		            if(event instanceof JGCSGroupEvent || event instanceof JGCSSendEvent){
+		                AppiaMessage msg=null;
+		                try {
+                            if(event instanceof JGCSGroupEvent)
+                                msg = (AppiaMessage) ((JGCSGroupEvent) event).getMessage();
+                            else
+                                msg = (AppiaMessage) ((JGCSSendEvent) event).getMessage();
+                        } catch (RuntimeException e) {
+                            e.printStackTrace();
+                            if(event instanceof JGCSGroupEvent)
+                                System.out.println("ON EVENT "+((JGCSGroupEvent)event).toString());
+
+                        }
+		                SocketAddress sender_addr=null;
+		                try {
+		                    sender_addr = controlSession.getMembership().getMemberAddress(((GroupSendableEvent)event).orig);
+		                } catch (NotJoinedException e1) {
+		                    workerlog.debug("Received message but I'm not in the group: "+event,e1);
+		                    notifyExceptionListeners(new JGCSException("Received message but I'm not in the group: "+event,e1));
+		                }
+		                msg.setSenderAddress(sender_addr);
+		                if(workerlog.isDebugEnabled())
+		                    workerlog.debug("Delivering message: "+msg);
+		                final Object ctx = notifyMessageListeners(msg);
+		                if(ctx != null){
+		                    servicesMap.put(msg,ctx);
+		                    if(workerlog.isDebugEnabled())
+		                        workerlog.debug("Received context for this message. Adding to the services map:\nMessage:: "+msg+
+		                                " --> Context:: "+ctx+" [ SIZE OF MAP:: "+servicesMap.size()+" ]");
+		                }
+		            }
+		            else if(event instanceof JGCSSendableEvent){
+		                final JGCSSendableEvent sendableEvent = (JGCSSendableEvent) event;
+		                AppiaMessage msg = (AppiaMessage) sendableEvent.getMessage();
+		                msg.setSenderAddress((SocketAddress) sendableEvent.source);
+		                if(workerlog.isDebugEnabled())
+		                    workerlog.debug("Delivering message coming from outside of the group: "+msg);
+		                Object ctx = notifyMessageListeners(msg);
+		                if(ctx != null){
+		                    logger.warn("The Service feature is not supported for this kind of messages. Ignoring it.");
+		                    notifyExceptionListeners(new JGCSException("The Service feature is not supported for this kind of messages. Ignoring it."));
+		                }
+		            }
+		            else if(event instanceof GroupEvent){
+		                if(logger.isDebugEnabled())
+		                    workerlog.debug("Received group event.");
+		                // This could be a View or a BlockOk.
+		                // the event received that contains the view is READ ONLY.
+		                // deliver to control session
+		                controlSession.notifyListeners((GroupEvent) event);
+		            }
+		            else if(event instanceof ServiceEvent)
+		                handleServiceEvent((ServiceEvent)event);
+		            else if(event instanceof ExitEvent){
+		                controlSession.notifyMemberRemoved();
+		            }
+		            else
+		                notifyExceptionListeners(new JGCSException("Received unrecognized event from Appia: "+event));
+		        }
+		    }
+		    catch(RuntimeException rte){
+		        workerlog.warn("Exception in the worker Thread: "+rte+"\nwhile processing event "+event.toString());
+                notifyExceptionListeners(new JGCSException("RuntimeException while processing received event: "+event,rte));
+		    }
 		} // end of run()
 
 		private void handleServiceEvent(ServiceEvent event) {

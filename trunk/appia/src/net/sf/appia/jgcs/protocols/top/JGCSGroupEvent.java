@@ -22,8 +22,8 @@ package net.sf.appia.jgcs.protocols.top;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
+import net.sf.appia.core.Direction;
 import net.sf.appia.core.Session;
-import net.sf.appia.core.message.Message;
 import net.sf.appia.jgcs.AppiaMessage;
 import net.sf.appia.protocols.group.Group;
 import net.sf.appia.protocols.group.ViewID;
@@ -36,11 +36,18 @@ public class JGCSGroupEvent extends GroupSendableEvent {
 		super(channel, dir, source, group, view_id);
 	}
 
-	public JGCSGroupEvent(Message message){
+	public JGCSGroupEvent(AppiaMessage message){
 		super(message);
 	}
+	
 	public JGCSGroupEvent() {
 		super(new AppiaMessage());
+	}
+	
+	@Override
+	public String toString(){
+	    return this.getClass().getName()+" SourceSession: "+this.getSource()+" Direction: "+
+	        (this.getDir()==Direction.UP? "UP":"DOWN")+" Channel: "+this.getChannel().getChannelID();
 	}
 
 }
