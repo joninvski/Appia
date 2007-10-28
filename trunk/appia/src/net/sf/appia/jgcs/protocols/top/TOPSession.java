@@ -231,9 +231,8 @@ public class TOPSession extends Session implements InitializableSession {
 			}
 		}
 		if(isBlocked){
-			if(logger.isDebugEnabled())
-				logger.debug("The group is blocked. Message "+sender.getMessage()+" added to pending events.");
 			eventsPending.add(event);
+            logger.warn("The group is blocked. Message "+sender.getMessage()+" added to pending events.");
 			return;
 		}
 		try {
@@ -246,6 +245,7 @@ public class TOPSession extends Session implements InitializableSession {
 	}
 
 	private void handleReleaseBlock(JGCSReleaseBlock block) {
+        isBlocked = true;
 		if(numberOfChannels > 1){
 			final BlockOk myBlock = block.getBlockEvent(); 
 			for(Channel c : channels){
@@ -279,19 +279,6 @@ public class TOPSession extends Session implements InitializableSession {
 				e.printStackTrace();
 			}
 		}
-//		// event from application
-//		else{
-//			if(isBlocked){
-//				eventsPending.add(event);
-//				return;
-//			}
-//			try {
-//				event.view_id = vs.id;
-//				event.go();
-//			} catch (AppiaEventException e) {
-//				e.printStackTrace();
-//			}
-//		}
 	}
 
 	private void handleSendableEvent(JGCSSendableEvent event) {
@@ -304,14 +291,6 @@ public class TOPSession extends Session implements InitializableSession {
 				e.printStackTrace();
 			}
 		}
-//		// event from application
-//		else{
-//			try {
-//				event.go();
-//			} catch (AppiaEventException e) {
-//				e.printStackTrace();
-//			}
-//		}
 	}
 
 	private void handleService(ServiceEvent event) {
@@ -409,8 +388,6 @@ public class TOPSession extends Session implements InitializableSession {
 	 * handles the BlockOk sent by the group communication protocols.
 	 */
 	private void handleBlock(BlockOk e) {
-		isBlocked = true;
-		
 		if(leaveChannel != null){
 			if(logger.isDebugEnabled())
 				logger.debug("Leave latch is present. Channel is closing. Forwarding BlockOk without delivering it to the Application.");
