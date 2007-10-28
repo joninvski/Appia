@@ -682,34 +682,31 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         if (debugFull) {
           logReader.debug(":receiveAndFormat: Reader, creating "+className+" event.");
         }
-        e = (SendableEvent) c.newInstance();
-        msg = e.getMessage();
-        msg.setByteArray(data, 4 + sLength, data.length - (4 + sLength));
         
         /* Extract channel hash and put event in it*/
-        mbuf.len = 4;
-        msg.pop(mbuf);
-        int channelHash = ParseUtils.byteArrayToInt(mbuf.data, mbuf.off);
-        Channel msgChannel = (Channel) parentSession.channels.get(new Integer(channelHash));
         
+        int channelHash = ParseUtils.byteArrayToInt(data, 4 + sLength);
+        Channel msgChannel = (Channel) parentSession.channels.get(new Integer(channelHash));
+
         /* If channel does not exist, discard message */
         if (msgChannel == null) {
         	if (debugFull)
         		logReader.debug(this.getClass().getName()+
         				": channel does not exist. message will be discarded. "
-        				+ "hash="+channelHash
-        				+ " "
-        				+ e);
+        				+ "hash="+channelHash);
         	return;
         }
+        
+        e = (SendableEvent) c.newInstance();
+        e.setMessage(msgChannel.getMessageFactory().newMessage());
+        msg = e.getMessage();
+        msg.setByteArray(data, 8 + sLength, data.length - (8 + sLength));
         
         if (debugFull)
           logReader.debug(":receiveAndFormat: "+msgChannel.getChannelID()+" ("+channelHash+")");
 
         
-        /* Extract the addresses and put them on the event */
-        
-        //msg's source, futurely change udpsimple to common
+        /* Extract the addresses and put them on the event */        
         InetSocketAddress addr = new InetSocketAddress(p.getAddress(),p.getPort());
         e.source = addr;
         
