@@ -1,6 +1,8 @@
-========================
-DD/MM/2007   Version 4.0 Release Candidate
-========================
+==========================
+DD/MM/2007   Version 4.0.0
+==========================
+
+(SVN revision 311)
 
 Replaced package names.
 Added JMX interfaces to retrieve information about Membership and Throughput;
