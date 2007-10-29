@@ -1,10 +1,16 @@
 ========================
-DD/MM/2007   Version 4.0
+DD/MM/2007   Version 4.0 Release Candidate
 ========================
 
 Replaced package names.
 Added JMX interfaces to retrieve information about Membership and Throughput;
-Fixed an issue on the Primary View protocol.
+JMX interfaces are now created dynamically;
+Several bug fixes in the failure detector protocol;
+Introduced a sender thread in the TCP protocol to avoid bloking the Appia main thread;
+Fixed several issues on the Primary View protocol;
+Added the implementation of jGCS version 0.6.1. Appia is now fully jGCS compliant;
+Started using the Java 5 features, including the JMX implementation;
+Dropped mx4j libraries;
 
 ========================
 25/06/2007   Version 3.3
@@ -17,7 +23,7 @@ Release Notes:
     * [APPIA-69] - Improve failure detection in cases of high load of messages.
     * [APPIA-76] - Several protocols must have a special case for the LeaveEvent.
     * [APPIA-77] - Views are not properly handled by non primary elements by the primary protocol.
-    * [APPIA-79] - Error on parsinf parameters in the GossipServer main class.
+    * [APPIA-79] - Error on parsing parameters in the GossipServer main class.
     * [APPIA-80] - Creating a channel using a non-existant XML template results in a NullPointerException
 
 ** New Feature

@@ -4,10 +4,10 @@
 <appia>
 	<template name="ecco_t">
 		<session name="tcp_s" sharing="global">
-			<protocol>org.continuent.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
+			<protocol>net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
 		</session>
 		<session name="ecco_s" sharing="private">
-			<protocol>org.continuent.appia.test.xml.ecco.EccoLayer</protocol>
+			<protocol>net.sf.appia.test.xml.ecco.EccoLayer</protocol>
 		</session>
 	</template>
 	<channel name="ecco_c" template="ecco_t" initialized="yes">

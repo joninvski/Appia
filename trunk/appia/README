@@ -162,10 +162,10 @@ The Appia distribution comes with a set of demo applications.
 The main demo applications are:
 
  - Appl - Uses Group Communication to create a group of communicating processes.
-   To get the available options execute "java org.continuent.appia.demo.Appl -help"
+   To get the available options execute "java net.sf.appia.demo.Appl -help"
    After starting it type "help" to get the available commands.
    Example (see previous paragraph for how to start the gossip server):
-   $ java org.continuent.appia.demo.Appl -gossip <gossip server host>:<gossip server port>"
+   $ java net.sf.appia.demo.Appl -gossip <gossip server host>:<gossip server port>"
 
  - Perf - Provides Appia Performance tests.
  
