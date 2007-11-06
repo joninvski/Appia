@@ -106,9 +106,8 @@ public class Appia {
   public void instanceRemoveListenRequest(ExternalEvent descriptor) {}
 
   public synchronized void instanceInsertedEvent() {
-    if ( nEvents != 0 )
       notify();
-    nEvents++;
+      nEvents++;
   }
   
   public Thread instanceGetAppiaThread() {
