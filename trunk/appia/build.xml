@@ -115,8 +115,6 @@
     	</copy>
     	<chmod perm="ugo+x" dir="." includes="*.sh" verbose="true" />
     	
-    	<echo message="Build completed with sucess. Please add all jar files in the dist directory to your CLASSPATH."/>
-    	<echo message="To run a test application and validate the instalation, please run the validate.sh shell script."/>
-    	<echo message="Run './bin/validate.sh' (on lunix or Mac OS X) or validate.bat (on windows) to run validation tests."/>
+    	<echo message="Build completed. You can add all jar files of the dist directory to your aplication classpath."/>
     </target>
 </project>
