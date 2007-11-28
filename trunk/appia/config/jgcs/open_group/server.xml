@@ -55,7 +55,7 @@
 <channel name="rrpc_group" template="tcp_total" initialized="no">
 	<memorymanagement size="40000000" up_threshold="15000000" down_threshold="7000000" />
 	<chsession name="atsl">
-		<parameter name="gossip_address">146.193.41.105:10000</parameter>
+		<parameter name="gossip_address">10.10.0.2:10000</parameter>
 	</chsession>
 </channel>
 
@@ -64,18 +64,5 @@
 	<chsession name="atsl">
 	</chsession>
 </channel>
-
-<!--
-<channel name="vsc+total" template="udp_multicast_total" initialized="no">
-	<memorymanagement size="40000000" up_threshold="15000000" down_threshold="7000000" />
-	<chsession name="atsl">
-		<parameter name="gossip_address">146.193.41.105:10000</parameter>
-		<parameter name="multicast">224.2.2.5:11000</parameter>
-	</chsession>
-	<chsession name="UdpSimpleSession">
-		<parameter name="max_udp_message_size">32000</parameter>
-	</chsession>
-</channel>
--->
 
 </appia>

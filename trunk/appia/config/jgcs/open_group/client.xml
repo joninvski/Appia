@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE appia PUBLIC "-//DTDName//DTD//EN"
-         "http://appia.di.fc.ul.pt/xml/3.2.1/appiaxml.dtd">
+         "http://appia.di.fc.ul.pt/xml/3.2/appiaxml.dtd">
 
 <appia>
 
@@ -22,7 +22,7 @@
 <channel name="rrpc" template="tcp" initialized="no">
 	<memorymanagement size="40000000" up_threshold="15000000" down_threshold="7000000" />
 	<chsession name="remoteview">
-		<parameter name="gossip">146.193.41.105:10000</parameter>
+		<parameter name="gossip">10.10.0.2:10000</parameter>
 	</chsession>
 	<chsession name="remoteaddr">
 		<parameter name="group">group</parameter>

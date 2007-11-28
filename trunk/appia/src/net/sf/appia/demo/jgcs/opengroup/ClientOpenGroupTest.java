@@ -1,14 +1,20 @@
-
-/*
- * JGCS - Group Communication Service.
- * Copyright (C) 2006 Nuno Carvalho, Universidade de Lisboa
+/**
+ * Appia: Group communication and protocol composition framework library
+ * Copyright 2007 University of Lisbon
  *
- * jgcs@lasige.di.fc.ul.pt
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Departamento de Informatica, Universidade de Lisboa
- * Bloco C6, Faculdade de Ciências, Campo Grande, 1749-016 Lisboa, Portugal.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * See COPYING for licensing details.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License. 
+ *
+ * Developer(s): Nuno Carvalho.
  */
 package net.sf.appia.demo.jgcs.opengroup;
 
@@ -27,10 +33,23 @@ import net.sf.jgcs.Protocol;
 import net.sf.jgcs.ProtocolFactory;
 import net.sf.jgcs.Service;
 
+/**
+ * 
+ * This class defines a ClientOpenGroupTest
+ * This example shows how to use and configure Appia with jGCS
+ * using an open group, where there is a group of servers that accept
+ * Messages from external members. This is the (external) client part.
+ * 
+ * The example only shows how to configure and use, and it only sends
+ * dummy messages. It does not intend to implement any algorithm.
+ * 
+ * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @version 1.0
+ */
 public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 
+    // only the data session is used
 	private DataSession data;
-
 	private Service rpcService;
 	
 	public ClientOpenGroupTest(DataSession data, Service serviceVSC) {
@@ -38,6 +57,7 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 		this.rpcService = serviceVSC;		
 	}
 
+	// messages are received here.
 	public Object onMessage(Message msg) {
 		System.out.println("Message from "+msg.getSenderAddress()+": "+new String(msg.getPayload()));
 		return null;
@@ -61,6 +81,11 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 	}
 
 	public void run() throws Exception {
+	    // sends dummy messages with no destination address.
+	    // an underlying protocol (in Appia) will discover
+	    // one address that belongs to the group and send the message
+	    // to that member.
+	    // Replies can be received from any group member.
 		for (int i = 0; i < 10; i++) {
 			Thread.sleep(1000);
 			Message m = data.createMessage();
@@ -70,11 +95,16 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 			data.send(m, rpcService, null,null,(Annotation[])null);
 		}
 
+		// waits 5 seconds before ending.
 		Thread.sleep(5000);
 
 	}
 
 	public static void main(String[] args) {
+        if(args.length != 1){
+            System.out.println("Must put the xml file name as an argument.");
+            System.exit(1);
+        }
 		try {
 			ProtocolFactory pf = new AppiaProtocolFactory();
 			AppiaGroup g = new AppiaGroup();
