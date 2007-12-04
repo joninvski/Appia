@@ -338,6 +338,8 @@ public class RemoteViewSession extends Session implements InitializableSession {
 			try{
 				ViewState.peek(msg);
 			}catch(Exception special){
+			    if(log.isDebugEnabled())
+			        log.debug("Message contents do not appear to be a ViewState object.");
 				appearsViewState = false;
 			}
 			//debug("Received remote view event!!!!!("+ViewState.peek(om)+")");
