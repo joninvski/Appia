@@ -415,19 +415,9 @@ public class ViewState implements Externalizable {
 	}
 	
 	public static ViewState peek(Message message) {
-		try {
-			ViewState vs=new ViewState(
-					message.popString(), 
-					Group.pop(message),
-					ViewID.pop(message),
-					ArrayOptimized.popArrayViewID(message),
-					ArrayOptimized.popArrayEndpt(message),
-					ArrayOptimized.popArrayInetWithPort(message));
-			ViewState.push(vs,message);
-			return vs;
-		} catch (AppiaGroupException ex) {
-			throw new MessageException("Error peeking view state from message.",ex);
-		}
+	    ViewState vs=ViewState.pop(message);
+	    ViewState.push(vs,message);
+	    return vs;
 	}
 	
 	public void writeExternal(ObjectOutput out) throws IOException {
