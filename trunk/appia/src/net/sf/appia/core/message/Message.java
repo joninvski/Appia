@@ -1498,6 +1498,9 @@ public class Message implements Cloneable {
 				str[strlen++] =
 					(char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | ((char3 & 0x3F) << 0));
 				break;
+			default:
+	            throw new MessageException("Error reading string from message (Wrong string size).",
+	                    new EOFException());
 			}
 		}
 		return new String(str, 0, strlen);
