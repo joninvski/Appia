@@ -85,7 +85,7 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 		}
 		
 		private Object handleClientMessage(String msg, SocketAddress sender){
-			System.out.println("Received message from Client: "+msg);
+			System.out.println("Received message from Client "+sender+" :"+msg);
 			Message replyMsg = null, groupMsg = null;
 			try {
 				replyMsg = groupSession.createMessage();
