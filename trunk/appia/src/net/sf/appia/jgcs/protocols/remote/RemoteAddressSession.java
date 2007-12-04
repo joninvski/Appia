@@ -145,13 +145,18 @@ public class RemoteAddressSession extends Session implements
 				// Request a remote view
 				new RemoteViewEvent(event.getChannel(),Direction.DOWN,this,new Group(groupID)).go();
 			}
-			if(event.dest == null && addresses != null)
+			if(event.dest == null && addresses != null){
 				event.dest = addresses[0];			
+			}
 			if(pendingEvents.isEmpty()){
-				if(event.dest != null)
-					event.go();
-				else
+				if(event.dest != null){
+		            if(logger.isDebugEnabled())
+		                logger.debug("Sending to address: "+addresses[0]);
+                    event.go();
+				}
+				else{
 					pendingEvents.add(event);
+				}
 			}
 			else
 				pendingEvents.add(event);
@@ -172,6 +177,8 @@ public class RemoteAddressSession extends Session implements
 			ev = it.next();
 			if(ev.dest == null)
 				ev.dest = addresses[0];
+			if(logger.isDebugEnabled())
+			    logger.debug("Sending to address: "+addresses[0]);
 			ev.go();
 			it.remove();
 		}
