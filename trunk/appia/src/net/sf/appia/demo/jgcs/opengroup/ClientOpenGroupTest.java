@@ -86,7 +86,7 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 	    // one address that belongs to the group and send the message
 	    // to that member.
 	    // Replies can be received from any group member.
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; true; i++) {
 			Thread.sleep(1000);
 			Message m = data.createMessage();
 			byte[] bytes =("C hello world from the client! " +i).getBytes();
@@ -96,7 +96,7 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 		}
 
 		// waits 5 seconds before ending.
-		Thread.sleep(5000);
+//		Thread.sleep(5000);
 
 	}
 
