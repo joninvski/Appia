@@ -31,8 +31,6 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
-import java.util.Enumeration;
-import java.util.Hashtable;
 
 import net.sf.appia.core.AppiaCursorException;
 import net.sf.appia.core.AppiaDuplicatedSessionsException;
@@ -87,7 +85,6 @@ public class RemoteViewSession extends Session implements InitializableSession {
     
 	private InetSocketAddress myAddress=null;
 	private InetSocketAddress gossipAddress;
-	private Hashtable addrTable = new Hashtable();
 	private Channel myChannel = null;
 	private Channel initChannel;
 	private boolean needsRse = true;
@@ -169,7 +166,6 @@ public class RemoteViewSession extends Session implements InitializableSession {
 						debug = (PrintStream)ev.getOutput();
 					else
 						debug = new PrintStream(ev.getOutput());
-					printAddrTable();
 					debug = null;
 				}
 			}
@@ -408,17 +404,4 @@ public class RemoteViewSession extends Session implements InitializableSession {
 			debug.println(this.getClass().getName()+"[FULL DEBUG] "+s);
 	}
 	
-	private void printAddrTable() {
-	    if(FULL_DEBUG){
-	        debug("address Table:");
-	        final Enumeration e = addrTable.keys();
-            String g = null;
-            InetSocketAddress ad = null;
-            while(e.hasMoreElements()) {
-	            g = (String) e.nextElement();
-	            ad = (InetSocketAddress) addrTable.get(g);
-	            debug("{" + g + "=" + ad + "}");
-	        }
-	    }
-	}
 }
