@@ -50,7 +50,7 @@ import net.sf.appia.protocols.common.AppiaThreadFactory;
  */
 public class Appia {
   
-  protected Vector eventSchedulers=new Vector();
+  protected Vector<EventScheduler> eventSchedulers=new Vector<EventScheduler>();
   protected TimerManager timerManager=null;
   protected Thread thread = null;
   protected int nEvents=0;
@@ -122,7 +122,7 @@ public class Appia {
     int i;
     thread = Thread.currentThread();
     for (i=0 ; i < eventSchedulers.size() ; i++) {
-      final EventScheduler es=(EventScheduler)eventSchedulers.elementAt(i);
+      final EventScheduler es=eventSchedulers.elementAt(i);
       es.start();
     }
     
@@ -132,7 +132,7 @@ public class Appia {
     
     while (true) {	
       try {
-        es=(EventScheduler)eventSchedulers.elementAt(i);
+        es=eventSchedulers.elementAt(i);
       } catch (ArrayIndexOutOfBoundsException e) {
         es=null;
       }
