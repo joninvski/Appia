@@ -63,6 +63,7 @@ public class RemoteAddressSession extends Session implements
 	private static final long DEFAULT_TIMER_PERIOD = 1000;
 	
 	private SocketAddress[] addresses = null;
+	private int nextAddrRank = 0;
 	private List<SendableEvent> pendingEvents = null;
 	private String groupID = null;
 	private long timerPeriod = DEFAULT_TIMER_PERIOD;
@@ -133,6 +134,7 @@ public class RemoteAddressSession extends Session implements
 		if(logger.isDebugEnabled())
 			logger.debug("Received remote view event. Addresses are: "+event.getAddresses());
 		addresses = event.getAddresses();
+		nextAddrRank=0;
 		event.go();
 		trySendMessages();
 	}
@@ -146,12 +148,12 @@ public class RemoteAddressSession extends Session implements
 				new RemoteViewEvent(event.getChannel(),Direction.DOWN,this,new Group(groupID)).go();
 			}
 			if(event.dest == null && addresses != null){
-				event.dest = addresses[0];			
+				event.dest = getAddressRoundRobin();
 			}
 			if(pendingEvents.isEmpty()){
 				if(event.dest != null){
 		            if(logger.isDebugEnabled())
-		                logger.debug("Sending to address: "+addresses[0]);
+		                logger.debug("Sending to address: "+event.dest);
                     event.go();
 				}
 				else{
@@ -176,11 +178,20 @@ public class RemoteAddressSession extends Session implements
 		while(it.hasNext()){
 			ev = it.next();
 			if(ev.dest == null)
-				ev.dest = addresses[0];
+				ev.dest = getAddressRoundRobin();
 			if(logger.isDebugEnabled())
-			    logger.debug("Sending to address: "+addresses[0]);
+			    logger.debug("Sending to address: "+ev.dest);
 			ev.go();
 			it.remove();
 		}
+	}
+	
+	private SocketAddress getAddressRoundRobin(){
+	    if(addresses == null)
+	        return null;
+	    int next = addresses.length%nextAddrRank++;
+	    if(next == addresses.length)
+	        next = 0;
+	    return addresses[next];
 	}
 }
