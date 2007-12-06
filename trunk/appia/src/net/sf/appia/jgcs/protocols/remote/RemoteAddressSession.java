@@ -46,6 +46,7 @@ import org.apache.log4j.Logger;
 /*
  * TODO
  * Must ensure that failed messages are retransmitted
+ * or notified as failed.
  */
 
 /**
@@ -142,12 +143,12 @@ public class RemoteAddressSession extends Session implements
 	private void handleSendableEvent(SendableEvent event) throws AppiaEventException {
 		// DOWN
 		if(event.getDir() == Direction.DOWN){
-			if(addresses == null){
+			if(!hasAddressList()){
 				pendingEvents.add(event);
 				// Request a remote view
 				new RemoteViewEvent(event.getChannel(),Direction.DOWN,this,new Group(groupID)).go();
 			}
-			if(event.dest == null && addresses != null){
+			else if(event.dest == null){
 				event.dest = getAddressRoundRobin();
 			}
 			if(pendingEvents.isEmpty()){
@@ -186,12 +187,18 @@ public class RemoteAddressSession extends Session implements
 		}
 	}
 	
+	private boolean hasAddressList(){
+	    return addresses != null && addresses.length > 0;
+	}
+
+	/*
+	 * this assumes that hasAddressList was called previously
+	 * @return the next server address
+	 */
 	private SocketAddress getAddressRoundRobin(){
-	    if(addresses == null)
-	        return null;
-	    int next = addresses.length%nextAddrRank++;
-	    if(next == addresses.length)
-	        next = 0;
+	    int next = nextAddrRank++;
+        if(next >= addresses.length)
+            next = 0;
 	    return addresses[next];
 	}
 }
