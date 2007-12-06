@@ -1,5 +1,16 @@
 ==========================
-DD/MM/2007   Version 4.0.0
+06/12/2007   Version 4.0.1
+==========================
+
+(SVN revision 333)
+
+Fixed a small issue on the Appia kernel;
+Added examples that show how to use jGCS with Appia;
+Added some examples that show how to use open groups with Appia and jGCS.
+Fixed small issues in the RemoteView protocol.
+
+==========================
+29/10/2007   Version 4.0.0
 ==========================
 
 (SVN revision 311)
