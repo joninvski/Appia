@@ -156,10 +156,11 @@ public class Message implements Cloneable {
 	
 	private void init(){
 		mbuf = new MsgBuffer();
-		synchronized (getClass()) {
-			if (CHECK && !checked)
-				check();
-		}
+		if(CHECK)
+		    synchronized (getClass()) {
+		        if (!checked)
+		            check();
+		    }
 	}
 	
 	/**
@@ -1510,16 +1511,18 @@ public class Message implements Cloneable {
 		MsgBuffer mbuf = new MsgBuffer();
 		mbuf.len = 6;
 		pop(mbuf);
-		String ip = new String();
+		StringBuilder strBuilder = new StringBuilder();
 		for (int i = 0; i < 3; i++) {
-			ip += (mbuf.data[mbuf.off + i + 2] & 0xff) + ".";
+			strBuilder.append((int)(mbuf.data[mbuf.off + i + 2] & 0xff));
+			strBuilder.append(".");
 		}
-		ip += (int) mbuf.data[mbuf.off + 3 + 2] & 0xff;
+		strBuilder.append((int)(mbuf.data[mbuf.off + 3 + 2] & 0xff));
 		InetAddress inet = null;
 		try {
-			inet = InetAddress.getByName(ip);
+			inet = InetAddress.getByName(strBuilder.toString());
 		} catch (UnknownHostException ex) {
-            throw new MessageException("Unable to retrieve the IP address \""+ip+"\" correctly.",ex);
+            throw new MessageException("Unable to retrieve the IP address \""+
+                    strBuilder.toString()+"\" correctly.",ex);
         }
 		int port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
 		port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
@@ -1821,16 +1824,18 @@ public class Message implements Cloneable {
 		MsgBuffer mbuf = new MsgBuffer();
 		mbuf.len = 6;
 		peek(mbuf);
-		String ip = new String();
+		StringBuilder strBuilder = new StringBuilder();
 		for (int i = 0; i < 3; i++) {
-			ip += (mbuf.data[mbuf.off + i + 2] & 0xff) + ".";
+			strBuilder.append((int)(mbuf.data[mbuf.off + i + 2] & 0xff));
+			strBuilder.append(".");
 		}
-		ip += (int) mbuf.data[mbuf.off + 3 + 2] & 0xff;
+		strBuilder.append((int)(mbuf.data[mbuf.off + 3 + 2] & 0xff));
 		InetAddress inet = null;
 		try {
-			inet = InetAddress.getByName(ip);
+			inet = InetAddress.getByName(strBuilder.toString());
 		} catch (UnknownHostException ex) {
-            throw new MessageException("Unable to retrieve the IP address \""+ip+"\" correctly.",ex);
+            throw new MessageException("Unable to retrieve the IP address \""+
+                    strBuilder.toString()+"\" correctly.",ex);
         }
 		int port = (((int) mbuf.data[mbuf.off]) & 0xFF) << 8;
 		port |= (((int) mbuf.data[mbuf.off + 1]) & 0xFF) << 0;
