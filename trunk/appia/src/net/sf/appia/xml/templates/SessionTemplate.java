@@ -105,14 +105,26 @@ public class SessionTemplate {
             ns.setId(name);
             return ns;
         }
-		else if (sharedSessions.containsKey(name+label))
-			return (Session) sharedSessions.get(name+label);
-		else {
-		    ns = layerInstance.createSession();
-            ns.setId(name);
-			sharedSessions.put(name+label,ns);
-			return ns;
-		}
+        else if (sharing == SharingState.GLOBAL) {
+            if (sharedSessions.containsKey(name))
+                return (Session) sharedSessions.get(name);
+            else {
+                ns = layerInstance.createSession();
+                ns.setId(name);
+                sharedSessions.put(name,ns);
+                return ns;
+            }
+        }
+        else { // sharing == SharingState.LABEL
+            if (sharedSessions.containsKey(name+label))
+                return (Session) sharedSessions.get(name+label);
+            else {
+                ns = layerInstance.createSession();
+                ns.setId(name);
+                sharedSessions.put(name+label,ns);
+                return ns;
+            }
+        }
 	}
 	
 	/**
