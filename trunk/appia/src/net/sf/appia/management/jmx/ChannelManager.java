@@ -284,12 +284,12 @@ implements DynamicMBean, SensorSessionListener {
     }
 
     public AttributeList setAttributes(AttributeList attList) {
-        final ListIterator<Attribute> it = attList.listIterator();
+        final ListIterator<Object> it = attList.listIterator();
         Attribute att = null;
         final String[] attrs = new String[attList.size()];
         int i=0;
         while(it.hasNext()){
-            att = it.next();
+            att = (Attribute) it.next();
             try {
                 setAttribute(att);
                 attrs[i] = att.getName();
