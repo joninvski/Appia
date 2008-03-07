@@ -38,7 +38,8 @@
 
 import java.util.LinkedList;
 
-import net.sf.appia.core.events.*;
+import net.sf.appia.core.events.AppiaMulticast;
+import net.sf.appia.core.events.SendableEvent;
 
 /**
  * this class keeps information about the Pending message
@@ -56,7 +57,7 @@ public class WaitingMessage {
     protected long timeStamp;
 
     /* header of each user that this message was sent to */
-    private LinkedList headers;
+    private LinkedList<Header> headers;
 
     /* constructors */
     public WaitingMessage(SendableEvent e, int nResends) {
@@ -89,9 +90,14 @@ public class WaitingMessage {
      * gets a array of headers of Peers that this message was sent to.
      * @return a array of headers
      * @see Header
+     * @deprecated
      */
     public Object[] toHeaderArray() {
 	return headers.toArray();
+    }
+    
+    public LinkedList<Header> getHeaders(){
+        return headers;
     }
     
     public boolean equals(Object o) {
@@ -104,14 +110,14 @@ public class WaitingMessage {
 	else return false;
     }
     
-    /* inicializes this WaitingMessage */
+    /* initializes this WaitingMessage */
     private void init(SendableEvent e, int nResends) {
 	this.event = e;
 	if (e.dest instanceof AppiaMulticast)
 	    endPoints = ((AppiaMulticast)e.dest).getDestinations().length;
 	else
 	    endPoints = 1;
-	this.headers = new LinkedList();
+	this.headers = new LinkedList<Header>();
 	this.nResends = nResends;
     }
 }

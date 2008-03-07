@@ -70,18 +70,18 @@ public class PeerInfo {
 	public long lastUsed;
 
 	/* keeps references to headers of peers that not acked this message */
-	public LinkedList headers;
+	public LinkedList<Header> headers;
 
 	/* keep a list of channels used by this peer */
-	private LinkedList channels;
+	private LinkedList<Channel> channels;
 
 	/* Address of this peer */
 	public Object peer;
 
 	public PeerInfo(Object peer, Channel c) {
 		final long now = c.getTimeProvider().currentTimeMillis();
-		headers = new LinkedList();
-		channels = new LinkedList();
+		headers = new LinkedList<Header>();
+		channels = new LinkedList<Channel>();
 		channels.add(c);
 		this.peer = peer;
         //FIXME: why this number?

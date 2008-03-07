@@ -126,10 +126,10 @@ public class Header {
 		buf.data[buf.off] = (byte) (0xff & seq);
 	}
 
-	private void putInt(int i, MsgBuffer mbuf) {
-		mbuf.data[mbuf.off + 0] = (byte) ((i >>> 24) & 0xFF);
-		mbuf.data[mbuf.off + 1] = (byte) ((i >>> 16) & 0xFF);
-		mbuf.data[mbuf.off + 2] = (byte) ((i >>> 8) & 0xFF);
-		mbuf.data[mbuf.off + 3] = (byte) ((i >>> 0) & 0xFF);
-	}
+//	private void putInt(int i, MsgBuffer mbuf) {
+//		mbuf.data[mbuf.off + 0] = (byte) ((i >>> 24) & 0xFF);
+//		mbuf.data[mbuf.off + 1] = (byte) ((i >>> 16) & 0xFF);
+//		mbuf.data[mbuf.off + 2] = (byte) ((i >>> 8) & 0xFF);
+//		mbuf.data[mbuf.off + 3] = (byte) ((i >>> 0) & 0xFF);
+//	}
 }
