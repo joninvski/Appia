@@ -46,6 +46,7 @@ import net.sf.appia.protocols.group.events.Send;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.suspect.Fail;
 import net.sf.appia.protocols.group.suspect.Suspect;
+import net.sf.appia.protocols.group.suspect.SuspectedMemberEvent;
 
 import org.apache.log4j.Logger;
 
@@ -154,6 +155,12 @@ public class StableSession extends Session {
     private void handleGroupSendableEvent(GroupSendableEvent ev) {
         if (ev instanceof Send) {
             try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
+            return;
+        }
+        
+        // to avoid NPEs of bad programming in other layers...
+        if (ev instanceof Suspect){
+            log.debug("Received unexpected Suspect event. Ignoring it");
             return;
         }
 
@@ -371,9 +378,12 @@ public class StableSession extends Session {
     private void suspect(GroupSendableEvent ev, long received) {
         System.err.println("Event ("+ev+" "+ev.getDir()+" "+ev.getSource()+") from "+ev.orig+"("+ls.my_rank+") discarded due to bad seq. number. Received "+received+" expected "+(table[ls.my_rank][ev.orig]+1));
         try {
-            Suspect e=new Suspect(ev.orig,vs.view.length,ev.getChannel(),Direction.DOWN,this,ev.group,ev.view_id);
-            e.go();
-            log.debug("Suspecting member "+ev.orig);
+            SuspectedMemberEvent sme = new SuspectedMemberEvent(ev.getChannel(),Direction.DOWN,this);
+            sme.setSuspectedMember(ev.orig);
+            sme.setGroup(ev.group);
+            sme.setViewID(ev.view_id);
+            sme.go();
+            log.debug("Suspecting member "+ev.orig+". Notification sent to the failure detector.");
         } catch (AppiaEventException ex) {
             ex.printStackTrace();
         }

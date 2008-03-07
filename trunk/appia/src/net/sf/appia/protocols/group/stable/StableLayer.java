@@ -34,37 +34,31 @@ import net.sf.appia.core.events.channel.PeriodicTimer;
 import net.sf.appia.protocols.group.events.GroupSendableEvent;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.suspect.Fail;
-import net.sf.appia.protocols.group.suspect.Suspect;
+import net.sf.appia.protocols.group.suspect.SuspectedMemberEvent;
 
 
 public class StableLayer extends Layer {
 
     public StableLayer() {
-        Class gossip=net.sf.appia.protocols.group.stable.StableGossip.class;
-        Class view=View.class;
-        Class retransmit=net.sf.appia.protocols.group.stable.Retransmit.class;
-        Class retransmission=net.sf.appia.protocols.group.stable.Retransmission.class;
-        Class periodic=PeriodicTimer.class;
-
         evProvide=new Class[] {
-                gossip,
-                retransmit,
-                retransmission,
-                Suspect.class,
+                net.sf.appia.protocols.group.stable.StableGossip.class,
+                net.sf.appia.protocols.group.stable.Retransmit.class,
+                net.sf.appia.protocols.group.stable.Retransmission.class,
+                SuspectedMemberEvent.class,
         };
 
         evRequire=new Class[] {
-                view,
-                periodic,
+                View.class,
+                PeriodicTimer.class,
         };
 
         evAccept=new Class[] {
-                gossip,
-                view,
-                retransmit,
-                retransmission,
+                net.sf.appia.protocols.group.stable.StableGossip.class,
+                View.class,
+                net.sf.appia.protocols.group.stable.Retransmit.class,
+                net.sf.appia.protocols.group.stable.Retransmission.class,
                 Fail.class,
-                periodic,
+                PeriodicTimer.class,
                 GroupSendableEvent.class,
         };
     }

@@ -258,6 +258,9 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
             // TcpUndeliveredEvent
         } else if (event instanceof TcpUndeliveredEvent) {
             handleTcpUndeliveredEvent((TcpUndeliveredEvent)event); return;
+        } else if (event instanceof SuspectedMemberEvent) {
+            handleSuspectedMember((SuspectedMemberEvent)event); 
+            return;
         } else if (event instanceof ChannelInit){
             handleChannelInit((ChannelInit)event); return;
         }
@@ -490,24 +493,40 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
 
         undelivered((InetSocketAddress)ev.getFailedAddress(),ev.getChannel());
     }
+    
+    private void handleSuspectedMember(SuspectedMemberEvent ev){
+        try { ev.go(); } catch (AppiaEventException ex) { ex.printStackTrace(); }
+        if (vs == null)
+            return;
+        if(!ev.getGroup().equals(vs.group) && !ev.getViewID().equals(vs.id)){
+            log.debug("SuspectedMemberEvent from another group or view. Discarding it");
+            return;
+        }
+        if(ev.getSuspectedMember() >= 0)
+            processUndelivered(ev.getSuspectedMember(),ev.getChannel());        
+        else
+            log.debug("SuspectedMemberEvent didn't contain a valid view member.");
+    }
 
     private void undelivered(InetSocketAddress addr, Channel channel) {
-        int rank,i;
+        int rank;
 
         if ((rank=vs.getRankByAddress(addr)) >= 0) {
-            if (!ls.failed[rank]) {
-                ls.fail(rank);
-
-                boolean[] new_failed=new boolean[vs.view.length];
-                for (i=0 ; i < new_failed.length ; i++) new_failed[i]=(i==rank);
-
-                sendSuspect(ls.failed,channel);
-                sendFail(new_failed,channel);
-
-                log.debug("Suspected member "+rank+" due to Undelivered");
-            }
+            processUndelivered(rank, channel);
         } else
             log.debug("Undelivered didn't contain a current view member");
+    }
+
+    private void processUndelivered(int rank, Channel channel) {
+        if (!ls.failed[rank]) {
+            ls.fail(rank);
+            boolean[] new_failed=new boolean[vs.view.length];
+            for (int i=0 ; i < new_failed.length ; i++) 
+                new_failed[i]=(i==rank);            
+            sendSuspect(ls.failed,channel);
+            sendFail(new_failed,channel);
+            log.debug("Suspected member "+rank+" due to Undelivered");
+        }
     }
 
     private void sendSuspect(boolean[] failed, Channel channel) {

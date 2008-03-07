@@ -74,6 +74,7 @@ public class SuspectLayer extends Layer {
         FIFOUndeliveredEvent.class,
         TcpUndeliveredEvent.class,
         ChannelInit.class,
+        SuspectedMemberEvent.class,
     };
   }
   
