@@ -158,7 +158,7 @@ public class IntraSession extends Session {
         ViewState.push(new_vs,ev.getMessage());
         ev.getMessage().pushInt(k);
         ev.setDir(Direction.DOWN);
-        ev.setSource(this);
+        ev.setSourceSession(this);
         ev.init();
         ev.go();
       } catch (AppiaEventException ex) {

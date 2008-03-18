@@ -363,7 +363,7 @@ public class NakFifoSession extends Session implements InitializableSession {
             // Must send a clone because original may be shared among several peers 
             // due to AppiaMulticast
             SendableEvent ev=(SendableEvent)event.cloneEvent();
-            ev.setSource(this);
+            ev.setSourceSession(this);
             ev.init();
 
             utils.pushSeq(ev.getMessage(),peer.last_msg_delivered);
@@ -538,7 +538,7 @@ public class NakFifoSession extends Session implements InitializableSession {
                     // Must send a clone because original may be shared among several peers
                     // due to AppiaMulticast
                     SendableEvent ev=(SendableEvent)evaux.cloneEvent();
-                    ev.setSource(this);
+                    ev.setSourceSession(this);
                     ev.init();
 
                     utils.pushSeq(ev.getMessage(),peer.last_msg_delivered);

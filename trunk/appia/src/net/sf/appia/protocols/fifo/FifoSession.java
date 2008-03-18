@@ -405,7 +405,7 @@ public class FifoSession extends Session {
 		header.pushHeader(clone, header.peer.nextIncoming);
 		/* prepare event and send it */
 		try {
-			clone.setSource(this);
+			clone.setSourceSession(this);
 			clone.init();
 			clone.go();
 			if (FifoConfig.DEBUG_ON && debugOutput != null)
@@ -634,7 +634,7 @@ public class FifoSession extends Session {
 			 */
 			timer.setQualifierMode(EventQualifier.OFF);
 			timer.setDir(Direction.invert(timer.getDir()));
-			timer.setSource(this);
+			timer.setSourceSession(this);
 			try {
 				timer.init();
 				timer.go();

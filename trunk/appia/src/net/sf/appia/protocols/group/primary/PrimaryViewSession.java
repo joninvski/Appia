@@ -154,7 +154,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
                     final BlockOk block = (BlockOk) event.getEvent();
                     block.setChannel(event.getChannel());
                     block.setDir(event.getDir() == Direction.UP ? Direction.DOWN : Direction.UP);
-                    block.setSource(this);
+                    block.setSourceSession(this);
                     block.init();
                     block.go();
                 } catch (AppiaEventException e) {

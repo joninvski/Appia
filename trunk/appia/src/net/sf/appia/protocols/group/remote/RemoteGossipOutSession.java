@@ -99,7 +99,7 @@ public class RemoteGossipOutSession extends GossipOutSession {
 			ev.setMessage(msg);
 			ev.setChannel(getOutChannel());
 			ev.setDir(Direction.DOWN);
-			ev.setSource(this);
+			ev.setSourceSession(this);
 
 			ev.init();
 			ev.go();

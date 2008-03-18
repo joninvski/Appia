@@ -199,7 +199,7 @@ public class HealSession extends Session implements InitializableSession {
 
         try {
             event.setDir(Direction.invert(event.getDir()));
-            event.setSource(this);
+            event.setSourceSession(this);
             event.init();
             event.go();
 

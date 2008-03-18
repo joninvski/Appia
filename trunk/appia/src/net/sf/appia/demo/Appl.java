@@ -59,15 +59,15 @@ public class Appl {
   public static final int DEFAULT_MULTICAST_PORT=7000;
   
   private static Layer[] qos={
-    new net.sf.appia.protocols.udpsimple.UdpSimpleLayer(),
+    //new net.sf.appia.protocols.udpsimple.UdpSimpleLayer(),
     //new appia.protocols.fifo.fifomulticast.FifoMulticastLayer(),
     //new appia.protocols.fifo.fifodual.FifoDualLayer(),
-    new net.sf.appia.protocols.fifo.FifoLayer(),
-    //new appia.protocols.tcpcomplete.TcpCompleteLayer(),
+    //new net.sf.appia.protocols.fifo.FifoLayer(),
+    new net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer(),
     //new appia.protocols.sslcomplete.SslCompleteLayer(),
     new net.sf.appia.protocols.group.bottom.GroupBottomLayer(),
     new net.sf.appia.protocols.group.heal.GossipOutLayer(),
-    new net.sf.appia.protocols.group.suspect.SuspectLayer(),
+    new net.sf.appia.protocols.group.phiSuspect.PhiSuspectLayer(),
     new net.sf.appia.protocols.group.intra.IntraLayer(),
     new net.sf.appia.protocols.group.inter.InterLayer(),
     new net.sf.appia.protocols.group.heal.HealLayer(),

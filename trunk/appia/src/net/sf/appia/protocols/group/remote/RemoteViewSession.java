@@ -319,7 +319,7 @@ public class RemoteViewSession extends Session implements InitializableSession {
 				
 //				event.setMessage(msg);
 				event.setChannel(myChannel);
-				event.setSource(this);
+				event.setSourceSession(this);
 				
 				event.init();
 				event.go();
@@ -343,7 +343,7 @@ public class RemoteViewSession extends Session implements InitializableSession {
 				final ViewState receivedVs = ViewState.pop(msg);
 				event.setAddresses(receivedVs.addresses);	    
 				event.setGroup(receivedVs.group);
-				event.setSource(this);
+				event.setSourceSession(this);
 				event.setChannel(initChannel);
 				
 				try {
@@ -389,7 +389,7 @@ public class RemoteViewSession extends Session implements InitializableSession {
 			final Debug e = new Debug(debugOut);
 			e.setChannel(myChannel);
 			e.setDir(Direction.DOWN);
-			e.setSource(this);
+			e.setSourceSession(this);
 			e.setQualifierMode(eq);
 			e.init();
 			e.go();

@@ -69,7 +69,7 @@ public class AckEvent extends SendableEvent {
 	super();
 	setChannel(c);
 	setDir(Direction.DOWN);
-	setSource(gen);
+	setSourceSession(gen);
 	this.dest = dest;
 	this.source = source;
 	init();

@@ -747,7 +747,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
         if (((update.from >= first) && (update.from <= last)) || ((update.to >= first) && (update.to <= last))) {
           try {
             SendableEvent ev=(UpdateEvent)update.cloneEvent();
-            ev.setSource(this);
+            ev.setSourceSession(this);
             ev.init();
             
             utils.pushSeq(ev.getMessage(),update.to);
@@ -770,7 +770,7 @@ public class NakFifoMulticastSession extends Session implements InitializableSes
             // Removes peer counter
             //FIXME: uncomment
 //            ev.getMessage().popInt();
-            ev.setSource(this);
+            ev.setSourceSession(this);
             ev.init();
             
             utils.pushSeq(ev.getMessage(),seq);

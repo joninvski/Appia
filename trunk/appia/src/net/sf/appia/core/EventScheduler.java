@@ -64,7 +64,7 @@ public class EventScheduler {
         (Thread.currentThread() == appia.instanceGetAppiaThread()) &&
         (currentSession != null) &&
         (event.getChannel() == currentChannel) &&
-        ((event.currentSession() == currentSession) || (event.getSource() == currentSession))
+        ((event.currentSession() == currentSession) || (event.getSourceSession() == currentSession))
     ) {
       if (event.getDir() == currentDirection) {
         
@@ -179,7 +179,7 @@ public class EventScheduler {
                     "\nSession: "+session+
                     "\nEvent: "+event+
                     "\nDirection: "+((event.getDir()==Direction.UP)?"UP":"DOWN")+
-                    "\nSourceSession: "+event.getSource()+
+                    "\nSourceSession: "+event.getSourceSession()+
                     "\nChannel: "+event.getChannel()+
                     "\n--------------------------------");
             throw e;

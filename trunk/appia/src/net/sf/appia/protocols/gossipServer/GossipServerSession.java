@@ -349,7 +349,7 @@ public class GossipServerSession extends Session implements InitializableSession
         try {
           SendableEvent ev=(SendableEvent)event.cloneEvent();
           ev.setDir(Direction.DOWN);
-          ev.setSource(this);
+          ev.setSourceSession(this);
           ev.init();
           ev.dest=c.addr;
           ev.go();

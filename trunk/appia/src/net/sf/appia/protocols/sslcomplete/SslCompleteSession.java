@@ -267,7 +267,7 @@ public class SslCompleteSession extends TcpCompleteSession implements Initializa
       
       //        send RegisterSocketEvent
       e.setDir(Direction.invert(e.getDir()));
-      e.setSource(this);
+      e.setSourceSession(this);
       
       try {
         e.init();
@@ -299,7 +299,7 @@ public class SslCompleteSession extends TcpCompleteSession implements Initializa
     
     //		send RegisterSocketEvent
     e.setDir(Direction.invert(e.getDir()));
-    e.setSource(this);
+    e.setSourceSession(this);
     
     try {
       e.init();

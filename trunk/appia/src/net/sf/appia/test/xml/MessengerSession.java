@@ -489,7 +489,7 @@ public class MessengerSession extends Session {
 	 */
 	private void sendEvent(GroupSendableEvent event, Channel chn) throws AppiaEventException {
 		if (!isBlocked) {
-			event.setSource(this);
+			event.setSourceSession(this);
 			event.setChannel(chn);
 			event.setDir(Direction.DOWN);
 			event.init();

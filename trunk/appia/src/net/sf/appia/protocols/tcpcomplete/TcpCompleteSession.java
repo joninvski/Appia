@@ -265,7 +265,7 @@ public void init(SessionProperties params) {
     
     //		send RegisterSocketEvent
     e.setDir(Direction.invert(e.getDir()));
-    e.setSource(this);
+    e.setSourceSession(this);
     
     try {
       e.init();

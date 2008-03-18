@@ -219,7 +219,7 @@ public class UniformSession extends Session {
 			
 			event.setChannel(channel);
 			event.setDir(Direction.DOWN);
-			event.setSource(this);
+			event.setSourceSession(this);
 			try {
 				event.init();
 				event.go();

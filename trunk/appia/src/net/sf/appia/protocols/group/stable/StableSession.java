@@ -291,7 +291,7 @@ public class StableSession extends Session {
 
             event.setChannel(ev.getChannel());
             event.setDir(ev.getDir());
-            event.setSource(this);
+            event.setSourceSession(this);
 
             event.dest=null;
             event.source=vs.view[orig];
@@ -376,7 +376,7 @@ public class StableSession extends Session {
     }
 
     private void suspect(GroupSendableEvent ev, long received) {
-        System.err.println("Event ("+ev+" "+ev.getDir()+" "+ev.getSource()+") from "+ev.orig+"("+ls.my_rank+") discarded due to bad seq. number. Received "+received+" expected "+(table[ls.my_rank][ev.orig]+1));
+        System.err.println("Event ("+ev+" "+ev.getDir()+" "+ev.getSourceSession()+") from "+ev.orig+"("+ls.my_rank+") discarded due to bad seq. number. Received "+received+" expected "+(table[ls.my_rank][ev.orig]+1));
         try {
             SuspectedMemberEvent sme = new SuspectedMemberEvent(ev.getChannel(),Direction.DOWN,this);
             sme.setSuspectedMember(ev.orig);

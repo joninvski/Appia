@@ -153,7 +153,7 @@ public class SwitchingSession extends Session implements InitializableSession, M
 					event.setChannel(topChannel);
 			}
 			try {
-				event.setSource(this);
+				event.setSourceSession(this);
 				event.init();
 				event.go();
 			} catch (AppiaEventException e) {
@@ -209,7 +209,7 @@ public class SwitchingSession extends Session implements InitializableSession, M
             if (bOkCounter == channelList.size()) {
                 try {
                     echo.setChannel(topChannel);
-                    echo.setSource(this);
+                    echo.setSourceSession(this);
                     echo.init();
                     echo.go();
                 } catch (AppiaEventException e) {
@@ -246,7 +246,7 @@ public class SwitchingSession extends Session implements InitializableSession, M
             vs = view.vs;
 
             view.setChannel(topChannel);
-            view.setSource(this);
+            view.setSourceSession(this);
             try {
                 view.init();
                 view.go();
@@ -266,7 +266,7 @@ public class SwitchingSession extends Session implements InitializableSession, M
             event.getMessage().pushString(event.nextChannelName);
             try {
                 event.setChannel(currentChannel);
-                event.setSource(this);
+                event.setSourceSession(this);
                 event.init();
                 event.go();
             } catch (AppiaEventException e) {
@@ -281,7 +281,7 @@ public class SwitchingSession extends Session implements InitializableSession, M
 	private void handleNullEvent(NullEvent event) {
 		event.getMessage().pushString(event.getChannel().getChannelID()+" (NULL)");
 		event.setChannel(topChannel);
-		event.setSource(this);
+		event.setSourceSession(this);
 		try {
 			event.init();
 			event.go();
@@ -329,7 +329,7 @@ public class SwitchingSession extends Session implements InitializableSession, M
 				try {
 					GroupSendableEvent clone = (GroupSendableEvent) event.cloneEvent();
 					clone.setChannel(nextChannel);
-					clone.setSource(this);
+					clone.setSourceSession(this);
 					clone.init();
 					clone.go();					
 				} catch (CloneNotSupportedException e) {
@@ -341,7 +341,7 @@ public class SwitchingSession extends Session implements InitializableSession, M
 			
 			try {
 				event.setChannel(currentChannel);
-				event.setSource(this);
+				event.setSourceSession(this);
 				event.init();
 				event.go();
 			} catch (AppiaEventException e) {
@@ -401,7 +401,7 @@ public class SwitchingSession extends Session implements InitializableSession, M
 		
 			try {
 				event.setChannel(topChannel);
-				event.setSource(this);
+				event.setSourceSession(this);
 				event.init();
 				event.go();
 			} catch (AppiaEventException e) {
@@ -460,7 +460,7 @@ public class SwitchingSession extends Session implements InitializableSession, M
 			try {
 				cont.event.getMessage().pushString(cont.event.getChannel().getChannelID()+ " (buffered)");
 				cont.event.setChannel(topChannel);
-				cont.event.setSource(this);
+				cont.event.setSourceSession(this);
 				cont.event.init();
 				cont.event.go();
 			} catch (AppiaEventException e) {

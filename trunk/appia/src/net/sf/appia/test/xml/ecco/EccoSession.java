@@ -179,7 +179,7 @@ public class EccoSession extends Session implements InitializableSession {
 			echo.source = local;
 			echo.dest = remote;
 			try {
-				echo.setSource(this);
+				echo.setSourceSession(this);
 				echo.init();
 				echo.go();
 			} catch (AppiaEventException e) {

@@ -208,7 +208,7 @@ public class VSyncSession extends Session {
 
     private void handleGroupSendableEvent(GroupSendableEvent ev) {
         if (recv_blockok && (ev.getDir() == Direction.DOWN))
-            throw new AppiaGroupError("VSyncSession: tried to sent event (name="+ev.getClass().getName()+" , direction="+ev.getDir()+" , source="+ev.getSource().getClass().getName()+" , message=\""+(new String(ev.getMessage().toByteArray()))+"\") while blocked");
+            throw new AppiaGroupError("VSyncSession: tried to sent event (name="+ev.getClass().getName()+" , direction="+ev.getDir()+" , source="+ev.getSourceSession().getClass().getName()+" , message=\""+(new String(ev.getMessage().toByteArray()))+"\") while blocked");
 
 
         // SEND

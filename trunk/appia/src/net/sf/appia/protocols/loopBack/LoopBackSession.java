@@ -81,7 +81,7 @@ public class LoopBackSession extends Session {
             System.err.println("Error sending event");
         }
         cloned.setDir(Direction.invert(cloned.getDir()));
-        cloned.setSource(this);
+        cloned.setSourceSession(this);
         cloned.dest=e.source;
         cloned.source=myEndpt;
         cloned.orig=myRank;

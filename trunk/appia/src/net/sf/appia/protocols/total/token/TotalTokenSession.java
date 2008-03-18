@@ -346,7 +346,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 				// Deliver my message
 				final GroupSendableEvent clone = (GroupSendableEvent) ev.cloneEvent();
 				clone.setDir(Direction.invert(ev.getDir()));
-				clone.setSource(this);
+				clone.setSourceSession(this);
 				clone.init();
 				clone.go();
 			} catch (CloneNotSupportedException e1) {

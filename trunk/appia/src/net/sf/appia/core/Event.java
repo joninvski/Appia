@@ -149,7 +149,7 @@ public class Event {
    * The source session is the session that created the event.
    * @param src The source Session.
    */
-  public void setSource(Session src) {
+  public void setSourceSession(Session src) {
     this.src = src;
     sourceSet=true;
     isInitiated = false;
@@ -159,20 +159,39 @@ public class Event {
    * Gets the source Session if the event.
    * The source session is the session that created the event.
    */
-  public Session getSource() {
+  public Session getSourceSession() {
     return src;
+  }
+
+  /**
+   * Sets the source Session if the event.
+   * The source session is the session that created the event.
+   * @param src The source Session.
+   */
+  @Deprecated
+  public void setSource(Session src) {
+      setSourceSession(src);
   }
   
   /**
+   * Gets the source Session if the event.
+   * The source session is the session that created the event.
+   */
+  @Deprecated
+  public Session getSource() {
+    return getSourceSession();
+  }
+
+  /**
    * Returns true if the current session accepts the Event.
-   * Currently it allways returns true.
+   * Currently it always returns true.
    */
   public final boolean isAccepted() {
     return true;
   }
   
   /**
-   * Returns the next Session to wich the event will be delivered.
+   * Returns the next Session to which the event will be delivered.
    * @return The next Session
    */
   public final Session popSession() {

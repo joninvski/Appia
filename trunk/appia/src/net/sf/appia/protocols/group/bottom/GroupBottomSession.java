@@ -339,7 +339,7 @@ public class GroupBottomSession extends Session {
             try {
                 GroupSendableEvent clone=(GroupSendableEvent)ev.cloneEvent();
                 clone.dest=vs.addresses[dests[i]];
-                clone.setSource(this);
+                clone.setSourceSession(this);
                 clone.init();
                 clone.go();
             } catch (CloneNotSupportedException ex) {

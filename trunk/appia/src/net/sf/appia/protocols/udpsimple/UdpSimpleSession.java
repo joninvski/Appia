@@ -177,7 +177,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       e.pduSize = param_MAX_UDPMSG_SIZE-MAX_UdpSimple_HEADERS;
       
       e.setDir(Direction.invert(e.getDir()));
-      e.setSource(this);
+      e.setSourceSession(this);
       e.init();
       e.go();
     } catch (AppiaEventException ex) {
@@ -313,7 +313,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     
     try {
       e.setDir(Direction.invert(e.getDir()));
-      e.setSource(this);
+      e.setSourceSession(this);
       e.init();
       e.go();
       log.debug(":handleAppiaMulticastInit: Returning multicastInit with error code: "+e.error);
@@ -727,7 +727,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
   
   private void reverseRegister(RegisterSocketEvent e, int port, InetAddress localHost, boolean error) {
     try {
-      e.setSource(this);
+      e.setSourceSession(this);
       e.setDir(Direction.invert(e.getDir()));
       e.port=port;
       e.localHost=localHost;

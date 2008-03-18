@@ -63,7 +63,7 @@ public class FragEvent extends SendableEvent implements Cloneable {
 	super();
 	setChannel(e.getChannel());
 	setDir(e.getDir());
-	setSource(gen);
+	setSourceSession(gen);
 	this.source=e.source;
 	this.dest=e.dest;
 	init();

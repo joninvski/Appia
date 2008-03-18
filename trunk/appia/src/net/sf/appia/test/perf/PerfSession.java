@@ -790,7 +790,7 @@ public class PerfSession extends Session implements InitializableSession {
       net.sf.appia.core.events.channel.Debug e = new net.sf.appia.core.events.channel.Debug(debug);
       e.setChannel(channel);
       e.setDir(Direction.DOWN);
-      e.setSource(this);
+      e.setSourceSession(this);
       e.setQualifierMode(EventQualifier.ON);
       
       e.init();

@@ -251,7 +251,7 @@ public class TOPSession extends Session implements InitializableSession {
 			for(Channel c : channels){
 				final BlockOk copy = new BlockOk(myBlock.group,myBlock.view_id);
 				copy.setDir(myBlock.getDir());
-				copy.setSource(this);
+				copy.setSourceSession(this);
 				copy.setChannel(c);
 				try {
 					copy.init();
@@ -315,7 +315,7 @@ public class TOPSession extends Session implements InitializableSession {
 				new LeaveEvent(timer.getChannel(),Direction.DOWN,this,myGroup,vs.id).go();
 				timer.setDir(Direction.invert(timer.getDir()));
 				timer.setQualifierMode(EventQualifier.ON);
-				timer.setSource(this);
+				timer.setSourceSession(this);
 				timer.init();
 				timer.go();
 			} catch (AppiaEventException e) {
@@ -373,7 +373,7 @@ public class TOPSession extends Session implements InitializableSession {
 			final GroupSendableEvent event = eventsPending.remove();
 			try {
 				event.view_id = vs.id;
-				event.setSource(this);
+				event.setSourceSession(this);
 				event.init();
 				event.go();
 			} catch (AppiaEventException e1) {

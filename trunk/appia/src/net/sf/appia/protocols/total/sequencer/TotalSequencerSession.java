@@ -196,7 +196,7 @@ public class TotalSequencerSession extends Session {
      */
     private void handleGroupSendableEvent(GroupSendableEvent e) {
         if(TotalSequencerConfig.debugOn)	
-        	debug(""+e+"   "+e.getSource());
+        	debug(""+e+"   "+e.getSourceSession());
         if(e.getDir() == Direction.DOWN)
             handleGroupSendableEventDown(e);
         else
@@ -221,7 +221,7 @@ public class TotalSequencerSession extends Session {
         }
         clonedEvent.setDir(Direction.invert(clonedEvent.getDir()));
         clonedEvent.source=viewState.view[localView.my_rank];
-        clonedEvent.setSource(this);
+        clonedEvent.setSourceSession(this);
         clonedEvent.orig = localView.my_rank;
         try{
             clonedEvent.init();

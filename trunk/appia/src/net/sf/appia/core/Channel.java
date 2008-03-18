@@ -550,7 +550,7 @@ public class Channel {
       
       e.setChannel(this);
       e.setDir(event.getDir() == Direction.UP ? Direction.DOWN : Direction.UP);
-      e.setSource(null);
+      e.setSourceSession(null);
       
       try {
         e.init();

@@ -50,7 +50,7 @@ public class ApplTimer extends Timer {
     setDir(Direction.invert(getDir()));
 	  setQualifierMode(EventQualifier.ON);
 	  setTimeout(period);
-	  setSource(parent);
+	  setSourceSession(parent);
 	  thisResend++;
 	  init();
   }

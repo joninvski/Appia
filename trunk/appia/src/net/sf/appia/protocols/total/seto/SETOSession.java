@@ -324,7 +324,7 @@ public class SETOSession extends Session implements InitializableSession {
 		if(event.getDir() == Direction.DOWN){
 			if(isBlocked){
 			    log.warn("Received event while blocked:"+event.getClass().getName()+" from session: "+
-                        event.getSource()+". Ignoring it.");
+                        event.getSourceSession()+". Ignoring it.");
                 return;
 			}
 			long msgDelay = max(delay) - delay[seq];
@@ -563,7 +563,7 @@ public class SETOSession extends Session implements InitializableSession {
 			
 			event.setChannel(channel);
 			event.setDir(Direction.DOWN);
-			event.setSource(this);
+			event.setSourceSession(this);
 			try {
 				event.init();
 				event.go();
@@ -791,7 +791,7 @@ public class SETOSession extends Session implements InitializableSession {
 	 */
 	private void delivery(GroupSendableEvent event){
 		try {
-			event.setSource(this);
+			event.setSourceSession(this);
 			event.init();
 			event.go();
 		} catch (AppiaEventException e) {

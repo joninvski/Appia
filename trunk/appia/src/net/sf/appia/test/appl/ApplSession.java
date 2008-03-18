@@ -187,7 +187,7 @@ public class ApplSession extends Session {
             new Debug(debugOut);
             e.setChannel(channel);
             e.setDir(Direction.DOWN);
-            e.setSource(this);
+            e.setSourceSession(this);
             e.setQualifierMode(eq);
             
             e.init();
@@ -375,7 +375,7 @@ public class ApplSession extends Session {
         
         if (isBlocked) {
             try {
-                e.setSource(this);
+                e.setSourceSession(this);
                 e.setDir(Direction.invert(e.getDir()));
                 e.setQualifierMode(EventQualifier.ON);
                 e.setTimeout(e.getChannel().getTimeProvider().currentTimeMillis() + e.period);

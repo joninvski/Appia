@@ -380,7 +380,7 @@ public class SuspectSession extends AbstractSensorSession implements Initializab
         if(ev.getPeriod() != suspect_sweep){
             ev.setDir(Direction.invert(ev.getDir()));
             ev.setQualifierMode(EventQualifier.OFF);
-            ev.setSource(this);
+            ev.setSourceSession(this);
             try {
                 ev.init();
                 ev.go();

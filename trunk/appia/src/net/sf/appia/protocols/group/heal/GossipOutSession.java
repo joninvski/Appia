@@ -260,7 +260,7 @@ public class GossipOutSession extends Session implements InitializableSession {
             try {
                 ev.setChannel(out);
                 ev.setDir(Direction.DOWN);
-                ev.setSource(this);
+                ev.setSourceSession(this);
                 ev.init();
                 ev.go();
             } catch (AppiaEventException ex) {
@@ -287,7 +287,7 @@ public class GossipOutSession extends Session implements InitializableSession {
             try {
                 ev.setChannel(channel);
                 ev.setDir(Direction.UP);
-                ev.setSource(this);
+                ev.setSourceSession(this);
                 ev.init();
                 ev.go();
             } catch (AppiaEventException ex) {
