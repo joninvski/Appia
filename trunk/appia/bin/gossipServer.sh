@@ -1,5 +1,5 @@
 #!/bin/bash
 
-#java org.continuent.appia.demo.ExecuteXML ./config/gossipServer.xml
+#java net.sf.appia.demo.ExecuteXML ./config/gossipServer.xml
 
-java org.continuent.appia.gossip.GossipServer "$@"
+java -cp .:classes:lib/log4j-1.2.14.jar net.sf.appia.gossip.GossipServer "$@"

@@ -20,8 +20,6 @@
 
 package net.sf.appia.jgcs.protocols.top;
 
-import java.util.concurrent.CountDownLatch;
-
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
 import net.sf.appia.core.Event;

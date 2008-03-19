@@ -187,6 +187,8 @@ public class AppiaDataSession extends AbstractDataSession {
 		            if(workerlog.isDebugEnabled())
 		                workerlog.debug("after receive: "+event);
 		            if(event instanceof JGCSGroupEvent || event instanceof JGCSSendEvent){
+	                    if(!controlSession.isJoined())
+	                        continue;
 		                AppiaMessage msg=null;
 		                try {
                             if(event instanceof JGCSGroupEvent)
@@ -237,8 +239,12 @@ public class AppiaDataSession extends AbstractDataSession {
 		                // deliver to control session
 		                controlSession.notifyListeners((GroupEvent) event);
 		            }
-		            else if(event instanceof ServiceEvent)
-		                handleServiceEvent((ServiceEvent)event);
+		            else if(event instanceof ServiceEvent){
+                        if(!controlSession.isJoined())
+                            continue;
+                        else
+                            handleServiceEvent((ServiceEvent)event);
+		            }
 		            else if(event instanceof ExitEvent){
 		                controlSession.notifyMemberRemoved();
 		            }
@@ -248,6 +254,7 @@ public class AppiaDataSession extends AbstractDataSession {
 		    }
 		    catch(RuntimeException rte){
 		        workerlog.warn("Exception in the worker Thread: "+rte+"\nwhile processing event "+event.toString());
+		        rte.printStackTrace();
                 notifyExceptionListeners(new JGCSException("RuntimeException while processing received event: "+event,rte));
 		    }
 		} // end of run()

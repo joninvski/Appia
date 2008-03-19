@@ -81,9 +81,8 @@ public class AcceptReader implements Runnable {
           debug("new connection");
       } catch(SocketTimeoutException ste){
       } catch (IOException ex) {
-        if(TcpCompleteConfig.debugOn)
-          debug("error in accept");
-        ex.printStackTrace();
+          if(isRunning())
+              ex.printStackTrace();
       }
       //check if there is a connection and
       //put new socket in socket list of connected sockets.
@@ -110,6 +109,12 @@ public class AcceptReader implements Runnable {
           } catch (IOException ex1) {}
         }
       }
+    }
+    try {
+        if(!socket.isClosed())
+            socket.close();
+    } catch (IOException e) {
+        e.printStackTrace();
     }
   }
   
@@ -140,6 +145,12 @@ public class AcceptReader implements Runnable {
   
 	public synchronized void setRunning(boolean r){
 		running = r;
+        if(!running)
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 	}
 	
 	private synchronized boolean isRunning(){

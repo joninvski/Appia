@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 import net.sf.appia.core.*;
@@ -122,11 +121,17 @@ public class TcpReader implements Runnable {
 						parentSession.removeSocket(iwp);
 						return;						
 					} catch (AppiaEventException e) {
-						e.printStackTrace();
+					    if(log.isDebugEnabled())
+					        e.printStackTrace();
 					}
 				}
 				//if (bench != null) bench.stopBench("receiving event");
 		}
+		try {
+            s.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 	}
 	
 	
@@ -178,10 +183,7 @@ public class TcpReader implements Runnable {
 		        curPos += sLength + 4;
 
 		        /* Create event */
-
-		        Class c = Class.forName(className);
-		
-		        e=(SendableEvent)c.newInstance();
+		        e = (SendableEvent)Class.forName(className).newInstance();
 
 		        /* Extract channel name and put event in it*/
 		        sLength = ParseUtils.byteArrayToInt(data, curPos);
@@ -202,7 +204,6 @@ public class TcpReader implements Runnable {
 			
 			e.dest=new InetSocketAddress(s.getLocalAddress(),originalPort);
 			e.setMessage(msgChannel.getMessageFactory().newMessage(data,curPos,total-curPos));
-//			e.getMessage().setByteArray(data,curPos,total-curPos);
 
 			if (bench != null) bench.stopBench("readandformat");			
 			
@@ -223,6 +224,12 @@ public class TcpReader implements Runnable {
 	
 	public synchronized void setRunning(boolean r){
 		running = r;
+		if(!running && !s.isClosed())
+		try {
+            s.shutdownInput();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 	}
 	
 	private synchronized boolean isRunning(){

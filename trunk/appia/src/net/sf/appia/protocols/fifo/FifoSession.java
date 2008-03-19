@@ -571,17 +571,20 @@ public class FifoSession extends Session {
         long delta = 0;
         boolean stop = false;
         WaitingMessage message = null;
+        LinkedList<WaitingMessage> localBuffer = new LinkedList<WaitingMessage>();
         ListIterator<WaitingMessage>it = messages.listIterator();
 		while(!stop && it.hasNext()){
 		    message = it.next();
             delta = currentTime - message.timeStamp;
             if (delta > timerPeriod){
                 it.remove();
-                resendMessage(message);
+                localBuffer.addLast(message);
             }
             else
                 stop = true;
 		}
+		for(WaitingMessage waiting : localBuffer)
+            resendMessage(waiting);
 	}
 
 	private void resendMessage(WaitingMessage we) {    

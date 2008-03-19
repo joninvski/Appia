@@ -24,6 +24,7 @@ import net.sf.appia.core.Session;
 import net.sf.appia.core.events.channel.EchoEvent;
 import net.sf.appia.protocols.group.events.GroupSendableEvent;
 import net.sf.appia.protocols.group.intra.View;
+import net.sf.appia.protocols.group.leave.LeaveEvent;
 import net.sf.appia.protocols.group.sync.BlockOk;
 
 
@@ -47,6 +48,7 @@ public class PrimaryViewLayer extends Layer {
                 EchoEvent.class,
                 GroupSendableEvent.class,
                 EchoProbeEvent.class,
+                LeaveEvent.class,
         };
         
         evRequire = new Class[]{
@@ -59,6 +61,7 @@ public class PrimaryViewLayer extends Layer {
                 DeliverViewEvent.class,
                 KickEvent.class,
                 EchoProbeEvent.class,
+                LeaveEvent.class,
         };
     }
 

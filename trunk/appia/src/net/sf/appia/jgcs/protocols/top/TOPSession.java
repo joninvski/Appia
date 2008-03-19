@@ -93,6 +93,7 @@ public class TOPSession extends Session implements InitializableSession {
 	
 	private boolean requestedJoin = false;
 	private boolean receivedRSE = false;
+	private boolean requestedLeave = false;
 	
 	private static Logger logger = Logger.getLogger(TOPSession.class);
 	
@@ -296,17 +297,28 @@ public class TOPSession extends Session implements InitializableSession {
 	private void handleService(ServiceEvent event) {
 		mailbox.add(event);
 	}
+
 	
+	private void sendLeave(Channel channel){
+        try {
+            new LeaveEvent(channel,Direction.DOWN,this,myGroup,vs.id).go();
+            new JGCSLeaveTimer(DEFAULT_TIME_PERIOD,channel,this).go();
+        } catch (AppiaEventException e) {
+            e.printStackTrace();
+        } catch (AppiaException e) {
+            e.printStackTrace();
+        }
+	}
 	private void handleJGCSLeave(JGCSLeaveEvent event) {
-		leaveChannel = event.getLatch();
-		try {
-			new LeaveEvent(event.getChannel(),Direction.DOWN,this,myGroup,vs.id).go();
-			new JGCSLeaveTimer(DEFAULT_TIME_PERIOD,event.getChannel(),this).go();
-		} catch (AppiaEventException e) {
-			e.printStackTrace();
-		} catch (AppiaException e) {
-			e.printStackTrace();
-		}
+	    leaveChannel = event.getLatch();
+	    if(vs == null){
+	        sentGroupInit = true;
+	        leaveChannel.countDown();
+	    }
+	    else if (!isBlocked)
+	        sendLeave(event.getChannel());
+	    else
+	        requestedLeave = true;
 	}
 	
 	private void handleLeaveTimer(JGCSLeaveTimer timer) {
@@ -382,6 +394,9 @@ public class TOPSession extends Session implements InitializableSession {
 		}		
 		// Not sending clone. The JGCSChannel should not write in this event. It's READ ONLY!
 		mailbox.add(e);
+		
+		if(requestedLeave && leaveChannel != null)
+		    sendLeave(e.getChannel());
 	}
 	
 	/*
@@ -479,7 +494,7 @@ public class TOPSession extends Session implements InitializableSession {
 		if(gossips == null || gossips.length == 0){
 			logger.fatal("Received channel init but no gossip is configured.");
 			throw new AppiaError("Received channel init but no gossip is configured.");
-		}    	
+		}
 		
 		/* Forwards channel init event. New events must follow this one */
 		try {

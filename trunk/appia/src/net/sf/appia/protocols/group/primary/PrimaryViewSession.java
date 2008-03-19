@@ -83,6 +83,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     private Map<String,String> operationsMap=new Hashtable<String,String>();
     
     List<GroupSendableEvent> pendingMessages=new ArrayList<GroupSendableEvent>();
+    private LeaveEvent leaveEvent = null;
     
     public PrimaryViewSession(Layer layer) {
         super(layer);
@@ -106,6 +107,8 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             handleDeliverViewEvent((DeliverViewEvent) event);
         else if (event instanceof KickEvent)
             handleKickEvent((KickEvent) event);
+        else if (event instanceof LeaveEvent)
+            handleLeaveEvent((LeaveEvent)event);
         else if (event instanceof GroupSendableEvent)
             handleGroupSendable((GroupSendableEvent)event);
         else if(event instanceof EchoProbeEvent)
@@ -122,6 +125,26 @@ public class PrimaryViewSession extends Session implements InitializableSession,
         }
     }
 
+    private void handleLeaveEvent(LeaveEvent event) {
+        if(event.getDir() == Direction.DOWN){
+            if(canSendMessages()){
+                try {
+                    event.go();
+                } catch (AppiaEventException e) {
+                    e.printStackTrace();
+                }
+            }
+            else{
+                leaveEvent = event;
+            }
+        } else
+            try {
+                event.go();
+            } catch (AppiaEventException e) {
+                e.printStackTrace();
+            }
+    }
+
     private void handleGroupSendable(GroupSendableEvent event) {
         if (blocked && event.getDir() == Direction.UP && this.view != null && event.view_id.equals(vs.id)){
             log.debug("I'm blocked and received message to be delivered in the current view");
@@ -133,7 +156,6 @@ public class PrimaryViewSession extends Session implements InitializableSession,
             } catch (AppiaEventException e) {
                 e.printStackTrace();
             }
-        
     }
 
     private void handleEchoEvent(EchoEvent event) {
@@ -245,6 +267,10 @@ public class PrimaryViewSession extends Session implements InitializableSession,
                     e.printStackTrace();
                 }
             }
+        }
+        if(leaveEvent != null){
+            leave(view.getChannel());
+            leaveEvent = null;
         }
     }
     
@@ -366,6 +392,7 @@ public class PrimaryViewSession extends Session implements InitializableSession,
     }
     
     private void leave(Channel ch) {
+        //FIXME: try later, not return!!!
         if(!canSendMessages())
             return;
         

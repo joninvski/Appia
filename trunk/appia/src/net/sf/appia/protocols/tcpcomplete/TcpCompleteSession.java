@@ -23,11 +23,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import javax.management.Attribute;
@@ -304,31 +301,27 @@ public void init(SessionProperties params) {
     removeChannel(e.getChannel());
     
     if(channels.size() == 0){
+        log.warn("No more channels. Cleaning sockets.");
     	acceptThread.setRunning(false);
-    	Iterator it = ourReaders.values().iterator();
-    	while(it.hasNext()){
-            ((TcpReader)(it.next())).setRunning(false);
-            it.remove();
-    	}
-    	it = otherReaders.values().iterator();
-    	while(it.hasNext()){
-            ((TcpReader)(it.next())).setRunning(false);
-            it.remove();
-    	}
+    	for(SocketInfoContainer comm : ourReaders.values())
+    	    comm.close();
+    	ourReaders.clear();
+        for(SocketInfoContainer comm : otherReaders.values())
+            comm.close();
+        otherReaders.clear();
     }
-    else if (e.getChannel() == timerChannel) {
+    else if (e.getChannel().getChannelID().equals(timerChannel.getChannelID())) {
         try {
-            timerChannel=(Channel)channels.values().iterator().next();
+            timerChannel=channels.values().iterator().next();
             TcpTimer timer=new TcpTimer(param_DEST_TIMEOUT, timerChannel, this, EventQualifier.ON);
             timer.go();
-          } catch (Exception ex) {
+        } catch (Exception ex) {
             timerChannel=null;
             ex.printStackTrace();
-          }
         }
-
+    }
   }
-  
+
   private void handleTcpTimer(TcpTimer e) {
 	  try {
 		e.go();
@@ -555,9 +548,11 @@ public void init(SessionProperties params) {
                   if (TcpCompleteConfig.debugOn)
                       debug("Added to Queue of peer "+container.who);
               } catch (IOException e) {
-                  sendASyncUndelivered(container.channel, container.who);
-                  if(TcpCompleteConfig.debugOn)
-                      e.printStackTrace();
+                  if(isRunning()){
+                      sendASyncUndelivered(container.channel, container.who);
+                      if(TcpCompleteConfig.debugOn)
+                          e.printStackTrace();
+                  }
               }
           }
           try {
@@ -573,6 +568,12 @@ public void init(SessionProperties params) {
       
     public synchronized void setRunning(boolean r){
         running = r;
+        if(!running && !socket.isClosed())
+            try {
+                socket.shutdownOutput();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
     }
     
     private synchronized boolean isRunning(){
@@ -618,5 +619,5 @@ public void init(SessionProperties params) {
   public Object invoke(String action, MBeanOperationInfo info, Object[] params, String[] signature) throws AppiaManagementException {
       return measures.invoke(action, info, params, signature);
   }
-  
+
 }

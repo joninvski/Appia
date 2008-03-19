@@ -131,12 +131,11 @@ public class AppiaControlSession extends AbstractBlockSession {
 		} catch (InterruptedException e) {
 			throw new JGCSException("Error leaving the group.",e);
 		}
-		
-		setMembership(null);
-		leaveLatch = null;
-		
+		leaveLatch = null;		
 		for(Channel ch : appiaChannels)
 			ch.end();
+        setMembership(null);
+        System.out.println("LEAVE end");
 	}
 
 	public SocketAddress getLocalAddress() {
@@ -157,7 +156,26 @@ public class AppiaControlSession extends AbstractBlockSession {
 		return am.addresses.get(am.myRank);
 	}
 		
-	/*
+	
+	/**
+     * 
+     * @see net.sf.jgcs.membership.AbstractMembershipSession#getMembership()
+     */
+    @Override
+    public synchronized Membership getMembership() throws NotJoinedException {
+        return super.getMembership();
+    }
+
+    /**
+     * 
+     * @see net.sf.jgcs.membership.AbstractMembershipSession#setMembership(net.sf.jgcs.membership.Membership)
+     */
+    @Override
+    protected synchronized void setMembership(Membership m) {
+        super.setMembership(m);
+    }
+
+    /*
 	 * This method is used by the thread that is waiting  for messages on the mailbox
 	 * and is called by this thread to notify the controlListener.
 	 * The Listener List is synchronized.
@@ -229,7 +247,7 @@ public class AppiaControlSession extends AbstractBlockSession {
 		this.notifyRemoved();
 	}
 	
-	public boolean isJoined() {
+	public synchronized boolean isJoined() {
 		try {
 			return getMembership() != null;
 		} catch (NotJoinedException e) {
