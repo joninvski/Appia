@@ -67,7 +67,7 @@ public class Appl {
     //new appia.protocols.sslcomplete.SslCompleteLayer(),
     new net.sf.appia.protocols.group.bottom.GroupBottomLayer(),
     new net.sf.appia.protocols.group.heal.GossipOutLayer(),
-    new net.sf.appia.protocols.group.phiSuspect.PhiSuspectLayer(),
+    new net.sf.appia.protocols.group.suspect.SuspectLayer(),
     new net.sf.appia.protocols.group.intra.IntraLayer(),
     new net.sf.appia.protocols.group.inter.InterLayer(),
     new net.sf.appia.protocols.group.heal.HealLayer(),
