@@ -249,7 +249,7 @@ public class SslCompleteSession extends TcpCompleteSession implements Initializa
         log.debug("Member "+dest.toString()+" has failed.");
       }
       sendUndelivered(channel,dest);
-      removeSocket(dest);
+//      removeSocket(dest);
     }
     return false;
   }

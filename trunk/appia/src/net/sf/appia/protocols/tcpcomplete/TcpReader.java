@@ -88,18 +88,13 @@ public class TcpReader implements Runnable {
 			}					
 			return;						
 		}
-//		bench = Benchmark.getInstance(channel.getTimeProvider());	
 		while(isRunning()){
-// if (bench != null) bench.startBench("receiving event");
 				try {
-// if (bench != null) bench.startBench("receive and format");
 					event = receiveAndFormat();
 					clearInactiveCounter();
-// if (bench != null) bench.stopBench("receive and format");										
-					
 					if(event != null){
 						if(TcpCompleteConfig.debugOn)	
-							debug("received an event sending it to the appia stack: "+event+" Channel: "+event.getChannel());
+							debug("received an event. sending it to the appia stack: "+event+" Channel: "+event.getChannel());
 						event.asyncGo(event.getChannel(), Direction.UP);
                         measures.countBytesUp(event.getMessage().length());
                         measures.countMessagesUp(1);
@@ -165,12 +160,7 @@ public class TcpReader implements Runnable {
 			total =ParseUtils.byteArrayToInt(bTotal,0);
 			
 			byte data[] = new byte[total];
-			
-			if (bench != null) bench.startBench("read msg");
 			receive_n(data,total);
-			if (bench != null) bench.stopBench("read msg");
-
-			if (bench != null) bench.startBench("readandformat");			
 			int curPos = 0;
 			
 			/* Extract event class name */
@@ -204,9 +194,6 @@ public class TcpReader implements Runnable {
 			
 			e.dest=new InetSocketAddress(s.getLocalAddress(),originalPort);
 			e.setMessage(msgChannel.getMessageFactory().newMessage(data,curPos,total-curPos));
-
-			if (bench != null) bench.stopBench("readandformat");			
-			
         } catch(IOException ste){
         	throw ste;
 		}

@@ -22,8 +22,9 @@ package net.sf.appia.core;
 
 import java.util.concurrent.ThreadFactory;
 
-import net.sf.appia.core.events.channel.*;
-import net.sf.appia.protocols.common.AppiaThreadFactory;
+import net.sf.appia.core.events.channel.ChannelEvent;
+import net.sf.appia.core.events.channel.PeriodicTimer;
+import net.sf.appia.core.events.channel.Timer;
 
 
 /** <I>Appia</I> timers manager.
@@ -38,7 +39,6 @@ import net.sf.appia.protocols.common.AppiaThreadFactory;
 public class TimerManager implements Runnable, TimeProvider {
   
     private static final long MICROS = 1000;
-    private static final long NANOS = 1000000;
     
     /**
      * This class defines a MyTimer
@@ -270,7 +270,7 @@ public class TimerManager implements Runnable, TimeProvider {
    * Uses {@linkplain System#currentTimeMillis()} therefore only has a millisecond precision.
    */
   public long currentTimeMicros() {
-  	return System.currentTimeMillis()*MICROS;
+  	return System.nanoTime()/MICROS;
   }
 
   /**
@@ -278,7 +278,7 @@ public class TimerManager implements Runnable, TimeProvider {
    * Uses {@linkplain System#currentTimeMillis()} therefore only has a millisecond precision.
    */
   public long nanoTime() {
-  	return System.currentTimeMillis()*NANOS;
+  	return System.nanoTime();
   }
 
   ////////////////////////////////////////////

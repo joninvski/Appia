@@ -65,7 +65,7 @@ import org.apache.log4j.Logger;
  * If {@link net.sf.appia.protocols.common.RegisterSocketEvent#localHost} is null, 
  * {@link net.sf.appia.protocols.utils.HostUtils} is used to select one. 
  * 
- * @author Pedro Vicente, Alexandre Pinto
+ * @author Pedro Vicente, Alexandre Pinto, Nuno Carvalho
  */
 public class TcpCompleteSession extends Session 
     implements InitializableSession,ManagedSession{
@@ -78,6 +78,7 @@ public class TcpCompleteSession extends Session
   
   protected int param_DEST_TIMEOUT=DEST_TIMEOUT, param_MAX_INACTIVITY=MAX_INACTIVITY, 
   	param_SOTIMEOUT=SOTIMEOUT;
+  protected boolean param_CLOSE_INACTIVE_SOCKETS=true;
   
   //Channels
   protected Hashtable<String,Channel> channels;
@@ -126,34 +127,39 @@ public class TcpCompleteSession extends Session
    * Initializes the session using the parameters given in the XML configuration.
    * Possible parameters:
    * <ul>
-   * <li><b>dest_timeout</b> time between unused open connections verification. (in milliseconds)
-   * <li><b>max_inactivity</b> number of times that the dest_timeout expires without closing the connection..
-   * <li><b>reader_sotimeout</b> the timeout of the threads that listen on TCP sockets. (in milliseconds)
+   * <li><b>dest_timeout</b> time between unused open connections verification. (in milliseconds);
+   * <li><b>max_inactivity</b> number of times that the dest_timeout expires without closing the connection;
+   * <li><b>reader_sotimeout</b> the timeout of the threads that listen on TCP sockets. (in milliseconds);
+   * <li><b>close_inactive_sockets</b> boolean that defines if inactive sockets should be closed or not.
    * </ul>
    * 
    * @param params The parameters given in the XML configuration.
    * @see net.sf.appia.xml.interfaces.InitializableSession#init(SessionProperties)
    */
-public void init(SessionProperties params) {
-    if (params.containsKey("reader_sotimeout"))
-        param_SOTIMEOUT=params.getInt("reader_sotimeout");
-    if (params.containsKey("dest_timeout"))
-        param_DEST_TIMEOUT=params.getInt("dest_timeout");
-    if (params.containsKey("max_inactivity"))
-        param_MAX_INACTIVITY=params.getInt("max_inactivity");    
-	}
-  
+  public void init(SessionProperties params) {
+      if (params.containsKey("reader_sotimeout"))
+          param_SOTIMEOUT=params.getInt("reader_sotimeout");
+      if (params.containsKey("dest_timeout"))
+          param_DEST_TIMEOUT=params.getInt("dest_timeout");
+      if (params.containsKey("max_inactivity"))
+          param_MAX_INACTIVITY=params.getInt("max_inactivity");
+      if (params.containsKey("close_inactive_sockets"))
+          param_CLOSE_INACTIVE_SOCKETS=params.getBoolean("close_inactive_sockets");
+  }
+
   public void handle(Event e){
-    if(e instanceof SendableEvent)
-      handleSendable((SendableEvent)e);
-    else if(e instanceof RegisterSocketEvent)
-      handleRegisterSocket((RegisterSocketEvent)e);
-    else if(e instanceof ChannelInit)
-      handleChannelInit((ChannelInit)e);
-    else if(e instanceof ChannelClose)
-      handleChannelClose((ChannelClose)e);
-    else if(e instanceof TcpTimer)
-      handleTcpTimer((TcpTimer)e);
+      if(e instanceof SendableEvent)
+          handleSendable((SendableEvent)e);
+      else if(e instanceof RegisterSocketEvent)
+          handleRegisterSocket((RegisterSocketEvent)e);
+      else if(e instanceof ChannelInit)
+          handleChannelInit((ChannelInit)e);
+      else if(e instanceof ChannelClose)
+          handleChannelClose((ChannelClose)e);
+      else if(e instanceof TcpTimer)
+          handleTcpTimer((TcpTimer)e);
+      else if(e instanceof CloseTcpSocket)
+          handleCloseSocket((CloseTcpSocket)e);
   }
   
   private void handleSendable(SendableEvent e){
@@ -272,6 +278,14 @@ public void init(SessionProperties params) {
     }
   }
   
+  private void handleCloseSocket(CloseTcpSocket e) {
+      InetSocketAddress dest = (InetSocketAddress) e.getAddress();
+      if(existsSocket(otherReaders,dest))
+          otherReaders.remove(dest).close();
+      else
+          log.debug("Requested to close socket "+dest+" but the socket does not exist.");
+  }
+
   private void handleChannelInit(ChannelInit e){
     //add channel to hash map
     putChannel(e.getChannel());
@@ -282,7 +296,7 @@ public void init(SessionProperties params) {
       ex.printStackTrace();
     }
     
-    if (timerChannel == null) {
+    if (timerChannel == null && param_CLOSE_INACTIVE_SOCKETS) {
       try {
         TcpTimer timer=new TcpTimer(param_DEST_TIMEOUT, e.getChannel(), this, EventQualifier.ON);
         timer.go();
@@ -310,7 +324,7 @@ public void init(SessionProperties params) {
             comm.close();
         otherReaders.clear();
     }
-    else if (e.getChannel().getChannelID().equals(timerChannel.getChannelID())) {
+    else if (timerChannel != null && e.getChannel().getChannelID().equals(timerChannel.getChannelID())) {
         try {
             timerChannel=channels.values().iterator().next();
             TcpTimer timer=new TcpTimer(param_DEST_TIMEOUT, timerChannel, this, EventQualifier.ON);
@@ -448,7 +462,7 @@ public void init(SessionProperties params) {
           otherReaders.remove(iwp).close();
       else{
         if(TcpCompleteConfig.debugOn)
-          debug("no socket anywhere?");
+          debug("No socket to remove.");
       }
     }
   }
@@ -586,7 +600,7 @@ public void init(SessionProperties params) {
    * 
    * This class defines a MessageContainer
    * 
-   * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+   * @author Nuno Carvalho
    * @version 1.0
    */
   class MessageContainer {

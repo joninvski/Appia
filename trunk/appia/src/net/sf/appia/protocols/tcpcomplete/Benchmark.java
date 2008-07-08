@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 
 import net.sf.appia.core.TimeProvider;
-import net.sf.appia.protocols.common.AppiaThreadFactory;
 
 
 /**
@@ -36,7 +35,8 @@ import net.sf.appia.protocols.common.AppiaThreadFactory;
  * 
  * All of the methods accumulate successive benchmarks, and the total running 
  * time, average running time and number of times executed for each benchmark
- * is printed on standart output when the JVM shuts down.
+ * is printed on standard output when the JVM shuts down.
+ * @deprecated
  */
 public class Benchmark {
   public static final boolean ON=false;

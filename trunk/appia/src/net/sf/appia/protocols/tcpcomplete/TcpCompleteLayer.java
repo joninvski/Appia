@@ -25,15 +25,14 @@ import net.sf.appia.core.events.SendableEvent;
 import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.protocols.common.RegisterSocketEvent;
-import net.sf.appia.protocols.udpsimple.UdpSimpleSession;
 
 
 
 /**
- * Layer definition of the UdpSimple protocol.
+ * Layer definition of the TCP protocol.
  * 
- * @author Pedro Vicente, Alexandre Pinto 
- * @see UdpSimpleSession
+ * @author Pedro Vicente, Alexandre Pinto, Nuno Carvalho
+ * @see TcpSimpleSession
   */
 public class TcpCompleteLayer extends Layer implements net.sf.appia.core.events.AppiaMulticastSupport {
 
@@ -50,6 +49,7 @@ public class TcpCompleteLayer extends Layer implements net.sf.appia.core.events.
 				ChannelInit.class,
 				ChannelClose.class,
 				TcpTimer.class,
+				CloseTcpSocket.class,
 		};
 		
 		evRequire = new Class[]{
