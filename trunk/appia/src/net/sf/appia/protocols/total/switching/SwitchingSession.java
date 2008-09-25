@@ -176,7 +176,6 @@ public class SwitchingSession extends Session implements InitializableSession, M
             
             if (currentChannel == null) {
 				topChannelInit = init;
-				return;
 			}
 		}
 		else if (firstChannelName != null && init.getChannel().getChannelID().equals(firstChannelName) ||
