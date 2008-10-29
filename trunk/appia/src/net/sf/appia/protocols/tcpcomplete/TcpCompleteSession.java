@@ -280,8 +280,11 @@ public class TcpCompleteSession extends Session
   
   private void handleCloseSocket(CloseTcpSocket e) {
       InetSocketAddress dest = (InetSocketAddress) e.getAddress();
-      if(existsSocket(otherReaders,dest))
+      if(existsSocket(otherReaders,dest)){
           otherReaders.remove(dest).close();
+          if(log.isDebugEnabled())
+              log.debug("Closing TCP socket for destination: "+dest);
+      }
       else
           log.debug("Requested to close socket "+dest+" but the socket does not exist.");
   }
@@ -343,22 +346,24 @@ public class TcpCompleteSession extends Session
 		e1.printStackTrace();
 	}
 	
-  	Iterator<SocketInfoContainer> it = ourReaders.values().iterator();
-	while(it.hasNext()){
-		TcpReader reader = it.next().reader;
-		if(reader.sumInactiveCounter() > param_MAX_INACTIVITY){
-			reader.setRunning(false);
-			it.remove();
-		}
-	}
-	it = otherReaders.values().iterator();
-	while(it.hasNext()){
-		TcpReader reader = it.next().reader;
-		if(reader.sumInactiveCounter() > param_MAX_INACTIVITY){
-			reader.setRunning(false);
-			it.remove();
-		}
-	}
+	synchronized (socketLock) {
+	    Iterator<SocketInfoContainer> it = ourReaders.values().iterator();
+	    while(it.hasNext()){
+	        TcpReader reader = it.next().reader;
+	        if(reader.sumInactiveCounter() > param_MAX_INACTIVITY){
+	            reader.setRunning(false);
+	            it.remove();
+	        }
+	    }
+	    it = otherReaders.values().iterator();
+	    while(it.hasNext()){
+	        TcpReader reader = it.next().reader;
+	        if(reader.sumInactiveCounter() > param_MAX_INACTIVITY){
+	            reader.setRunning(false);
+	            it.remove();
+	        }
+	    }
+    }
   }
   
   protected void send(byte[] data, InetSocketAddress dest, Channel channel) {

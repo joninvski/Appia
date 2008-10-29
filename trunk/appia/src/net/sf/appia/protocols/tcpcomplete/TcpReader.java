@@ -46,7 +46,6 @@ public class TcpReader implements Runnable {
 	private int remotePort ;
 	private int originalPort; //port of the accept socket
 	private Channel channel;
-	private Benchmark bench;
     private Measures measures;
 	
 	private int inactiveCounter=0;
