@@ -61,7 +61,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
     private static final long DEFAULT_SILENT_PERIOD = 500; // miliseconds
 	
 	private long globalSeqNumber;
-	private LinkedList pendingMessages, undeliveredMessages;
+	private LinkedList<GroupSendableEvent> pendingMessages, undeliveredMessages;
 	private int rankWidthToken, numMessagesPerToken;
 	
 	private LocalState localState;
@@ -74,8 +74,8 @@ public class TotalTokenSession extends Session implements InitializableSession {
 	public TotalTokenSession(Layer layer) {
 		super(layer);
 		
-		pendingMessages = new LinkedList();
-		undeliveredMessages = new LinkedList();
+		pendingMessages = new LinkedList<GroupSendableEvent>();
+		undeliveredMessages = new LinkedList<GroupSendableEvent>();
 		rankWidthToken = 0;
 		numMessagesPerToken = DEFAULT_NUM_MESSAGES_PER_TOKEN;
 		isBlocked = true;
@@ -236,8 +236,8 @@ public class TotalTokenSession extends Session implements InitializableSession {
 			if(hasToken)
 				rotateToken();
 			
-			while(undeliveredMessages.size() > 0){
-				final GroupSendableEvent auxEvent = (GroupSendableEvent) undeliveredMessages.getFirst();
+			while(!undeliveredMessages.isEmpty()){
+				final GroupSendableEvent auxEvent = undeliveredMessages.getFirst();
 				final long seqaux = auxEvent.getMessage().peekLong();
 				if(seqaux == (globalSeqNumber + 1)){
 					undeliveredMessages.removeFirst();
@@ -264,7 +264,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 			
 			if(iHaveToken() && ! isBlocked)
                 if(sentExplicitToken && localState.my_rank == 0 && event instanceof TokenEvent
-                        && pendingMessages.size() == 0)
+                        && pendingMessages.isEmpty())
                     insertTokenDelay(event.getChannel());
                 else
                     sendMessages(event.getChannel());
@@ -340,7 +340,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
             // With only one member, the messages are sent until the end of the buffer is reached.
 			if((i+1) == listSize || (viewState.view.length > 1 && (i+1) ==  numMessagesPerToken))
 				sendToken = true;
-			final GroupSendableEvent ev = (GroupSendableEvent) pendingMessages.removeFirst();
+			final GroupSendableEvent ev = pendingMessages.removeFirst();
 			ev.orig = localState.my_rank;
 			try {
 				// Deliver my message
@@ -372,9 +372,9 @@ public class TotalTokenSession extends Session implements InitializableSession {
 		}
 	}
 	
-	  private void storeUndelivered(SendableEvent ev, long seq) {
+	  private void storeUndelivered(GroupSendableEvent ev, long seq) {
 		  ev.getMessage().pushLong(seq);
-		    final ListIterator aux=undeliveredMessages.listIterator(undeliveredMessages.size());
+		    final ListIterator<GroupSendableEvent> aux=undeliveredMessages.listIterator();
 		    while (aux.hasPrevious()) {
 		      final SendableEvent evaux=(SendableEvent)aux.previous();
 		      final long seqaux= evaux.getMessage().peekLong();
