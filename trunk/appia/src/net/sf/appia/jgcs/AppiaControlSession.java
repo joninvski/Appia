@@ -216,6 +216,7 @@ public class AppiaControlSession extends AbstractBlockSession {
 				incomingMembership.setOldAndFailedMembers(currentMembership);
 			}
 			
+			setMembership(incomingMembership);
 			synchronized (membershipSync) {
 				membershipSync.notifyAll();
 			}
