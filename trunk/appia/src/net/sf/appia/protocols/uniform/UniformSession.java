@@ -63,7 +63,7 @@ public class UniformSession extends Session {
 	private TimeProvider timeProvider;
 	
 	
-	private LinkedList receivedMessages = new LinkedList();
+	private LinkedList<MessageContainer> receivedMessages = new LinkedList<MessageContainer>();
 	
 	private long timeLastMsgSent;
 	private boolean utSet; // Uniform timer is set?
@@ -230,6 +230,10 @@ public class UniformSession extends Session {
 	}
 	
 	private void handleUniformInfo(UniformInfoEvent event) {
+	    // If I do not have a view, I should not receive this message...
+	    // FIXME: for now, I'm ignoring the message, but this should work without this... fix later
+	    if(vs == null)
+	        return;
 		final Message msg = event.getMessage();
 		final long[] uniformInfo = new long[vs.view.length];
 		for (int i = uniformInfo.length; i > 0; i--)
@@ -248,9 +252,9 @@ public class UniformSession extends Session {
 	 * Tries to deliver Uniform messages.
 	 */
 	private void deliverUniform(Channel channel) {
-		final ListIterator it = receivedMessages.listIterator();
+		final ListIterator<MessageContainer> it = receivedMessages.listIterator();
 		while (it.hasNext()) {
-			final MessageContainer nextMsg = (MessageContainer)it.next();
+			final MessageContainer nextMsg = it.next();
 			if (isUniform(nextMsg)) {
 				try {
 					// deliver uniform notification
