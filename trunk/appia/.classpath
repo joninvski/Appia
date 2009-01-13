@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="core/|groupcomm/|test/" kind="src" path="src"/>
 	<classpathentry kind="src" path="src/test"/>
 	<classpathentry kind="src" path="src/groupcomm"/>
 	<classpathentry kind="src" path="src/core"/>
