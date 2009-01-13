@@ -28,7 +28,7 @@ import java.net.UnknownHostException;
 import java.util.Enumeration;
 
 /**
- * Class containing methods usefull for Host information retrieval.
+ * Class containing methods useful for Host information retrieval.
  *  
  * @author Alexandre Pinto
  */
