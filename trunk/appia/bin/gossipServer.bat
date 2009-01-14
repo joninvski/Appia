@@ -1,3 +1,3 @@
 @echo off
 
-java org.continuent.appia.gossip.GossipServer %*
+java net.sf.appia.gossip.GossipServer %*
