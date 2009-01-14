@@ -4,6 +4,10 @@
 #################################################################
 
 	USAGE:
+		Now:
+		ant -f build-release.xml
+		
+		Previously:
 		ant -DAPPIA.release=<release_tag> -f build-release.xml
 #################################################################
 -->

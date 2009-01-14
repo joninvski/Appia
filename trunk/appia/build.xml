@@ -37,6 +37,11 @@
     		<include name="*"/>
     	</fileset>
     </path>
+	<path id="project.src.path">
+	    <pathelement location="${APPIA.src-core}"/>
+	    <pathelement location="${APPIA.src-groupcomm}"/>
+	    <pathelement location="${APPIA.src-test}"/>
+	</path>
 	
     <target name="init">
 		<mkdir dir="${APPIA.classes}"/>
@@ -104,7 +109,9 @@
           target: doc              
          ================================= -->
     <target name="doc" depends="init" description="Creates Appia Javadoc">
-        <javadoc sourcepath="${APPIA.src-core},${APPIA.src-groupcomm},${APPIA.src-test}" destdir="${APPIA.doc}" charset="ISO8859-1" encoding="ISO8859-1" use="true" >
+        <javadoc sourcepathref="project.src.path" 
+        	destdir="${APPIA.doc}" 
+        	charset="ISO8859-1" encoding="ISO8859-1" use="true" >
         	<header>Appia Documentation</header>
         	<doctitle>Appia version ${APPIA.version}</doctitle>
         	<bottom>
@@ -115,9 +122,6 @@
 		    		<include name="*"/>
 		    	</fileset>				
 			</classpath>
-	        <packageset dir="${APPIA.src-core},${APPIA.src-groupcomm},${APPIA.src-test}" >
-        		<include name="**"/>
-        	</packageset>
         </javadoc>
     </target>
 	
@@ -252,7 +256,7 @@
     <!-- ================================= 
           target: dist              
          ================================= -->
-    <target name="dist" depends="jars" description="Distribution">
+    <target name="dist" depends="jars,tests-jar" description="Distribution">
     	<copy todir="${APPIA.dist}">
 			<fileset dir="${APPIA.libs}">
 				<exclude name="README.txt"/>
