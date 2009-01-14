@@ -125,21 +125,45 @@
           target: core-jar              
          ================================= -->
     <target name="core-jar" depends="build-core" description="Create the Appia core jar file.">
-        <jar destfile="${APPIA.dist}/${APPIA.corejar}-${APPIA.version}.jar" basedir="${APPIA.classes}">
+        <jar destfile="${APPIA.dist}/${APPIA.corejar}-${APPIA.version}.jar">
         	<fileset dir="${APPIA.classes}">
-        		<patternset refid="net.sf.appia.core"/>
-        		<patternset refid="net.sf.appia.management"/>
-        		<patternset refid="net.sf.appia.protocols.common"/>
-        		<patternset refid="net.sf.appia.protocols.drop"/>
-        		<patternset refid="net.sf.appia.protocols.fifo"/>
-        		<patternset refid="net.sf.appia.protocols.fifounreliable"/>
-        		<patternset refid="net.sf.appia.protocols.frag"/>
-        		<patternset refid="net.sf.appia.protocols.nakfifo"/>
-        		<patternset refid="net.sf.appia.protocols.sslcomplete"/>
-        		<patternset refid="net.sf.appia.protocols.tcpcomplete"/>
-        		<patternset refid="net.sf.appia.protocols.udpsimple"/>
-        		<patternset refid="net.sf.appia.protocols.utils"/>
-        		<patternset refid="net.sf.appia.xml"/>
+        		<filename name="net/sf/appia/core/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/management/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+	       		<filename name="net/sf/appia/protocols/common/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/drop/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+	       		<filename name="net/sf/appia/protocols/fifo/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/fifounreliable/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/frag/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/nakfifo/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/sslcomplete/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/tcpcomplete/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/udpsimple/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/utils/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/xml/**"/>
        		</fileset>
 			<manifest>
 				<attribute name="Specification-Title" value="${specification.title}"/>
@@ -156,16 +180,30 @@
           target: groupcomm-jar              
          ================================= -->
     <target name="groupcomm-jar" depends="build-groupcomm" description="Create the Appia jar file for group communication.">
-        <jar destfile="${APPIA.dist}/${APPIA.groupcommjar}-${APPIA.version}.jar" basedir="${APPIA.classes}">
+        <jar destfile="${APPIA.dist}/${APPIA.groupcommjar}-${APPIA.version}.jar">
         	<fileset dir="${APPIA.classes}">
-        		<patternset refid="net.sf.appia.jgcs"/>
-        		<patternset refid="net.sf.appia.protocols.causalWaiting"/>
-        		<patternset refid="net.sf.appia.protocols.group"/>
-        		<patternset refid="net.sf.appia.protocols.loopBack"/>
-        		<patternset refid="net.sf.appia.protocols.total"/>
-        		<patternset refid="net.sf.appia.protocols.uniform"/>
-        		<patternset refid="net.sf.appia.gossip"/>
-        		<patternset refid="net.sf.appia.protocols.gossipServer"/>
+        		<filename name="net/sf/appia/jgcs/**"/>
+           		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/causalWaiting/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/group/**"/>
+      		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/loopBack/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/total/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/uniform/**"/>
+      		</fileset>
+         	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/gossip/**"/>
+     		</fileset>
+        	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/gossipServer/**"/>
        		</fileset>
 			<manifest>
 				<attribute name="Specification-Title" value="${specification.title}"/>
@@ -182,12 +220,18 @@
           target: tests-jar              
          ================================= -->
     <target name="tests-jar" depends="build-test" description="Create the Appia jar file for tests and demo protocols.">
-        <jar destfile="${APPIA.dist}/${APPIA.groupcommjar}-${APPIA.version}.jar" basedir="${APPIA.classes}">
+        <jar destfile="${APPIA.dist}/${APPIA.testjar}-${APPIA.version}.jar">
         	<fileset dir="${APPIA.classes}">
-        		<patternset refid="net.sf.appia.demo"/>
-        		<patternset refid="net.sf.appia.protocols.measures"/>
-        		<patternset refid="net.sf.appia.protocols.test"/>
-        		<patternset refid="net.sf.appia.test"/>
+        		<filename name="net/sf/appia/demo/**"/>
+       		</fileset>
+           	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/measures/**"/>
+    		</fileset>
+         	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/protocols/test/**"/>
+     		</fileset>
+         	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/test/**"/>
        		</fileset>
 			<manifest>
 				<attribute name="Specification-Title" value="${specification.title}"/>
@@ -211,7 +255,7 @@
     <target name="dist" depends="jars" description="Distribution">
     	<copy todir="${APPIA.dist}">
 			<fileset dir="${APPIA.libs}">
-				<include name="*"/>
+				<exclude name="README.txt"/>
 			</fileset>
     	</copy>
     	<chmod perm="ugo+x" dir="." includes="*.sh" verbose="true" />
