@@ -27,8 +27,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 
-import net.sf.appia.protocols.group.Endpt;
-
 /**
  * Class containing some methods useful for parsing strings.
  * 
@@ -94,52 +92,6 @@ public final class ParseUtils {
     return result;
   }
 
-  /**
-   * Generate an Endpt[] from a string of the form "endpt1[,endpt2 ...]".
-   * 
-   * @param s the string to parse
-   * @return an Endpt array
-   * @throws ParseException
-   */
-  public static Endpt[] parseEndptArray(String s) 
-  throws ParseException {
-    //System.err.println("##### Parse string: "+s);
-    
-    final char separator=',';
-    int isep=-1;
-    int previsep;
-    int j;
-
-    int count=1;
-    while (isep < s.length()) {
-      isep=s.indexOf(separator,isep+1);
-      if (isep < 0)
-        break;
-      count++;
-    }
-    final Endpt[] result=new Endpt[count];
- 
-    //System.err.println("##### Parsed array("+result.length+"):{");
-
-    j=0;
-    isep=-1;
-    while (isep < s.length()) {
-      previsep=isep;
-      isep=s.indexOf(separator,previsep+1);
-      if (isep < 0)
-        isep=s.length();
-      
-      if (isep > previsep+1) {
-          //System.err.print("##### \""+s.substring(previsep+1,isep)+"\"");
-          result[j++]=new Endpt(s.substring(previsep+1,isep));
-          //System.err.println(" -> "+result[j-1]);
-      } else {
-        throw new ParseException("Missing element in array.",previsep+1);
-      }
-    }
-    
-    return result;
-  }
 
   /**
    * Generate a InetSocketAddress from a string of the form "[host][:port]".
