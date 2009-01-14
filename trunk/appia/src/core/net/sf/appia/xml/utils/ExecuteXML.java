@@ -23,7 +23,7 @@
  * TODO To change the template for this generated file go to
  * Window - Preferences - Java - Code Style - Code Templates
  */
-package net.sf.appia.demo;
+package net.sf.appia.xml.utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,14 +48,12 @@ public class ExecuteXML {
 		 */
 		if (args.length != 1) {
 			System.out.println("Invalid number of arguments!");
-			System.out.println("Usage: java demo.ExecuteXML <configuration XML file>");
+			System.out.println("Usage: java "+ExecuteXML.class.getName()+" <configuration XML file>");
 			System.exit(0);
 		}
 		
-		final String filename = args[0];
-		final File file = new File(filename);
 		try {
-			AppiaXML.loadAndRun(file);
+			AppiaXML.loadAndRun(new File(args[0]));
 		} catch (SAXException e) {
 		    e.printStackTrace();
 		} catch (IOException e) {
