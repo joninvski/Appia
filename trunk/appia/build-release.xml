@@ -56,7 +56,7 @@
          ================================= -->
     <target name="src" depends="structure" description="">
 		<move file="${APPIA.rootdir}" tofile="${APPIA.rootdir}-src"/>
-        <tar basedir="." destfile="${APPIA.web}/${APPIA.jarname}-${APPIA.version}-src.tgz" compression="gzip" includes="${APPIA.rootdir}-src/**"/>
+        <tar basedir="." destfile="${APPIA.web}/${APPIA.releasefilename}-${APPIA.version}-src.tgz" compression="gzip" includes="${APPIA.rootdir}-src/**"/>
 		<move file="${APPIA.rootdir}-src" tofile="${APPIA.rootdir}"/>
     </target>
 
@@ -69,7 +69,6 @@
     	<copy todir="${APPIA.web}/${APPIA.rootdir}-bin">
     		<fileset dir="${APPIA.rootdir}/dist">
     			<include name="*"/>
-    			<exclude name="${APPIA.jarname}.jar"/>
     		</fileset>
     		<fileset dir="${APPIA.rootdir}">
 				<include name="LICENSE"/>
@@ -83,14 +82,14 @@
     		<fileset dir="${APPIA.rootdir}/bin">
     			<include name="*"/>
     		</fileset>
-	</copy>
+		</copy>
     	<mkdir dir="${APPIA.web}/${APPIA.rootdir}-bin/config"/>
     	<copy todir="${APPIA.web}/${APPIA.rootdir}-bin/config">
     		<fileset dir="${APPIA.rootdir}/config">
     			<include name="**"/>
     		</fileset>
 	</copy>
-    	<tar basedir="${APPIA.web}" destfile="${APPIA.web}/${APPIA.jarname}-${APPIA.version}-bin.tgz" compression="gzip" includes="${APPIA.rootdir}-bin/**" />
+    	<tar basedir="${APPIA.web}" destfile="${APPIA.web}/${APPIA.releasefilename}-${APPIA.version}-bin.tgz" compression="gzip" includes="${APPIA.rootdir}-bin/**" />
     </target>
 	
 
@@ -102,8 +101,8 @@
     	<copy todir="${APPIA.web}">
     		<fileset dir="${APPIA.rootdir}" includes="doc/**"/>
     	</copy>
-    	<move file="${APPIA.web}/doc" tofile="${APPIA.web}/${APPIA.jarname}-${APPIA.version}-doc"/>
-    	<tar basedir="${APPIA.web}" destfile="${APPIA.web}/${APPIA.jarname}-${APPIA.version}-doc.tgz" compression="gzip" includes="${APPIA.jarname}-${APPIA.version}-doc/**" />
+    	<move file="${APPIA.web}/doc" tofile="${APPIA.web}/${APPIA.releasefilename}-${APPIA.version}-doc"/>
+    	<tar basedir="${APPIA.web}" destfile="${APPIA.web}/${APPIA.releasefilename}-${APPIA.version}-doc.tgz" compression="gzip" includes="${APPIA.releasefilename}-${APPIA.version}-doc/**" />
     </target>
 	
 	<!-- - - - - - - - - - - - - - - - - - 
