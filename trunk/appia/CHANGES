@@ -1,4 +1,16 @@
 ==========================
+XX/01/2009   Version 4.1.0
+==========================
+
+Refactored all the code to separate the Appia core and the group communication protocols.
+With this change, now the Appia core can be used without having to carry lots of uneeded
+protocols if (for instance) you are building p2p protocols;
+Fixed some small issues in the jGCS implementation;
+Changed several protocols to use generics in their data structures;
+Added a new failure detector protocol (PhiSuspect) based on the work of Naohiro Hayashibara. This
+protocol was implemented by Dan Mihai Dumitriu. Thanks for the contribution!
+
+==========================
 06/12/2007   Version 4.0.1
 ==========================
 
@@ -6,7 +18,7 @@
 
 Fixed a small issue on the Appia kernel;
 Added examples that show how to use jGCS with Appia;
-Added some examples that show how to use open groups with Appia and jGCS.
+Added some examples that show how to use open groups with Appia and jGCS;
 Fixed small issues in the RemoteView protocol.
 
 ==========================
@@ -19,7 +31,7 @@ Replaced package names.
 Added JMX interfaces to retrieve information about Membership and Throughput;
 JMX interfaces are now created dynamically;
 Several bug fixes in the failure detector protocol;
-Introduced a sender thread in the TCP protocol to avoid bloking the Appia main thread;
+Introduced a sender thread in the TCP protocol to avoid blocking the Appia main thread;
 Fixed several issues on the Primary View protocol;
 Added the implementation of jGCS version 0.6.1. Appia is now fully jGCS compliant;
 Started using the Java 5 features, including the JMX implementation;
