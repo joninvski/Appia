@@ -26,11 +26,11 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.ThreadFactory;
 
@@ -84,8 +84,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
 
   private DatagramSocket sock = null; //point-to-point socket
   private UdpSimpleReader sockReader = null; //point-to-point reader
-  private HashMap multicastReaders = new HashMap(); //multicast readers
-  protected HashMap channels = new HashMap(); // known channels
+  private HashMap<SocketAddress,UdpSimpleReader> multicastReaders = new HashMap<SocketAddress, UdpSimpleReader>(); //multicast readers
+  protected HashMap<Integer,Channel> channels = new HashMap<Integer, Channel>(); // known channels
   
   private InetAddress param_LOCAL_ADDRESS=null;
   private int param_MAX_UDPMSG_SIZE=DEFAULT_MAX_UDPMSG_SIZE;
@@ -210,16 +210,13 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     out.println("UdpSimpleSession state dumping:");
     if (sock != null)
       out.println("Local UDP port: " + sock.getLocalPort());
-    Iterator iter=multicastReaders.keySet().iterator();
-    while (iter.hasNext())
-      out.println("Local Multicast address: " + ((InetSocketAddress)iter.next()));
+    for(SocketAddress _addr : multicastReaders.keySet())
+      out.println("Local Multicast address: " + _addr);
     
     int nChannels = channels.size();
     out.println("Currently connected channels: " + nChannels);
     
-    iter = channels.values().iterator();
-    while (iter.hasNext()) {
-      Channel c = (Channel) iter.next();
+    for(Channel c : channels.values()) {
       out.println("Channel name: " + c.getChannelID() + " QoS: " + c.getQoS().getQoSID());
     }
   }
@@ -383,11 +380,8 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       // Terminating 
       sockReader.terminate();
       
-      Iterator iter=multicastReaders.values().iterator();
-      while (iter.hasNext()) {
-        UdpSimpleReader reader=(UdpSimpleReader)iter.next();
-        reader.terminate();
-      }
+      for(UdpSimpleReader _reader : multicastReaders.values())
+        _reader.terminate();
     }
   }
   
@@ -585,10 +579,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
     private InetSocketAddress ignoreSource = null;
     private UdpSimpleSession parentSession = null;
     private Thread parentThread = null;
-    
-    private byte[] b = new byte[MAX_BUFFER_SIZE];
-    private MsgBuffer mbuf = new MsgBuffer();
-    
+    private byte[] b = new byte[MAX_BUFFER_SIZE];    
     private boolean terminate=false;
     
     /**
@@ -660,9 +651,9 @@ public class UdpSimpleSession extends Session implements InitializableSession {
       }
     }
     
-                /* Event deserialization. Returns the event or null if something wrong
-                 * happened.
-                 */
+    /* Event deserialization. Returns the event or null if something wrong
+     * happened.
+     */
     private void receiveFormatSend(DatagramPacket p) {
       
       byte[] data = new byte[p.getLength()];
@@ -678,7 +669,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         String className = new String(data, 4, sLength, "ISO-8859-1");
         
         /* Create event */
-        Class c = Class.forName(className);
+        Class<?> c = Class.forName(className);
         if (debugFull) {
           logReader.debug(":receiveAndFormat: Reader, creating "+className+" event.");
         }
@@ -686,7 +677,7 @@ public class UdpSimpleSession extends Session implements InitializableSession {
         /* Extract channel hash and put event in it*/
         
         int channelHash = ParseUtils.byteArrayToInt(data, 4 + sLength);
-        Channel msgChannel = (Channel) parentSession.channels.get(new Integer(channelHash));
+        Channel msgChannel = parentSession.channels.get(new Integer(channelHash));
 
         /* If channel does not exist, discard message */
         if (msgChannel == null) {

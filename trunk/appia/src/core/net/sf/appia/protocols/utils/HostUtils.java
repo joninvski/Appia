@@ -55,7 +55,8 @@ public final class HostUtils {
   public static InetAddress getLocalAddress() {
     NetworkInterface result_intf=null, intf;
     InetAddress result_addr=null, addr;
-    Enumeration eips, eintfs = null;
+    Enumeration<InetAddress> eips=null;
+    Enumeration<NetworkInterface> eintfs = null;
     
     try {
       eintfs=NetworkInterface.getNetworkInterfaces();
@@ -63,10 +64,10 @@ public final class HostUtils {
       e1.printStackTrace();
     }
     while ((eintfs != null) && eintfs.hasMoreElements()) {
-      intf=(NetworkInterface)eintfs.nextElement();
+      intf=eintfs.nextElement();
       eips=intf.getInetAddresses();
       while (eips.hasMoreElements()) {
-        addr=(InetAddress)eips.nextElement();
+        addr=eips.nextElement();
         debug("INTERFACE "+intf.getName()+"("+intf.getDisplayName()+") -> "+addr+"\n\t"+
             "(Link Local ? "+addr.isLinkLocalAddress()+") "+
             "(Loopback ? "+addr.isLoopbackAddress()+") "+
@@ -158,7 +159,8 @@ public final class HostUtils {
   public static boolean isLocalAddress(InetAddress address) {
     NetworkInterface intf;
     InetAddress addr;
-    Enumeration eips, eintfs = null;
+    Enumeration<InetAddress> eips=null;
+    Enumeration<NetworkInterface> eintfs = null;
     
     try {
       eintfs=NetworkInterface.getNetworkInterfaces();
@@ -166,10 +168,10 @@ public final class HostUtils {
       e1.printStackTrace();
     }
     while ((eintfs != null) && eintfs.hasMoreElements()) {
-      intf=(NetworkInterface)eintfs.nextElement();
+      intf=eintfs.nextElement();
       eips=intf.getInetAddresses();
       while (eips.hasMoreElements()) {
-        addr=(InetAddress)eips.nextElement();
+        addr=eips.nextElement();
         if (address.equals(addr))
         	return true;
       }

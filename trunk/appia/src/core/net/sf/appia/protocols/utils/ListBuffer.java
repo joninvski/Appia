@@ -24,25 +24,25 @@ import java.util.*;
 /**
  *
  */
-public class ListBuffer implements Buffer {
+public class ListBuffer<T> implements Buffer<T> {
 
-    private LinkedList list;
+    private LinkedList<T> list;
     
     public ListBuffer(){
-	this.list = new LinkedList();
+	this.list = new LinkedList<T>();
     }
 
     /**
      * inserts a message at the end of the buffer
      */
-    public void insertTail(Object o){
+    public void insertTail(T o){
 	list.addLast(o);
     }
 
     /**
      * gets the most recent message of the buffer
      */
-    public Object getTail(){
+    public T getTail(){
 	return list.getLast();
     }
 
@@ -50,21 +50,21 @@ public class ListBuffer implements Buffer {
      * removes a message from the head of the buffer.
      * return null if there are no messages.
      */
-    public Object removeHead(){
+    public T removeHead(){
 	return list.removeFirst();
     }
 
     /**
      * removes a specified object from the buffer.
      */
-    public boolean remove(Object o){
+    public boolean remove(T o){
 	return list.remove(o);
     }
 
     /**
      * gets a iterator of the buffer
      */
-    public ListIterator getIterator(int index){
+    public ListIterator<T> getIterator(int index){
 	return list.listIterator(index);
     }
 

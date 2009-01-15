@@ -24,33 +24,33 @@ import java.util.ListIterator;
 /**
  *
  */
-public interface Buffer {
+public interface Buffer<T> {
     
     /**
      * inserts a message at the end of the buffer
      */
-    public void insertTail(Object o);
+    public void insertTail(T o);
 
     /**
      * gets the most recent message of the buffer
      */
-    public Object getTail();
+    public T getTail();
 
     /**
      * removes a message from the head of the buffer.
      * return null if there are no messages.
      */
-    public Object removeHead();
+    public T removeHead();
 
     /**
      * removes a specified object from the buffer.
      */
-    public boolean remove(Object o);
+    public boolean remove(T o);
 
     /**
      * gets a iterator of the buffer
      */
-    public ListIterator getIterator(int index);
+    public ListIterator<T> getIterator(int index);
 
     /**
      * gets the size of the buffer (number of messages)
