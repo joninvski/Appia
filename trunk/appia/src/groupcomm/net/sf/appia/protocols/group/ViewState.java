@@ -426,17 +426,17 @@ public class ViewState implements Externalizable {
 		out.writeInt(bytes.length);
 		out.write(bytes);		
 //		public Group group;
-		group.writeExternal(out);
+		out.writeObject(group);
 //		public ViewID id;
-		id.writeExternal(out);
+		out.writeObject(id);
 //		public ViewID[] previous;
 		out.writeInt(previous.length);
 		for(int i=0; i<previous.length; i++)
-			previous[i].writeExternal(out);
+			out.writeObject(previous[i]);
 //		public Endpt[] view;
 		out.writeInt(view.length);
 		for(int i=0; i<view.length; i++)
-			view[i].writeExternal(out);
+			out.writeObject(view[i]);
 //		public InetWithPort[] addresses;
 		out.writeInt(addresses.length);
 		for(int i=0; i<addresses.length; i++){
@@ -454,23 +454,19 @@ public class ViewState implements Externalizable {
 		in.read(bytes);
 		version = new String(bytes);
 //		public Group group;
-		group = new Group();
-		group.readExternal(in);
+		group = (Group) in.readObject();
 //		public ViewID id;
-		id = new ViewID();
-		id.readExternal(in);
+		id = (ViewID) in.readObject();
 //		public ViewID[] previous;
 		len = in.readInt();
 		previous = new ViewID[len];
-		for(int i=0; i<len; i++){
-			previous[i] = new ViewID();
-			previous[i].readExternal(in);
-		}
+		for(int i=0; i<len; i++)
+			previous[i] = (ViewID) in.readObject();
 //		public Endpt[] view;
 		len = in.readInt();
 		view = new Endpt[len];
 		for(int i=0; i<len; i++)
-			view[i].readExternal(in);
+			view[i] = (Endpt) in.readObject();
 //		public InetWithPort[] addresses;
 		len = in.readInt();
 		int addrLen = 0;
