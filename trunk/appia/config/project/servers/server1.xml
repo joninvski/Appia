@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE appia PUBLIC "-//DTDName//DTD//EN"
-"../xml/appiaxml.dtd">
+"../../xml/appiaxml.dtd">
 <appia>
     <template name="server_listen_t">
         <session name="tcp_listen_s" sharing="global">

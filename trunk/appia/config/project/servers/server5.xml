@@ -18,8 +18,8 @@
         <session name="tcp_vs_s" sharing="global">
             <protocol>net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
         </session>
-        
-        <session name="nakfifo" sharing="private">
+
+		<session name="nakfifo" sharing="private">
 			<protocol>net.sf.appia.protocols.nakfifo.NakFifoLayer</protocol>
 		</session>
 
@@ -62,8 +62,8 @@
 
     <channel name="server_vs_c" template="server_vs_t" initialized="yes">
         <chsession name="vs_proxy_s">
-            <parameter name="localport">4000</parameter>
-            <parameter name="servername">MANEL</parameter>
+            <parameter name="localport">3998</parameter>
+            <parameter name="servername">JONAS</parameter>
             <parameter name="gossiphost">172.20.41.68</parameter>
             <parameter name="gossipport">5000</parameter>
         </chsession>
