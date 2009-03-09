@@ -196,6 +196,17 @@ config
             <parameter name="gossiphost">192.168.1.19</parameter> - The hostname of the gossip server
             <parameter name="gossipport">5000</parameter> - The port number of the gossip port
 
+=== How to run ===
+   * Launch the gossip server
+   * Launch the servers
+        java -cp .:classes:lib/log4j-1.2.14.jar net.sf.appia.project.group.Launcher config/project/servers/server1.xml
+        java -cp .:classes:lib/log4j-1.2.14.jar net.sf.appia.project.group.Launcher config/project/servers/server2.xml
+        java -cp .:classes:lib/log4j-1.2.14.jar net.sf.appia.project.group.Launcher config/project/servers/server3.xml
+   * Launch the clients
+        java -cp .:classes:lib/log4j-1.2.14.jar net.sf.appia.project.group.Launcher config/project/clients/client0.xml
+        java -cp .:classes:lib/log4j-1.2.14.jar net.sf.appia.project.group.Launcher config/project/clients/client1.xml
+        java -cp .:classes:lib/log4j-1.2.14.jar net.sf.appia.project.group.Launcher config/project/clients/client2.xml
+
 === Problems ===
     * The synchronization is done in an conservative way. This ensures no errors but has a performance penalty cost. In the future there could be a refactorization to allow a more tuned synchronization.
     * The example application that was done only to test the project contains some bugs. Honestly I seize these bugs to get clients dying in unexpected times. (Note: The "real" project works well, it is only the example application that sometimes crashes)
