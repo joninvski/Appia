@@ -26,6 +26,7 @@
     <property name="APPIA.src-core" location="src/core"/>
     <property name="APPIA.src-groupcomm" location="src/groupcomm"/>
     <property name="APPIA.src-test" location="src/test"/>
+    <property name="APPIA.src-project" location="src/project"/>
     <property name="APPIA.classes" location="classes"/>
     <property name="APPIA.libs" location="lib"/>
     <property name="APPIA.dist" location="dist"/>
@@ -41,6 +42,7 @@
 	    <pathelement location="${APPIA.src-core}"/>
 	    <pathelement location="${APPIA.src-groupcomm}"/>
 	    <pathelement location="${APPIA.src-test}"/>
+	    <pathelement location="${APPIA.src-project}"/>
 	</path>
 	
     <target name="init">
@@ -97,11 +99,24 @@
             <classpath refid="project.classpath"/>
         </javac>
     </target>
+
+    <!-- ================================= 
+          target: build-project
+         ================================= -->
+    <target name="build-project" depends="build-core,build-groupcomm">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac destdir="${APPIA.classes}" encoding="ISO8859-1" source="${javac.source}" 
+        		target="${javac.target}" debug="${javac.debug}" depend="${javac.depend}" 
+			deprecation="${javac.deprecation}" optimize="${javac.optimize}">
+            <src path="${APPIA.src-project}"/>
+            <classpath refid="project.classpath"/>
+        </javac>
+    </target>
 	
     <!-- ================================= 
           target: build-all
          ================================= -->
-    <target name="build-all" depends="build-core,build-groupcomm,build-test">
+    <target name="build-all" depends="build-core,build-groupcomm,build-test,build-project">
         <echo message="${ant.project.name}: ${ant.file}"/>
     </target>
 	
@@ -221,6 +236,25 @@
     </target>
 
     <!-- ================================= 
+          target: project-jar              
+         ================================= -->
+    <target name="project-jar" depends="build-project" description="Create the Appia jar file for the project.">
+        <jar destfile="${APPIA.dist}/${APPIA.projectjar}-${APPIA.version}.jar">
+        	<fileset dir="${APPIA.classes}">
+        		<filename name="net/sf/appia/project/**"/>
+            </fileset>
+			<manifest>
+				<attribute name="Specification-Title" value="${specification.title}"/>
+				<attribute name="Specification-Version" value="${APPIA.version}"/>
+				<attribute name="Specification-Vendor" value="${specification.vendor}"/>
+				<attribute name="Implementation-Title" value="${specification.title}"/>
+				<attribute name="Implementation-Version" value="${version}"/>
+				<attribute name="Implementation-Vendor" value="${specification.vendor}"/>
+			</manifest>
+        	</jar>
+    </target>
+
+    <!-- ================================= 
           target: tests-jar              
          ================================= -->
     <target name="tests-jar" depends="build-test" description="Create the Appia jar file for tests and demo protocols.">
@@ -251,7 +285,7 @@
     <!-- ================================= 
           target: jars              
          ================================= -->
-    <target name="jars" depends="core-jar,groupcomm-jar" description="Creates all jar files."/>
+    <target name="jars" depends="core-jar,groupcomm-jar,project-jar" description="Creates all jar files."/>
 
     <!-- ================================= 
           target: dist              
