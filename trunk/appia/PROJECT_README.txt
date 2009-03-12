@@ -155,6 +155,9 @@ config
         update serverView
         serverAlreadyStableList.clear()
 
+        myClientView.add(futureLiveList)
+        myClientView.remove(futureDeadList)
+
         sendToAllServers(UpdateProxy(myClientsView))
 
     upon receive UpdateProxyEvent(otherServerView)

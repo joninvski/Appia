@@ -686,6 +686,9 @@ public class VsProxySession extends Session implements InitializableSession{
 
 		//We seize the oportunity to put the future clients and future dead clients in the view
 		for(VsGroup group : allGroups){
+			VsClientManagement.setFutureClientsIntoPresent(group.getGroupId());
+			VsClientManagement.setFutureDeadsIntoPresent(group.getGroupId());
+
 			VsClientManagement.clearFutureClients(group.getGroupId());
 			VsClientManagement.clearFutureDead(group.getGroupId());
 		}
