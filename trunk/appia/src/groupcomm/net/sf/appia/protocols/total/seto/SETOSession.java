@@ -22,7 +22,6 @@ package net.sf.appia.protocols.total.seto;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -46,7 +45,6 @@ import net.sf.appia.protocols.group.ViewState;
 import net.sf.appia.protocols.group.events.GroupSendableEvent;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.leave.LeaveEvent;
-import net.sf.appia.protocols.group.primary.DeliverViewEvent;
 import net.sf.appia.protocols.group.sync.BlockOk;
 import net.sf.appia.protocols.total.common.RegularServiceEvent;
 import net.sf.appia.protocols.total.common.SETOServiceEvent;
@@ -84,15 +82,16 @@ public class SETOSession extends Session implements InitializableSession {
 	private final int seq = 0;
 	
 	
-	private LinkedList R = new LinkedList(), // Received 
-		S = new LinkedList(),  // Sequence
-        O = new LinkedList(),  // Optimistic
-		G = new LinkedList();  // Regular
+	private LinkedList<ListContainer> R = new LinkedList<ListContainer>(); // Received 
+	private LinkedList<ListSEQContainer> S = new LinkedList<ListSEQContainer>();  // Sequence
+    private LinkedList<ListContainer> O = new LinkedList<ListContainer>();  // Optimistic
+	private LinkedList<ListSEQContainer> G = new LinkedList<ListSEQContainer>();  // Regular
 	private long [] delay = null, r_delay = null;
 	
 	private long[] lastOrderList;
 	private long timeLastMsgSent;
-	private static final long UNIFORM_INFO_PERIOD = 100;
+	private static final long DEFAULT_UNIFORM_INFO_PERIOD = 100;
+	private long uniformInfoPeriod=DEFAULT_UNIFORM_INFO_PERIOD;
 	private boolean utSet; // Uniform timer is set?
 	private boolean newUniformInfo = false;
 	
@@ -120,10 +119,14 @@ public class SETOSession extends Session implements InitializableSession {
        * @see net.sf.appia.xml.interfaces.InitializableSession#init(SessionProperties)
        */
 	public void init(SessionProperties params) {
-		if(params.containsKey("alfa")){
-			alfa = params.getDouble("alfa");			
-		}
-		log.info("Initializing static parameter alfa. Set to "+alfa);
+	    if(params.containsKey("alfa")){
+	        alfa = params.getDouble("alfa");			
+	    }
+	    if(params.containsKey("uniform_info_period")){
+	        uniformInfoPeriod = params.getLong("uniform_info_period");
+	    }
+
+	    log.info("Initializing static parameter alfa. Set to "+alfa);
 	}
 
 	/** 
@@ -301,9 +304,9 @@ public class SETOSession extends Session implements InitializableSession {
             pendingMessages.clear();
         }
         
-        if (!utSet) {
+        if (!utSet && uniformInfoPeriod > 0) {
             try {
-                UniformTimer ut = new UniformTimer(UNIFORM_INFO_PERIOD,pendingView.getChannel(),Direction.DOWN,this,EventQualifier.ON);
+                UniformTimer ut = new UniformTimer(uniformInfoPeriod,pendingView.getChannel(),Direction.DOWN,this,EventQualifier.ON);
                 ut.go();
                 utSet = true;
             } catch (AppiaEventException e) {
@@ -390,6 +393,8 @@ public class SETOSession extends Session implements InitializableSession {
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
 		}
+		if(uniformInfoPeriod == 0)
+		    sendUniformInfo(event.getChannel());
 	}
 	
 	/**
@@ -486,8 +491,8 @@ public class SETOSession extends Session implements InitializableSession {
 	 * Tries to deliver REGULAR message.
 	 */
 	private void deliverRegular() {
-	    for (ListIterator li = S.listIterator(); li.hasNext(); ) {
-	        ListSEQContainer orderedMsg = (ListSEQContainer) li.next();
+	    for (ListIterator<ListSEQContainer> li = S.listIterator(); li.hasNext(); ) {
+	        ListSEQContainer orderedMsg = li.next();
 	        if (log.isDebugEnabled()) {
 	            log.debug("Message in order with SN="+(localSN+1)+" -> "+orderedMsg);
 	            log.debug("Messages in S {");
@@ -546,7 +551,7 @@ public class SETOSession extends Session implements InitializableSession {
 
 	private void handleUniformTimer(UniformTimer timer) {
 	    //log.debug("Uniform timer expired. Now is: "+timeProvider.currentTimeMillis());
-		if (!isBlocked && newUniformInfo && timeProvider.currentTimeMillis() - timeLastMsgSent >= UNIFORM_INFO_PERIOD) {
+		if (!isBlocked && newUniformInfo && timeProvider.currentTimeMillis() - timeLastMsgSent >= uniformInfoPeriod) {
 			//log.debug("Last message sent was at time "+timeLastMsgSent+". Will send Uniform info!");
 			sendUniformInfo(timer.getChannel());
 			newUniformInfo = false;
@@ -597,9 +602,9 @@ public class SETOSession extends Session implements InitializableSession {
 	 */
 	private void deliverUniform() {
 		log.debug("Trying to deliver FINAL messages!");
-		ListIterator it = G.listIterator();
+		ListIterator<ListSEQContainer> it = G.listIterator();
 		while (it.hasNext()) {
-			ListSEQContainer nextMsg = (ListSEQContainer)it.next();
+			ListSEQContainer nextMsg = it.next();
 			if (isUniform(nextMsg.header)) {
 				ListContainer msgContainer = getRemoveMessage(nextMsg.header,R);
 				log.debug("Delivering message: "+msgContainer.event);
@@ -690,14 +695,14 @@ public class SETOSession extends Session implements InitializableSession {
             return null;
         }
         
-        ListContainer first = (ListContainer) R.getFirst();
+        ListContainer first = R.getFirst();
     	
         long nSeqMin=first.header.sn;
         int emissor=first.header.id;
         int pos=0;
 
         for(int i=1; i<R.size(); i++){
-            ListContainer current = (ListContainer) R.get(i);
+            ListContainer current = R.get(i);
             if (!S.contains(current)) {
                 if(nSeqMin > current.header.sn){
                     pos=i;
@@ -714,16 +719,16 @@ public class SETOSession extends Session implements InitializableSession {
         }
 
         nextDeterministicCounter++;
-        return (ListContainer) R.get(pos);
+        return R.get(pos);
 	}
 
     /**
      * Get and remove a message from a list
      */
-	private ListContainer getRemoveMessage(Header header, LinkedList list){
-		ListIterator it = list.listIterator();
+	private ListContainer getRemoveMessage(Header header, LinkedList<ListContainer> list){
+		ListIterator<ListContainer> it = list.listIterator();
 		while(it.hasNext()){
-			ListContainer cont = (ListContainer) it.next();
+			ListContainer cont = it.next();
 			if(cont.header.equals(header)){
 				it.remove();
 				return cont;
@@ -735,10 +740,10 @@ public class SETOSession extends Session implements InitializableSession {
 	/**
      * Get a message from a list
      */
-	private ListContainer getMessage(Header header, LinkedList list){
-		ListIterator it = list.listIterator();
+	private ListContainer getMessage(Header header, LinkedList<ListContainer> list){
+		ListIterator<ListContainer> it = list.listIterator();
 		while(it.hasNext()){
-			ListContainer cont = (ListContainer) it.next();
+			ListContainer cont = it.next();
 			if(cont.header.equals(header))
 				return cont;
 		}
@@ -748,10 +753,10 @@ public class SETOSession extends Session implements InitializableSession {
 	/**
 	 * Check if the list has the given message.
 	 */
-	private boolean hasMessage(ListSEQContainer msg, LinkedList list) {
-		ListIterator it = list.listIterator();
+	private boolean hasMessage(ListSEQContainer msg, LinkedList<ListSEQContainer> list) {
+		ListIterator<ListSEQContainer> it = list.listIterator();
 		while(it.hasNext()){
-			ListSEQContainer cont = (ListSEQContainer) it.next();
+			ListSEQContainer cont = it.next();
 			if(cont.header.equals(msg.header)) {
 				return true;
 			}
@@ -763,8 +768,8 @@ public class SETOSession extends Session implements InitializableSession {
 	 * Get the next ordered message.
 	 */
 	private ListSEQContainer getOrderedMessage(long ord){
-		for (ListIterator li=S.listIterator(); li.hasNext();){
-			ListSEQContainer cont = (ListSEQContainer) li.next();
+		for (ListIterator<ListSEQContainer> li=S.listIterator(); li.hasNext();){
+			ListSEQContainer cont = li.next();
 			if(cont.header.order == ord){
 				li.remove();
 				return cont;
@@ -777,12 +782,10 @@ public class SETOSession extends Session implements InitializableSession {
 	 * List the order.<br>
 	 * <b>FOR DEBUGGING PURPOSES ONLY!</b>
 	 */
-	private ListSEQContainer listOrderedMessage(){
-		for (ListIterator li=S.listIterator(); li.hasNext();){
-			ListSEQContainer cont = (ListSEQContainer) li.next();
-			log.debug("Element: "+cont.header);
-		} 
-		return null;
+	private void listOrderedMessage(){
+	    for (ListSEQContainer cont : S){
+            log.debug("Element: "+cont.header);
+	    }
 	}
 
 	
