@@ -391,9 +391,9 @@ public class TcpCompleteSession extends Session
         }
       //send event by the chosen socket -> formatAndSend()
       if (TcpCompleteConfig.debugOn)
-        debug("Adding to socket Queue of "+container.sender);
+        debug("Adding to socket Queue of "+container.sender+" Queue has now #Items: "+container.sender.getQueue().getSize());
       measures.countBytesDown(data.length);
-      measures.countMessagesDown(1);
+      measures.countMessagesDown(1);      
       container.sender.getQueue().add(new MessageContainer(data,dest,channel));
     } catch (IOException ex) {
       if(TcpCompleteConfig.debugOn) {
@@ -540,7 +540,7 @@ public class TcpCompleteSession extends Session
   }
 
   private void debug(String msg){
-  		System.out.println("[TcpComplete] ::"+msg);
+  		log.debug(msg);
   }
 
   /**
@@ -562,10 +562,14 @@ public class TcpCompleteSession extends Session
           while(isRunning()){
               container = queue.removeNext();
               try {
+                  if (TcpCompleteConfig.debugOn)
+                      debug("Sending message to the socket for "+container.who+" with "+container.data.length+" bytes");
                   socket.getOutputStream().write(container.data);
+                  if (TcpCompleteConfig.debugOn)
+                      debug("Flushing data...");
                   socket.getOutputStream().flush();
                   if (TcpCompleteConfig.debugOn)
-                      debug("Added to Queue of peer "+container.who);
+                      debug("Flushing done...");
               } catch (IOException e) {
                   if(isRunning()){
                       sendASyncUndelivered(container.channel, container.who);
@@ -575,6 +579,8 @@ public class TcpCompleteSession extends Session
               }
           }
           try {
+              if(TcpCompleteConfig.debugOn && log.isDebugEnabled())
+                  log.debug("Closing socket "+socket);
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();

@@ -73,8 +73,8 @@ public class TcpReader implements Runnable {
 		} catch (IOException ex) {
 			InetSocketAddress iwp = new InetSocketAddress(s.getInetAddress(),remotePort);
 
-			if(TcpCompleteConfig.debugOn){
-				debug("message reception from "+iwp+" failed. Sending Undelivered event back. Exception:");
+			if(TcpCompleteConfig.debugOn && log.isDebugEnabled()){
+				log.debug("message reception from "+iwp+" failed. Sending Undelivered event back. Exception:");
                 ex.printStackTrace();
             }            
 	
@@ -88,38 +88,39 @@ public class TcpReader implements Runnable {
 			return;						
 		}
 		while(isRunning()){
-				try {
-					event = receiveAndFormat();
-					clearInactiveCounter();
-					if(event != null){
-						if(TcpCompleteConfig.debugOn)	
-							debug("received an event. sending it to the appia stack: "+event+" Channel: "+event.getChannel());
-						event.asyncGo(event.getChannel(), Direction.UP);
-                        measures.countBytesUp(event.getMessage().length());
-                        measures.countMessagesUp(1);
-					}
-				} catch (AppiaEventException ex) {
-					log.debug("Could not insert event: "+ex);
-		        } catch(SocketTimeoutException ste){
-                    log.debug("TIMEOUT EXCEPTION");
-				} catch (IOException ex) {
-					//send_undelivered :(
-					try {
-						InetSocketAddress iwp = new InetSocketAddress(s.getInetAddress(),remotePort);
-		
-						if(TcpCompleteConfig.debugOn)	
-							debug("Message reception from "+iwp+" failed. Send undelivered event up.");
-							
-						TcpUndeliveredEvent undelivered = new TcpUndeliveredEvent(iwp);    
-						undelivered.asyncGo(channel,Direction.UP);						
-						parentSession.removeSocket(iwp);
-						return;						
-					} catch (AppiaEventException e) {
-					    if(log.isDebugEnabled())
-					        e.printStackTrace();
-					}
-				}
-				//if (bench != null) bench.stopBench("receiving event");
+		    try {
+		        event = receiveAndFormat();
+		        clearInactiveCounter();
+		        if(event != null){
+		            if(TcpCompleteConfig.debugOn && log.isDebugEnabled())
+		                log.debug("received an event. sending it to the appia stack: "+event+" Channel: "+event.getChannel());
+		            event.asyncGo(event.getChannel(), Direction.UP);
+		            measures.countBytesUp(event.getMessage().length());
+		            measures.countMessagesUp(1);
+		        }
+		    } catch (AppiaEventException ex) {
+		        log.debug("Could not insert event: "+ex);
+		    } catch(SocketTimeoutException ste){
+		        log.debug("TIMEOUT EXCEPTION");
+		    } catch (IOException ex) {
+		        //send_undelivered :(
+		        try {
+		            InetSocketAddress iwp = new InetSocketAddress(s.getInetAddress(),remotePort);
+
+		            if(TcpCompleteConfig.debugOn && log.isDebugEnabled()){
+		                log.debug("Message reception from "+iwp+" failed. Send undelivered event up.");
+		                ex.printStackTrace();
+		            }
+		            TcpUndeliveredEvent undelivered = new TcpUndeliveredEvent(iwp);    
+		            undelivered.asyncGo(channel,Direction.UP);
+		            parentSession.removeSocket(iwp);
+		            setRunning(false);
+		        } catch (AppiaEventException e) {
+		            if(log.isDebugEnabled())
+		                e.printStackTrace();
+		        }
+		    }
+		    //if (bench != null) bench.stopBench("receiving event");
 		}
 		try {
             s.close();
@@ -140,7 +141,7 @@ public class TcpReader implements Runnable {
 		//		if (bench != null) bench.stopBench("receive_n");
 		//if (bench != null) bench.indepBench("iterations_on read",x);
 		if(i==-1)
-	    		throw new IOException();
+	    		throw new IOException("Received EOF in the socket input stream.");
 
 		return n;
         }
@@ -152,11 +153,11 @@ public class TcpReader implements Runnable {
 		SendableEvent e=null;
 		try {
 			byte bTotal[] = new byte[4];
-			int total ;
+			int total;
 			//if (bench != null) bench.startBench("read msg size");
 			receive_n(bTotal,4);
 			//if (bench != null) bench.stopBench("read msg size");			
-			total =ParseUtils.byteArrayToInt(bTotal,0);
+			total = ParseUtils.byteArrayToInt(bTotal,0);
 			
 			byte data[] = new byte[total];
 			receive_n(data,total);
@@ -222,11 +223,6 @@ public class TcpReader implements Runnable {
 		return running;
 	}
     	
-	private void debug(String msg){
-		System.out.println("[TCPREADER]:: "+msg);
-	}
-
-
 	public Socket getSocket() {
 		return s;
 	}
