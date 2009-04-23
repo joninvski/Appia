@@ -25,10 +25,19 @@
  */
 package net.sf.appia.test.xml.ecco;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import net.sf.appia.core.Layer;
+import net.sf.appia.core.ReconfigurableLayer;
+import net.sf.appia.core.ReconfigurableSession;
 import net.sf.appia.core.Session;
+import net.sf.appia.core.TimeProvider;
 import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
+import net.sf.appia.core.reconfigurator.utils.Attribute;
+import net.sf.appia.core.type.ServiceType;
+import net.sf.appia.core.type.TransportServiceType;
 import net.sf.appia.protocols.common.RegisterSocketEvent;
 
 
@@ -38,13 +47,15 @@ import net.sf.appia.protocols.common.RegisterSocketEvent;
  * @author Jose Mocito
  * @version 1.0
  */
-public class EccoLayer extends Layer {
+public class EccoLayer extends ReconfigurableLayer{
 
     /**
      * Creates a new EccoLayer.
      */
 	public EccoLayer() {
 		
+	    
+	    //attributes from layer
 		evRequire = new Class[]{
 		        ChannelInit.class,
 		};
@@ -59,13 +70,35 @@ public class EccoLayer extends Layer {
                 RegisterSocketEvent.class,
                 MyEccoEvent.class,
         };
+		
+		//?? para quê? validação?
+	    // subtypes = new HashSet<ServiceType>();
+
+	    // quando validar ver se é instanceof ServiceType
+	    requiredServiceTypes = new Class[]{
+	            TransportServiceType.class
+	    };
+
+		addaptableParams = new Attribute[]{
+		        new Attribute("localPort", int.class),
+		};
+		
+		// relacionado com o monitor de contexto
+		//contextTraps = new HashSet<Attribute>();
+		//contextQueries = new HashSet<Attribute>();
+
+		transferableState = new Attribute[]{
+		        new Attribute("time", TimeProvider.class),
+		};
+
+		
 	}
 	
 	/**
      * Creates the session for this protocol.
 	 * @see Layer#createSession()
 	 */
-	public Session createSession() {
+	public ReconfigurableSession createSession() {
 		return new EccoSession(this);
 	}
 }

@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- 
+
 /**
  * Title:        Appia<p>
  * Description:  Protocol development and composition framework<p>
@@ -35,36 +35,34 @@ package net.sf.appia.core;
  * @author <a href="mailto:apinto@di.fc.ul.pt">Alexandre Pinto</a>
  * @version 1.0
  */
-public abstract class Session {
+public abstract class Session{
 
-  protected Layer layer;
-  private String id="";
+    protected Layer layer;
+    private String id="";
 
-  public Session(Layer layer) {
-    this.layer=layer;
-  }
-
-  public void boundSessions(Channel channel) {}
-
-  public void handle(Event event) {
-    try {
-      event.go();
-    } catch (AppiaEventException e) {
-      throw new AppiaError(e.getMessage());
+    public Session(Layer layer) {
+        this.layer=layer;
     }
-    
-    
-  }
 
-  public Layer getLayer() {
-      return layer;
-  }
+    public void boundSessions(Channel channel) {}
 
-  public String getId() {
-      return id;
-  }
+    public void handle(Event event) {
+        try {
+            event.go();
+        } catch (AppiaEventException e) {
+            throw new AppiaError(e.getMessage());
+        }
+    }
 
-  public void setId(String id) {
-      this.id = id;
-  }
+    public Layer getLayer() {
+        return layer;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 }

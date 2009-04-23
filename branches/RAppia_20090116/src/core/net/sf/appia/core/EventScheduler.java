@@ -130,6 +130,7 @@ public class EventScheduler {
     Event event=null;
     Session session=null;
     
+      
     if (mainHead != null) {
       event=mainHead;
       mainHead=(Event) mainHead.getSchedulerData();

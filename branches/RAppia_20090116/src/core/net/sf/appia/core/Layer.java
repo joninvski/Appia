@@ -33,7 +33,7 @@ package net.sf.appia.core;
  * @author Alexandre Pinto
  * @version 1.0
  */
-public abstract class Layer {
+public abstract class Layer{
   
   protected Class[] evAccept;
   protected Class[] evRequire;

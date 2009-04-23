@@ -29,16 +29,25 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.Set;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
 import net.sf.appia.core.Direction;
 import net.sf.appia.core.Event;
+import net.sf.appia.core.ReconfigurableSession;
+import net.sf.appia.core.Service;
 import net.sf.appia.core.Session;
 import net.sf.appia.core.TimeProvider;
 import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.core.message.Message;
+import net.sf.appia.core.reconfigurator.ReconfigureSession;
+import net.sf.appia.core.reconfigurator.utils.How;
+import net.sf.appia.core.reconfigurator.utils.ValuedAttribute;
+import net.sf.appia.core.reconfigurator.utils.Where;
+import net.sf.appia.core.type.ServiceType;
+import net.sf.appia.core.type.TestServiceType;
 import net.sf.appia.protocols.common.RegisterSocketEvent;
 import net.sf.appia.xml.interfaces.InitializableSession;
 import net.sf.appia.xml.utils.SessionProperties;
@@ -50,7 +59,7 @@ import net.sf.appia.xml.utils.SessionProperties;
  * @author Jose Mocito
  * @version 1.0
  */
-public class EccoSession extends Session implements InitializableSession {
+public class EccoSession extends ReconfigurableSession implements InitializableSession {
 	
 	private Channel channel;
     private TimeProvider time;
@@ -204,5 +213,42 @@ public class EccoSession extends Session implements InitializableSession {
             e.printStackTrace();
         }
     }
+
+    public void becomeQuiscent() {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public Set<ValuedAttribute> getState() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public void resume(Channel c) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void setState(Set<ValuedAttribute> v) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void start(Channel c) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void stop(Channel c) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public TestServiceType type() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+  
     
 }

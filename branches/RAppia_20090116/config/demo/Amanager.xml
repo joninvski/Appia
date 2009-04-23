@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE appia PUBLIC "-//DTDName//DTD//EN"
+	"../xml/appiaxml.dtd">
+<appia>
+	<template name="ecco_t">
+		<session name="tcp_s" sharing="global">
+			<protocol>net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
+		</session>
+		<session name="reconfig_s" sharing="private">
+			<protocol>net.sf.appia.adaptationmanager.AdaptationManagerLayer</protocol>
+		</session>
+	</template>
+	<channel name="manager_c" template="ecco_t" initialized="yes">
+		<chsession name="reconfig_s">
+			<parameter name="localport">4003</parameter>
+			<parameter name="remotehost">localhost</parameter>
+			<parameter name="remoteport">4002</parameter>
+		</chsession>
+	</channel>
+</appia>

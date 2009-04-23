@@ -17,7 +17,7 @@
  * Initial developer(s): Alexandre Pinto and Hugo Miranda.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- 
+
 package net.sf.appia.core;
 
 //Change log:
@@ -25,7 +25,11 @@ package net.sf.appia.core;
 //				 on channels
 //(28-Feb-2003)
 
+import java.io.IOException;
+import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Vector;
+import java.util.Map.Entry;
 import java.util.concurrent.ThreadFactory;
 
 import net.sf.appia.core.events.channel.ExternalEvent;
@@ -49,236 +53,328 @@ import net.sf.appia.protocols.common.AppiaThreadFactory;
  * @see net.sf.appia.core.EventScheduler
  */
 public class Appia {
-  
-  protected Vector<EventScheduler> eventSchedulers=new Vector<EventScheduler>();
-  protected TimerManager timerManager=null;
-  protected Thread thread = null;
-  protected int nEvents=0;
-  
-  private ThreadFactory threadFactory;
-  
-  private boolean running = true;
-  
-  /**
-   * Default constructor.
-   * <br>
-   * It creates, and starts, the default {@link net.sf.appia.core.TimerManager TimerManager}.
-   */
-  public Appia() {
-      threadFactory = new AppiaThreadFactory();
-      timerManager=new TimerManager(threadFactory);
-  }
 
-  /**
-   * Default constructor.
-   * <br>
-   * It creates, and starts, the default {@link net.sf.appia.core.TimerManager TimerManager}.
-   */
-  public Appia(ThreadFactory thf) {
-      threadFactory = thf;
-      timerManager=new TimerManager(threadFactory);
-  }
+    protected Vector<EventScheduler> eventSchedulers=new Vector<EventScheduler>();
+    protected TimerManager timerManager=null;
+    protected Thread thread = null;
+    protected int nEvents=0;
 
-  public TimerManager instanceGetTimerManager() {
-    return timerManager;
-  }
-  
-  public void instanceSetTimerManager(TimerManager timerManager) {
-    if (this.timerManager!=null) {
-      this.timerManager.stop();
+    private ThreadFactory threadFactory;
+
+    private boolean running = true;
+
+    /*
+     * List of all appia channels.
+     */
+    protected Hashtable<String,Channel> channelList = new Hashtable<String,Channel>();
+    private Hashtable<String,Session> sessionList = new Hashtable<String,Session>();
+
+
+    public static Hashtable<String, Session> getSessionList() {
+        return appia.sessionList;
     }
-    
-    this.timerManager=timerManager;
-    this.timerManager.start();
-  }
 
-  public void instanceInsertEventScheduler(EventScheduler eventScheduler) {
-    if ( ! eventSchedulers.contains(eventScheduler) )
-      eventSchedulers.addElement(eventScheduler);
-  }
-
-  public void instanceRemoveEventScheduler(EventScheduler eventScheduler) {
-    eventSchedulers.removeElement(eventScheduler);
-  }
-
-  public void instanceInsertListenRequest(ExternalEvent descriptor) {}
-  
-  public void instanceRemoveListenRequest(ExternalEvent descriptor) {}
-
-  public synchronized void instanceInsertedEvent() {
-      notify();
-      nEvents++;
-  }
-  
-  public Thread instanceGetAppiaThread() {
-    return thread;
-  }
-
-  public void instanceRun() {
-    // Starting associated TimerManager
-    timerManager.start();
-
-    //some final initializations
-    int i;
-    thread = Thread.currentThread();
-    for (i=0 ; i < eventSchedulers.size() ; i++) {
-      final EventScheduler es=eventSchedulers.elementAt(i);
-      es.start();
+    public static void setSessionList(Hashtable<String, Session> sessionList) {
+        appia.sessionList = sessionList;
     }
-    
-    i=0;
-    boolean consumedEvent;
-    EventScheduler es;
-    
-    while (true) {	
-      try {
-        es=eventSchedulers.elementAt(i);
-      } catch (ArrayIndexOutOfBoundsException e) {
-        es=null;
-      }
-      
-      if ( es != null )
-        consumedEvent=es.consumeEvent();
-      else
-        consumedEvent=false;
-      
-      synchronized (this) {
-    	  if ( consumedEvent )
-    		  nEvents--;
-    	  
-    	  while ( running && nEvents == 0 ) {
-    		  try {
-    			  wait();
-    		  } catch (InterruptedException e) {}
-    	  }        
+
+    protected Interpreter rappiaInterpreter;
+      /**
+     * Default constructor.
+     * <br>
+     * It creates, and starts, the default {@link net.sf.appia.core.TimerManager TimerManager}.
+     */
+    public Appia() {
+        threadFactory = new AppiaThreadFactory();
+        timerManager=new TimerManager(threadFactory);
+        rappiaInterpreter = new Interpreter();
+        channelList = new Hashtable<String,Channel>();
+        sessionList = new Hashtable<String, Session>(); 
         
-    	if(!running)
-    		break;    		
-      }
-      
-      i++;
-      if ( i >= eventSchedulers.size() ) {
-        i=0;
-        //so other threads can run
-        // Thread.yield();
-      }
+        System.out.println("New Appia1");
     }
 
-  }
+    /**
+     * Default constructor.
+     * <br>
+     * It creates, and starts, the default {@link net.sf.appia.core.TimerManager TimerManager}.
+     */
+    public Appia(ThreadFactory thf) {
+        threadFactory = thf;
+        timerManager=new TimerManager(threadFactory);
+        rappiaInterpreter = new Interpreter();
+        System.out.println("New Appia2");
+    }
 
-  public void instanceStop() {
-      synchronized (this) {
-      	running = false;
-      	timerManager.stop();
-//      	instanceGetAppiaThread().interrupt();
-  	}
-  }
-  
-  /* the instance of Appia! */
-  protected static Appia appia=new Appia();
+    public TimerManager instanceGetTimerManager() {
+        return timerManager;
+    }
 
-  /**
-   * Get the current {@link net.sf.appia.core.TimerManager TimerManager}.
-   *
-   * @return the current {@link net.sf.appia.core.TimerManager TimerManager}
-   */
-  public static TimerManager getTimerManager() {
-    return appia.timerManager;
-  }
-  
-  /**
-   * Set the {@link net.sf.appia.core.TimerManager TimerManager}.
-   * <br>
-   * The current {@link net.sf.appia.core.TimerManager TimerManager} will be
-   * {@link net.sf.appia.core.TimerManager#stop stoped}. The new
-   * {@link net.sf.appia.core.TimerManager TimerManager} will be
-   * {@link net.sf.appia.core.TimerManager#start started}.
-   *
-   * @param timerManager the new {@link net.sf.appia.core.TimerManager TimerManager}
-   */
-  public static void setTimerManager(TimerManager timerManager) {
-    appia.instanceSetTimerManager(timerManager);
-  }
-  
-  
-  /**
-   * Registers a new {@link net.sf.appia.core.EventScheduler EventScheduler}.
-   * <br>
-   * <b>This method is called by {@link net.sf.appia.core.Channel#start Channel.start()}</b>
-   *
-   * @param eventScheduler the new {@link net.sf.appia.core.EventScheduler EventScheduler}
-   */
-  public static void insertEventScheduler(EventScheduler eventScheduler) {
-    appia.instanceInsertEventScheduler(eventScheduler);
-  }
-  
-  /**
-   * Unregisters a {@link net.sf.appia.core.EventScheduler EventScheduler}.
-   *
-   * @param eventScheduler the {@link net.sf.appia.core.EventScheduler EventScheduler} to deregister.
-   * It does nothing if the given {@link net.sf.appia.core.EventScheduler EventScheduler} is not registered.
-   */
-  public static void removeEventScheduler(EventScheduler eventScheduler) {
-    appia.instanceRemoveEventScheduler(eventScheduler);
-  }
-  
-  /**
-   * <b>In the Java version this method does nothing.</b>
-   */
-  public static void insertListenRequest(ExternalEvent descriptor) {
-    appia.instanceInsertListenRequest(descriptor);
-  }
-  
-  /**
-   * <b>In the Java version this method does nothing.</b>
-   */
-  public static void removeListenRequest(ExternalEvent descriptor) {
-    appia.instanceRemoveListenRequest(descriptor);
-  }
-  
-  /**
-   * Starts <i>Appia</i> operation.
-   * <br>
-   * This method implements the infinite loop that calls the
-   * {@link net.sf.appia.core.EventScheduler#consumeEvent consumeEvent()} method
-   * of the registered {@link net.sf.appia.core.EventScheduler EventSchedulers}.
-   * <br>
-   * It's this method that makes the <i>Appia</i> run.
-   */
-  public static void run() {
-      appia.instanceRun();
-  }
-  
-  /**
-   * Method used by any {@link net.sf.appia.core.EventScheduler EventScheduler} to signal
-   * that a new {@link net.sf.appia.core.Event Event} has been inserted.
-   * <br>
-   * The <i>Appia</i> keeps track of how many events exist in all the
-   * {@link net.sf.appia.core.EventScheduler EventSchedulers}, and if none exist it simply
-   * waits idle.
-   */
-  public static void insertedEvent() {
-    appia.instanceInsertedEvent();
-  }
-  
-  /**
-   * Gets the Thread where Appia is running.
-   * @return Thread
-   */
-  public static Thread getAppiaThread() {
-      return appia.thread;
-  }
+    public void instanceSetTimerManager(TimerManager timerManager) {
+        if (this.timerManager!=null) {
+            this.timerManager.stop();
+        }
 
-  public synchronized ThreadFactory getThreadFactory() {
-      return threadFactory;
-  }
+        this.timerManager=timerManager;
+        this.timerManager.start();
+    }
 
-  public void setThreadFactory(ThreadFactory thf) throws AppiaException {
-      if (this.timerManager!=null)
-          this.timerManager.stop();
-      this.threadFactory = thf;
-      this.timerManager=new TimerManager(thf);
-      this.timerManager.start();
-  }
+    public void instanceInsertEventScheduler(EventScheduler eventScheduler) {
+        if ( ! eventSchedulers.contains(eventScheduler) )
+            eventSchedulers.addElement(eventScheduler);
+    }
+
+    public void instanceRemoveEventScheduler(EventScheduler eventScheduler) {
+        eventSchedulers.removeElement(eventScheduler);
+    }
+
+    public void instanceInsertListenRequest(ExternalEvent descriptor) {}
+
+    public void instanceRemoveListenRequest(ExternalEvent descriptor) {}
+
+    public synchronized void instanceInsertedEvent() {
+        notify();
+        nEvents++;
+    }
+
+    public Thread instanceGetAppiaThread() {
+        return thread;
+    }
+
+    public void instanceRun() {
+        // Starting associated TimerManager
+        timerManager.start();
+
+        //some final initializations
+        int i;
+        thread = Thread.currentThread();
+        for (i=0 ; i < eventSchedulers.size() ; i++) {
+            final EventScheduler es=eventSchedulers.elementAt(i);
+            es.start();
+        }
+
+        i=0;
+        boolean consumedEvent;
+        EventScheduler es;
+
+        while (true) {	
+            try {
+                es=eventSchedulers.elementAt(i);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                es=null;
+            }
+
+            if ( es != null )
+                consumedEvent=es.consumeEvent();
+            else
+                consumedEvent=false;
+
+            synchronized (this) {
+                if ( consumedEvent )
+                    nEvents--;
+
+                while ( running && nEvents == 0 ) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {}
+                }        
+
+                if(!running)
+                    break;    		
+            }
+
+            i++;
+            if ( i >= eventSchedulers.size() ) {
+                i=0;
+                //so other threads can run
+                // Thread.yield();
+            }
+        }
+
+    }
+
+    public void instanceStop() {
+        synchronized (this) {
+            running = false;
+            timerManager.stop();
+            //      	instanceGetAppiaThread().interrupt();
+        }
+    }
+
+    /* the instance of Appia! */
+    protected static Appia appia=new Appia();
+
+    /**
+     * Get the current {@link net.sf.appia.core.TimerManager TimerManager}.
+     *
+     * @return the current {@link net.sf.appia.core.TimerManager TimerManager}
+     */
+    public static TimerManager getTimerManager() {
+        return appia.timerManager;
+    }
+
+    /**
+     * Set the {@link net.sf.appia.core.TimerManager TimerManager}.
+     * <br>
+     * The current {@link net.sf.appia.core.TimerManager TimerManager} will be
+     * {@link net.sf.appia.core.TimerManager#stop stoped}. The new
+     * {@link net.sf.appia.core.TimerManager TimerManager} will be
+     * {@link net.sf.appia.core.TimerManager#start started}.
+     *
+     * @param timerManager the new {@link net.sf.appia.core.TimerManager TimerManager}
+     */
+    public static void setTimerManager(TimerManager timerManager) {
+        appia.instanceSetTimerManager(timerManager);
+    }
+
+
+    /**
+     * Registers a new {@link net.sf.appia.core.EventScheduler EventScheduler}.
+     * <br>
+     * <b>This method is called by {@link net.sf.appia.core.Channel#start Channel.start()}</b>
+     *
+     * @param eventScheduler the new {@link net.sf.appia.core.EventScheduler EventScheduler}
+     */
+    public static void insertEventScheduler(EventScheduler eventScheduler) {
+        appia.instanceInsertEventScheduler(eventScheduler);
+    }
+
+    /**
+     * Unregisters a {@link net.sf.appia.core.EventScheduler EventScheduler}.
+     *
+     * @param eventScheduler the {@link net.sf.appia.core.EventScheduler EventScheduler} to deregister.
+     * It does nothing if the given {@link net.sf.appia.core.EventScheduler EventScheduler} is not registered.
+     */
+    public static void removeEventScheduler(EventScheduler eventScheduler) {
+        appia.instanceRemoveEventScheduler(eventScheduler);
+    }
+
+    /**
+     * <b>In the Java version this method does nothing.</b>
+     */
+    public static void insertListenRequest(ExternalEvent descriptor) {
+        appia.instanceInsertListenRequest(descriptor);
+    }
+
+    /**
+     * <b>In the Java version this method does nothing.</b>
+     */
+    public static void removeListenRequest(ExternalEvent descriptor) {
+        appia.instanceRemoveListenRequest(descriptor);
+    }
+
+    /**
+     * Starts <i>Appia</i> operation.
+     * <br>
+     * This method implements the infinite loop that calls the
+     * {@link net.sf.appia.core.EventScheduler#consumeEvent consumeEvent()} method
+     * of the registered {@link net.sf.appia.core.EventScheduler EventSchedulers}.
+     * <br>
+     * It's this method that makes the <i>Appia</i> run.
+     */
+    public static void run() {
+        appia.instanceRun();
+    }
+
+    /**
+     * Method used by any {@link net.sf.appia.core.EventScheduler EventScheduler} to signal
+     * that a new {@link net.sf.appia.core.Event Event} has been inserted.
+     * <br>
+     * The <i>Appia</i> keeps track of how many events exist in all the
+     * {@link net.sf.appia.core.EventScheduler EventSchedulers}, and if none exist it simply
+     * waits idle.
+     */
+    public static void insertedEvent() {
+        appia.instanceInsertedEvent();
+    }
+
+    /**
+     * Gets the Thread where Appia is running.
+     * @return Thread
+     */
+    public static Thread getAppiaThread() {
+        return appia.thread;
+    }
+
+    public synchronized ThreadFactory getThreadFactory() {
+        return threadFactory;
+    }
+
+    public void setThreadFactory(ThreadFactory thf) throws AppiaException {
+        if (this.timerManager!=null)
+            this.timerManager.stop();
+        this.threadFactory = thf;
+        this.timerManager=new TimerManager(thf);
+        this.timerManager.start();
+    }
+
+
+    /**
+     * @author cfonseca
+     * Adicionei estes três métodos para ser possível exportar os canais presentes no Appia
+     */
+    public static Hashtable<String,Channel> getChannels(){
+        //System.out.println("Appia get channels " + appia.channelList.size());
+        return appia.channelList;
+    }
+
+    public static void addChannel(Channel ch){
+        System.out.println("Adding channel to channelList....");
+        appia.channelList.put(ch.channelID, ch);
+        appia.rappiaInterpreter.updateChannelList(ch);
+       
+        ChannelCursor c = ch.getCursor();
+        c.top();
+        Session s;
+        try {
+
+
+            for (int i = 0; i < ch.getQoS().getLayers().length; i++) {
+                s = c.getSession();
+                appia.sessionList.put(s.getLayer().getClass().getName(), s);
+                c.down();
+
+            }
+
+        } catch (AppiaCursorException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+       
+    }
+
+    public static Channel getChannel(String name){
+        return appia.channelList.get(name);
+    }
+
+
+   public void updateChannelList(Channel channel){
+        Iterator it = appia.channelList.entrySet().iterator();
+
+        
+        while (it.hasNext()) {
+            Entry<String, Channel> o = (Entry<String, Channel>) it.next();
+            Channel ch = o.getValue();
+
+            ChannelCursor c = ch.getCursor();
+            c.top();
+            Session s;
+            try {
+
+
+                for (int i = 0; i < ch.getQoS().getLayers().length; i++) {
+                    s = c.getSession();
+                    appia.sessionList.put(s.getLayer().getClass().getName(), s);
+                    c.down();
+
+                }
+
+            } catch (AppiaCursorException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+        }
+    }
 
 }

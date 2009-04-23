@@ -180,6 +180,7 @@ public class TcpCompleteSession extends Session
     
     byte[] data=format(e);
     
+    
     if (e.dest instanceof AppiaMulticast) {
       Object[] dests=((AppiaMulticast)e.dest).getDestinations();
       for (int i=0 ; i < dests.length ; i++) {
@@ -496,8 +497,7 @@ public class TcpCompleteSession extends Session
     
     byte[] eventType = e.getClass().getName().getBytes();
     byte[] channelID = e.getChannel().getChannelID().getBytes();
-    
-    
+        
     mbuf.len = channelID.length;
     msg.push(mbuf);
     System.arraycopy(channelID, 0, mbuf.data, mbuf.off, mbuf.len);
@@ -516,8 +516,8 @@ public class TcpCompleteSession extends Session
     
     mbuf.len = 4;
     msg.push(mbuf);
-    ParseUtils.intToByteArray(msg.length()-4,mbuf.data,mbuf.off);
-    
+    ParseUtils.intToByteArray((msg.length()-4),mbuf.data,mbuf.off);
+      
     return msg.toByteArray();
   }
   
