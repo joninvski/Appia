@@ -22,8 +22,14 @@ package net.sf.appia.jgcs.protocols.remote;
 
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
+import javax.management.Attribute;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanOperationInfo;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.AppiaException;
@@ -35,6 +41,9 @@ import net.sf.appia.core.Session;
 import net.sf.appia.core.events.SendableEvent;
 import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
+import net.sf.appia.management.AppiaManagementException;
+import net.sf.appia.management.ManagedSession;
+import net.sf.appia.management.jmx.ChannelManager;
 import net.sf.appia.protocols.common.NetworkUndeliveredEvent;
 import net.sf.appia.protocols.group.Group;
 import net.sf.appia.protocols.group.remote.RemoteViewEvent;
@@ -52,22 +61,26 @@ import org.apache.log4j.Logger;
 /**
  * This class defines a RemoteAddressSession
  * 
- * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @author <a href="mailto:nonius@gsd.inesc-id.pt">Nuno Carvalho</a>
  * @version 1.0
  */
 public class RemoteAddressSession extends Session implements
-		InitializableSession {
+		InitializableSession, ManagedSession {
 
 	private static Logger logger = Logger.getLogger(RemoteAddressSession.class);
 	
 	// one second
 	private static final long DEFAULT_TIMER_PERIOD = 1000;
+    private static final String GROUP="group";
+    private static final String GET_ADDRESSES="get_addresses";
 	
 	private SocketAddress[] addresses = null;
 	private int nextAddrRank = 0;
 	private List<SendableEvent> pendingEvents = null;
 	private String groupID = null;
 	private long timerPeriod = DEFAULT_TIMER_PERIOD;
+	
+    private Map<String,String> operationsMap = new Hashtable<String,String>();
 	
 	/**
 	 * Creates a new RemoteAddressSession.
@@ -116,9 +129,9 @@ public class RemoteAddressSession extends Session implements
 	}
 
 	private void handleUndelivered(NetworkUndeliveredEvent event) throws AppiaEventException {
-		//TODO: retransmit failed message to another group member.
-		event.getFailedAddress();
-		event.go();
+		//TODO: find a way to retransmit failed messages to another group member.
+		logger.warn("Group member "+event.getFailedAddress()+" failed. Messages may have been lost.");
+        event.go();
 	}
 
 	private void handleChannelClose(ChannelClose close) throws AppiaException {
@@ -201,4 +214,91 @@ public class RemoteAddressSession extends Session implements
             next = 0;
 	    return addresses[next];
 	}
+	
+	private String getGroupID(){
+	    return groupID;
+	}
+	
+	private void setGroupID(String gid){
+	    groupID = gid;
+	}
+	
+	private String getAddresses(){
+	    StringBuilder str = new StringBuilder("Remote addresses: ");
+	    for(SocketAddress addr : addresses)
+	        str.append(addr).append(",");
+	    return str.toString();
+	}
+
+	/**
+	 * gets the value of a specified attribute. The accepted attributes are: group, get_addresses.
+	 * 
+	 * @see net.sf.appia.management.ManagedSession#attributeGetter(java.lang.String, javax.management.MBeanAttributeInfo)
+	 */
+    public Object attributeGetter(String attribute, MBeanAttributeInfo info)
+            throws AppiaManagementException {
+        if(logger.isDebugEnabled())
+            logger.debug("Getting attribute: "+attribute);
+        String myAction = operationsMap.get(attribute);
+        if(myAction == null)
+            throw new AppiaManagementException("Attribute "+attribute+" does not exist.");
+        if(myAction.equals(GET_ADDRESSES) && info.isReadable())
+            return getAddresses();
+        else if(myAction.equals(GROUP) && info.isReadable())
+            return getGroupID();
+        else
+            return null;
+    }
+
+    /**
+     * Sets a specified attribute. The accepted attributes are: group.
+     * 
+     * @see net.sf.appia.management.ManagedSession#attributeSetter(javax.management.Attribute, javax.management.MBeanAttributeInfo)
+     */
+    public void attributeSetter(Attribute attribute, MBeanAttributeInfo info)
+            throws AppiaManagementException {
+        if(logger.isDebugEnabled())
+            logger.debug("Setting attribute: "+attribute);
+        String myAction = operationsMap.get(attribute.getName());
+        if(myAction == null)
+            throw new AppiaManagementException("Attribute "+attribute+" does not exist.");
+        if(myAction.equals(GROUP) && info.isWritable()){
+            setGroupID((String) attribute.getValue());
+            if(logger.isDebugEnabled())
+                logger.debug("Attribute "+myAction+" changed to "+getGroupID());
+        }
+    }
+
+    /**
+     * Gets all the possible attributes of this layer. This is used already by the kernel.
+     * 
+     * @see net.sf.appia.management.ManagedSession#getAttributes(java.lang.String)
+     * @see ChannelManager
+     */
+    public MBeanAttributeInfo[] getAttributes(String sessionID) {
+        MBeanAttributeInfo[] mbai = new MBeanAttributeInfo[]{
+                new MBeanAttributeInfo(sessionID+GET_ADDRESSES,"java.lang.String", 
+                        "gets the address list as a string",true,false,false),
+                new MBeanAttributeInfo(sessionID+GROUP,"java.lang.String",
+                        "sets and gets the group ID", true,true,false),
+        };
+        operationsMap.put(sessionID+GET_ADDRESSES, GET_ADDRESSES);
+        operationsMap.put(sessionID+GROUP, GROUP);
+        return mbai;
+    }
+
+    public MBeanOperationInfo[] getOperations(String sessionID) {
+        return null;
+    }
+
+    /**
+     * This layer does not have any operations to invoke.
+     * 
+     * @see net.sf.appia.management.ManagedSession#invoke(java.lang.String, javax.management.MBeanOperationInfo, java.lang.Object[], java.lang.String[])
+     */
+    public Object invoke(String action, MBeanOperationInfo info,
+            Object[] params, String[] signature)
+            throws AppiaManagementException {
+            throw new AppiaManagementException("Action "+action+" is not accepted");
+    }
 }
