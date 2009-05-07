@@ -215,7 +215,8 @@ public class TcpReader implements Runnable {
 		try {
             s.shutdownInput();
         } catch (IOException e) {
-            e.printStackTrace();
+            if(log.isDebugEnabled())
+                e.printStackTrace();
         }
 	}
 	
