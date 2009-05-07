@@ -252,7 +252,30 @@ implements DynamicMBean, SensorSessionListener {
     public Object invoke(String actionName, Object[] params, String[] signature) throws MBeanException, ReflectionException {
         if(log.isDebugEnabled())
             log.debug("Invoking: "+actionName+" params "+params.length);
-        if (actionName.equals("invoke") && params.length == 3)
+        
+        if(actionName.equals("getAttribute")){
+            try {
+                return getAttribute((String) params[0]);
+            } catch (AttributeNotFoundException e1) {
+                throw new MBeanException(new AppiaManagementException(e1));
+            }
+        }
+        else if(actionName.equals("setAttribute")){
+            System.out.println("WILL CALL SETATTRIBUTE");
+            try {
+                for(Object obj : params)
+                    System.out.println("### "+obj);
+                System.out.println("------------");
+                for(String str : signature)
+                    System.out.println("### "+str);
+                setAttribute((Attribute) params[0]);
+            } catch (AttributeNotFoundException e) {
+                throw new MBeanException(new AppiaManagementException(e));
+            } catch (InvalidAttributeValueException e) {
+                throw new MBeanException(new AppiaManagementException(e));
+            }
+        }
+        else if (actionName.equals("invoke") && params.length == 3)
             return invoke((String)params[0], (Object[])params[1], (String[])params[2]);
         final Operation<MBeanOperationInfo> op = operations.get(actionName);
         if (op == null)
@@ -268,19 +291,26 @@ implements DynamicMBean, SensorSessionListener {
 
     public void setAttribute(Attribute att) throws AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException {
         if(log.isDebugEnabled())
-            log.debug("SET from DynamicMBean: "+att);
+            log.debug("SET from DynamicMBean: "+att.getValue());
         
-        final Operation<MBeanAttributeInfo> op = attributes.get(att.getName());
-        System.out.println("---> "+att.getName()+" OP="+op.operation.isWritable());
+        Attribute myAtt = att;
+        if(myAtt.getName().equals("Attribute"))
+            myAtt = (Attribute) att.getValue();
+        
+        final Operation<MBeanAttributeInfo> op = attributes.get(myAtt.getName());
+        if(log.isDebugEnabled()){
+            log.debug("ATT "+myAtt+" Name "+myAtt.getName()+" Value "+myAtt.getValue()+" OP="+op);
+        }
+
         if(op != null && op.operation.isWritable()){
             try {
-                op.session.attributeSetter(att, op.operation);
+                op.session.attributeSetter(myAtt, op.operation);
             } catch (AppiaManagementException e) {
                 throw new MBeanException(e,"unable to invoke operation");
             }
         }
         else
-            throw new AttributeNotFoundException("cannot find attribute "+att);
+            throw new AttributeNotFoundException("cannot find attribute "+myAtt);
     }
 
     public AttributeList setAttributes(AttributeList attList) {
