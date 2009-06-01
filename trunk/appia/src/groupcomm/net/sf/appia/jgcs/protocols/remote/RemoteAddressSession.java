@@ -33,6 +33,7 @@ import javax.management.MBeanOperationInfo;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.AppiaException;
+import net.sf.appia.core.Channel;
 import net.sf.appia.core.Direction;
 import net.sf.appia.core.Event;
 import net.sf.appia.core.EventQualifier;
@@ -77,6 +78,7 @@ public class RemoteAddressSession extends Session implements
 	private SocketAddress[] addresses = null;
 	private int nextAddrRank = 0;
 	private List<SendableEvent> pendingEvents = null;
+	private Channel channel = null;
 	private String groupID = null;
 	private long timerPeriod = DEFAULT_TIMER_PERIOD;
 	
@@ -129,17 +131,19 @@ public class RemoteAddressSession extends Session implements
 	}
 
 	private void handleUndelivered(NetworkUndeliveredEvent event) throws AppiaEventException {
-		//TODO: find a way to retransmit failed messages to another group member.
+		//TODO: find a way to retransmit failed messages to another group member...
 		logger.warn("Group member "+event.getFailedAddress()+" failed. Messages may have been lost.");
         event.go();
 	}
 
 	private void handleChannelClose(ChannelClose close) throws AppiaException {
+	    channel = null;
 		new RetrieveAddressTimer(timerPeriod,close.getChannel(),Direction.DOWN,this,EventQualifier.OFF).go();		
 		close.go();
 	}
 
 	private void handleChannelInit(ChannelInit init) throws AppiaException {
+	    channel = init.getChannel();
 		new RetrieveAddressTimer(timerPeriod,init.getChannel(),Direction.DOWN,this,EventQualifier.ON).go();
 		init.go();
 	}
@@ -221,6 +225,18 @@ public class RemoteAddressSession extends Session implements
 	
 	private void setGroupID(String gid){
 	    groupID = gid;
+	    addresses = null;
+	    if(!pendingEvents.isEmpty()){
+	        logger.warn("GroupID was changed. "+pendingEvents.size()+" messages will be discarded.");
+	        pendingEvents.clear();
+	    }
+	    if(channel != null){
+            try {
+                new RemoteViewEvent(channel,Direction.DOWN,this,new Group(groupID)).go();
+            } catch (AppiaEventException e) {
+                e.printStackTrace();
+            }
+	    }
 	}
 	
 	private String getAddresses(){
