@@ -32,14 +32,20 @@ public class ActuatorTest {
      */
     public static void main(String[] args) {
 
-        if(args.length != 3){
-            System.out.println("Usage: java "+ActuatorTest.class.getName()+" <host> <port> <channelName>");
+        if((args[0].equals("remote") && args.length != 4) || 
+                (args[0].equals("local") && args.length != 3)){
+            System.out.println("Usage:\njava "+ActuatorTest.class.getName()+" remote <host> <port> <channelName>"+
+                    "\nOR\njava "+ActuatorTest.class.getName()+" local <managementMBeanID> <channelName>");
             System.exit(-1);
         }
         
         GenericActuator actuator = new GenericActuator();
         try {
-            actuator.connect(args[0], Integer.parseInt(args[1]), args[2]);
+            if(args[0].equals("remote"))
+                actuator.connect(args[1], Integer.parseInt(args[2]), args[3]);
+            else
+                actuator.getLocalMBean(args[1], args[2]);
+            
             System.out.println("Current group attribute: "+actuator.getAttribute("remoteaddr:group"));
             actuator.setAttribute(new Attribute("remoteaddr:group","NewGroupID"));
             System.out.println("Current group attribute: "+actuator.getAttribute("remoteaddr:group"));
