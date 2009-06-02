@@ -105,28 +105,9 @@ public class Configuration {
 		// Behavior by default: one global scheduler
 		globalEventScheduler = new EventScheduler();
 		//globalEventScheduler = getEventScheduler();
-        jmxConfiguration = new JMXConfiguration();
+		//TODO: verify if this affects other parts of the code...
+        jmxConfiguration = null;
 	}
-	
-	/*
-	 * Builds an empty configuration.
-	 *
-	 *//*
-	public Configuration(boolean multiSchedulers) {
-		templates = new Hashtable();
-		channels = new Hashtable();
-		globalSessions = new Hashtable();
-		labelSessions = new Hashtable();
-		//sharedSessions = new Hashtable();
-		if (!multiSchedulers)
-			// Behavior by default: one global scheduler
-			globalEventScheduler = new EventScheduler();
-		else
-			// One scheduler per channel except when shared sessions
-			// exist. In this case the scheduler is shared between
-			// the channels
-			this.multiSchedulers = true;
-	}*/
 	
 	/**
 	 * Builds an empty configuration.
@@ -142,7 +123,7 @@ public class Configuration {
 		// Behavior by default: one global scheduler
 		globalEventScheduler = new EventScheduler(appia);
 		//globalEventScheduler = getEventScheduler();
-        jmxConfiguration = new JMXConfiguration();
+        jmxConfiguration = new JMXConfiguration(appia.getManagementMBeanID());
         try {
             if(threadFactory != null)
                 appia.setThreadFactory(threadFactory);

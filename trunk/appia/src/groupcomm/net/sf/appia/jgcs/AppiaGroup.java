@@ -43,6 +43,7 @@ public class AppiaGroup implements GroupConfiguration {
 
 	private String configFileName;
 	private String groupName;
+	private String managementMBeanID;
 	
 	public String getGroupName() {
 		return groupName;
@@ -64,6 +65,20 @@ public class AppiaGroup implements GroupConfiguration {
 		this.groupName = groupName;
 	}
 
+    /**
+     * @return Returns the managementMBeanID.
+     */
+    public String getManagementMBeanID() {
+        return managementMBeanID;
+    }
+
+    /**
+     * @param managementMBeanID The managementMBeanID to set.
+     */
+    public void setManagementMBeanID(String managementMBeanID) {
+        this.managementMBeanID = managementMBeanID;
+    }
+    
 	@Override
 	public int hashCode(){
 		return groupName.hashCode();
@@ -73,7 +88,7 @@ public class AppiaGroup implements GroupConfiguration {
 	public boolean equals(Object o){
 		if (o instanceof AppiaGroup) {
 			AppiaGroup ag = (AppiaGroup) o;
-			return ag.groupName.equals(this.groupName);
+			return ag.groupName.equals(this.groupName) && ag.managementMBeanID.equals(managementMBeanID);
 		}
 		else return false;
 	}

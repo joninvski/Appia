@@ -26,7 +26,7 @@
  * @version 1.0
  */
 
-package net.sf.appia.management.jmx;
+package net.sf.appia.core;
 
 import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
@@ -39,55 +39,55 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
-import net.sf.appia.core.Channel;
 import net.sf.appia.management.AppiaManagementException;
+import net.sf.appia.management.jmx.JMXConfiguration;
 
 import org.apache.log4j.Logger;
 
 /**
- * This class defines a ConnectionServerFactory
+ * This class defines a ManagementServerFactory
  * 
- * @author <a href="mailto:nunomrc@di.fc.ul.pt">Nuno Carvalho</a>
+ * @author <a href="mailto:nonius@gsd.inesc-id.pt">Nuno Carvalho</a>
  * @version 1.0
  */
-public class ConnectionServerFactory {
+public class ManagementServerFactory {
 
-    private static Logger log = Logger.getLogger(ConnectionServerFactory.class);
+    private static Logger log = Logger.getLogger(ManagementServerFactory.class);
 
-    private static final Hashtable<JMXConfiguration,ConnectionServerFactory> FACTORIES = 
-        new Hashtable<JMXConfiguration,ConnectionServerFactory>();
+    private static Hashtable<JMXConfiguration,ManagementServerFactory> factories = 
+        new Hashtable<JMXConfiguration,ManagementServerFactory>();
     private MBeanServer mbeanServer = null;
     private Hashtable<Channel,Object> managedChannels = null;
-    
-    private ConnectionServerFactory(JMXConfiguration config) throws AppiaManagementException {
+
+    private ManagementServerFactory() throws AppiaManagementException {
         managedChannels = new Hashtable<Channel,Object>();
-        createMBeanServer(config);
+        createMBeanServer();
     }
-    
+
     /**
      * Gets the factory instance for a given configuration. Creates the factory if it does not exist.
      * @param config the given configuration.
      * @return the factory instance.
      * @throws AppiaManagementException
      */
-    public static ConnectionServerFactory getInstance(JMXConfiguration config) throws AppiaManagementException{
-        ConnectionServerFactory factory = (ConnectionServerFactory) FACTORIES.get(config);
+    public static ManagementServerFactory getInstance(JMXConfiguration config) throws AppiaManagementException{
+        ManagementServerFactory factory = factories.get(config);
         if(factory == null){
-            factory = new ConnectionServerFactory(config);
-            FACTORIES.put(config,factory);
+            factory = new ManagementServerFactory();
+            factories.put(config,factory);
         }
         return factory;
     }
 
-    private void createMBeanServer(JMXConfiguration config) throws AppiaManagementException{
+    private void createMBeanServer() throws AppiaManagementException{
         if(mbeanServer != null)
             return;
         
-        log.info("Creating MBean server for this Appia instance.");
+        log.info("Creating MBean server for this process.");
         // The default MBeanServer
         mbeanServer = ManagementFactory.getPlatformMBeanServer();
     }
-    
+
     /**
      * Registers a MBean for the Channel.
      * @param channel the managed channel
@@ -97,7 +97,8 @@ public class ConnectionServerFactory {
     public void registerMBean(Channel channel, Object mbean)
     throws AppiaManagementException {
         try {
-            mbeanServer.registerMBean(mbean, new ObjectName(Channel.class.getName()+":name="+channel.getChannelID()));
+            if(mbeanServer != null)
+                mbeanServer.registerMBean(mbean, new ObjectName(Channel.class.getName()+":name="+channel.getChannelID()));
             managedChannels.put(channel,mbean);
         } catch (InstanceAlreadyExistsException e) {
             throw new AppiaManagementException(e);
@@ -119,7 +120,8 @@ public class ConnectionServerFactory {
     public Object unregisterMBean(Channel channel)
     throws AppiaManagementException {
         try {
-            mbeanServer.unregisterMBean(new ObjectName(Channel.class.getName()+":name="+channel.getChannelID()));
+            if(mbeanServer != null)
+                mbeanServer.unregisterMBean(new ObjectName(Channel.class.getName()+":name="+channel.getChannelID()));
             return managedChannels.remove(channel);
         } catch (InstanceNotFoundException e) {
             throw new AppiaManagementException(e);

@@ -56,9 +56,10 @@ public abstract class AbstractAppiaRunnable implements Runnable {
         appiaXML = AppiaXML.getInstance(appia);
     }
 
-    public AbstractAppiaRunnable(File xmlConfig) throws AppiaXMLException {
+    public AbstractAppiaRunnable(File xmlConfig, String managementID) throws AppiaXMLException {
         super();
         appia = new Appia();
+        appia.setManagementMBeanID(managementID);
         appiaXML = AppiaXML.getInstance(appia);
         try {
             appiaXML.instanceLoad(xmlConfig,this.appia);

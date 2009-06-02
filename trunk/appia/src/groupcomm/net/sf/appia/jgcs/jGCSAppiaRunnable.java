@@ -45,8 +45,9 @@ public class jGCSAppiaRunnable extends AbstractAppiaRunnable {
 	private static 
 	Logger logger = Logger.getLogger(jGCSAppiaRunnable.class);
 	
-	public jGCSAppiaRunnable(File xmlConfig, Mailbox<Event> mb) throws AppiaXMLException {
-		super(xmlConfig);
+	public jGCSAppiaRunnable(File xmlConfig, String managementID, Mailbox<Event> mb) 
+	throws AppiaXMLException {
+		super(xmlConfig,managementID);
 		mbox = mb;
 	}
 

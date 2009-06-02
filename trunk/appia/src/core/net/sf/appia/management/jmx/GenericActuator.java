@@ -39,6 +39,7 @@ import javax.management.remote.JMXServiceURL;
 
 import org.apache.log4j.Logger;
 
+import net.sf.appia.core.AppiaMBeanContainer;
 import net.sf.appia.core.Channel;
 import net.sf.appia.management.AppiaManagementException;
 
@@ -98,6 +99,16 @@ public class GenericActuator {
         log.debug("JMX Client connected.");
     }
     
+    public void getLocalMBean(String managementMBeanID, String channelName){
+        String beanID = managementMBeanID+":"+channelName;
+        bean = AppiaMBeanContainer.getInstance().getBean(beanID);
+        if(bean != null)
+            log.debug("Retrieved instance of MBean for ID: "+beanID);
+        else
+            log.warn("MBean for ID "+beanID+" does not exist.");
+    }
+
+    
     /**
      * Invokes a method inside an Appia Layer.
      * @param action the method to invoke in the form layerID:methodName
@@ -136,7 +147,7 @@ public class GenericActuator {
     
     /**
      * Sets a new value for a specified attribute in an Appia layer.
-     * @param attribute the attribute name and value that we want to set. 
+     * @param attribute the attribute name and value that we want to set.
      * The name must be in the form layerID:attributeName
      * @throws AppiaManagementException
      */

@@ -35,7 +35,6 @@ import net.sf.appia.core.message.MessageFactory;
 import net.sf.appia.management.ManagedSession;
 import net.sf.appia.management.SensorSession;
 import net.sf.appia.management.jmx.ChannelManager;
-import net.sf.appia.management.jmx.ConnectionServerFactory;
 import net.sf.appia.management.jmx.JMXConfiguration;
 import net.sf.appia.protocols.common.AppiaThreadFactory;
 
@@ -387,12 +386,12 @@ public class Channel {
     }
     
     if(jmxConfiguration != null){
-    		try {
-    			this.registerMBean();
-    		} catch (AppiaException e) {
-    			e.printStackTrace();
-    		}
-    	}
+        try {
+            this.registerMBean();
+        } catch (AppiaException e) {
+            e.printStackTrace();
+        }
+    }
   }
   
   public synchronized boolean isStarted() {
@@ -572,8 +571,7 @@ public class Channel {
         final ChannelManager manager = new ChannelManager(this);
         Session currentSession = null;
         int numSensorSessions = 0, numManagedSessions = 0;
-        ConnectionServerFactory.getInstance(jmxConfiguration).registerMBean(this,manager);
-
+        
         final ChannelCursor cc = getCursor();
         cc.top();
         while(cc.isPositioned()){
@@ -588,6 +586,14 @@ public class Channel {
             }
             cc.down();
         }
+        
+        if(jmxConfiguration.isLocal()){
+            String beanID = jmxConfiguration.getManagementMBeanID()+":"+this.getChannelID();
+            AppiaMBeanContainer.getInstance().registerBean(beanID, manager);
+        }
+        else
+            ManagementServerFactory.getInstance(jmxConfiguration).registerMBean(this,manager);
+
         log.info("MBean registered on channel "+channelID+". Listening on "+numSensorSessions+" SensorSession(s) and "+
                 numManagedSessions+" ManagedSession(s).");
     }
@@ -595,8 +601,13 @@ public class Channel {
     private void unregisterMBean() throws AppiaException{
         log.info("Unregistering MBean for channel "+channelID);
         Session currentSession = null;
-        final ChannelManager manager = 
-            (ChannelManager) ConnectionServerFactory.getInstance(jmxConfiguration).unregisterMBean(this);
+        ChannelManager manager = null;
+        if(jmxConfiguration.isLocal()){
+            String beanID = jmxConfiguration.getManagementMBeanID()+":"+this.getChannelID();
+            AppiaMBeanContainer.getInstance().unregisterBean(beanID);
+        }
+        else
+            manager = (ChannelManager) ManagementServerFactory.getInstance(jmxConfiguration).unregisterMBean(this);
         
         final ChannelCursor cc = getCursor();
         cc.top();

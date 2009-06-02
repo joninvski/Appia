@@ -68,7 +68,7 @@ public class XMLFileHandler extends DefaultHandler {
 	private String mmSize, mmUPThreshold, mmDOWNThreshold;
 	private MemoryManager memoryManager = null;
     //JMX Management variables
-    private String namingHost,namingPort;
+    private String namingHost,namingPort,local;
 	// Auxiliary flag used to solve the problem of the characters() method not reading
 	// all the text at once
 	private boolean charactersUsed;
@@ -199,6 +199,8 @@ public class XMLFileHandler extends DefaultHandler {
         else if (qName.equals("management")) {
             namingHost = attributes.getValue("naming_host");
             namingPort = attributes.getValue("naming_port");
+            local = attributes.getValue("local");
+            
         }
 		else if (qName.equals("parameter")) {
 			paramName = attributes.getValue("name");
@@ -255,6 +257,8 @@ public class XMLFileHandler extends DefaultHandler {
                 config.getJMXConfiguration().setNamingServer(namingHost);
             if(namingPort != null)
                 config.getJMXConfiguration().setNamingPort(Integer.parseInt(namingPort));
+            if(local != null)
+                config.getJMXConfiguration().setLocal(local.equals("yes") ? true : false);
         }
 		else if (qName.equals("parameter")) {
 			settingParameter = false;

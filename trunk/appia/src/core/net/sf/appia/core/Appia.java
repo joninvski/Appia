@@ -54,10 +54,9 @@ public class Appia {
   protected TimerManager timerManager=null;
   protected Thread thread = null;
   protected int nEvents=0;
-  
-  private ThreadFactory threadFactory;
-  
+  private ThreadFactory threadFactory;  
   private boolean running = true;
+  private String managementMBeanID;
   
   /**
    * Default constructor.
@@ -78,7 +77,7 @@ public class Appia {
       threadFactory = thf;
       timerManager=new TimerManager(threadFactory);
   }
-
+  
   public TimerManager instanceGetTimerManager() {
     return timerManager;
   }
@@ -279,6 +278,14 @@ public class Appia {
       this.threadFactory = thf;
       this.timerManager=new TimerManager(thf);
       this.timerManager.start();
+  }
+  
+  public void setManagementMBeanID(String id){
+      managementMBeanID = id;
+  }
+  
+  public String getManagementMBeanID(){
+      return managementMBeanID;
   }
 
 }

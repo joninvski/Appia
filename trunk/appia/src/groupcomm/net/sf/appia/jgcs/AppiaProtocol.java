@@ -123,7 +123,7 @@ public class AppiaProtocol extends AbstractProtocol {
 			// create mail box
 			Mailbox<Event> mbox = new Mailbox<Event>();
 			// create Appia and its thread
-			Channel[] channelArray = createAppia(group.getConfigFile(),mbox);
+			Channel[] channelArray = createAppia(group,mbox);
 			List<Channel> chList = 
 				new ArrayList<Channel>(AppiaUtils.toCollection(channelArray)); 
 			// bind sessions to group
@@ -135,10 +135,10 @@ public class AppiaProtocol extends AbstractProtocol {
 			putSessions(group,controlSession,dataSession, chList);			
 	}
 
-	private Channel[] createAppia(File config, Mailbox<Event> mbox) throws JGCSException{
+	private Channel[] createAppia(AppiaGroup group, Mailbox<Event> mbox) throws JGCSException{
 		jGCSAppiaRunnable runnable = null;
 		try {
-			runnable = new jGCSAppiaRunnable(config,mbox);
+			runnable = new jGCSAppiaRunnable(group.getConfigFile(),group.getManagementMBeanID(),mbox);
 		} catch (AppiaXMLException e1) {
 			throw new JGCSException("Could not load configuration.",e1);
 		}		

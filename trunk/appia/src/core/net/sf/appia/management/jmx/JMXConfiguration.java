@@ -41,15 +41,19 @@ public class JMXConfiguration {
     
     private String namingServer;
     private int namingPort;
+    private boolean local;
+    private String managementMBeanID = "";
     
-    public JMXConfiguration() {
+    public JMXConfiguration(String mbeanID) {
         namingPort = DEFAULT_NAMING_PORT;
         namingServer = DEFAULT_NAMING_SERVER;
+        managementMBeanID = mbeanID;
     }
 
-    public JMXConfiguration(int namingPort, String namingServer){
+    public JMXConfiguration(int namingPort, String namingServer, String mbeanID){
         this.namingPort = namingPort;
         this.namingServer = namingServer;
+        managementMBeanID = mbeanID;
     }
 
     public int getNamingPort() {
@@ -71,14 +75,36 @@ public class JMXConfiguration {
     public boolean equals(Object arg0) {
         if(arg0 instanceof JMXConfiguration){
             final JMXConfiguration c = (JMXConfiguration) arg0;
-            return namingPort == c.namingPort && namingServer.equals(c.namingServer);
+            return namingPort == c.namingPort && namingServer.equals(c.namingServer)
+                && managementMBeanID.equals(c.managementMBeanID);
         }
         else
             return false;
     }
 
     public int hashCode() {
-        return namingServer.hashCode() ^ namingPort;
+        return namingServer.hashCode() ^ namingPort ^ managementMBeanID.hashCode();
+    }
+
+    /**
+     * @return Returns the local.
+     */
+    public boolean isLocal() {
+        return local;
+    }
+
+    /**
+     * @param local The local to set.
+     */
+    public void setLocal(boolean local) {
+        this.local = local;
+    }
+
+    /**
+     * @return Returns the managementMBeanID.
+     */
+    public String getManagementMBeanID() {
+        return managementMBeanID;
     }
     
     

@@ -15,7 +15,8 @@
 <!ELEMENT management EMPTY>
 <!ATTLIST management
 	naming_host CDATA #IMPLIED
-	naming_port CDATA #IMPLIED>
+	naming_port CDATA #IMPLIED
+	local (yes|no) #IMPLIED>
 <!ELEMENT channel (memorymanagement?,chsession*)>
 <!ATTLIST channel
 	name CDATA #REQUIRED
