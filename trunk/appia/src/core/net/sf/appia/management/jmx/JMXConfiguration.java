@@ -83,7 +83,10 @@ public class JMXConfiguration {
     }
 
     public int hashCode() {
-        return namingServer.hashCode() ^ namingPort ^ managementMBeanID.hashCode();
+        if(managementMBeanID == null)
+            return namingServer.hashCode() ^ namingPort;
+        else
+            return namingServer.hashCode() ^ namingPort ^ managementMBeanID.hashCode();
     }
 
     /**
