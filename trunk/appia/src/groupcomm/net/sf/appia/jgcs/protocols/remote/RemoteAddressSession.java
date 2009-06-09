@@ -31,6 +31,7 @@ import javax.management.Attribute;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanOperationInfo;
 
+import net.sf.appia.core.Appia;
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.AppiaException;
 import net.sf.appia.core.Channel;
@@ -149,6 +150,10 @@ public class RemoteAddressSession extends Session implements
 	}
 
 	private void handleRemoteViewEvent(RemoteViewEvent event) throws AppiaEventException {
+	    if(event.getDir() == Direction.DOWN){
+            event.go();
+            return;
+	    }
 		if(logger.isDebugEnabled())
 			logger.debug("Received remote view event. Addresses are: "+event.getAddresses());
 		addresses = event.getAddresses();
@@ -232,7 +237,14 @@ public class RemoteAddressSession extends Session implements
 	    }
 	    if(channel != null){
             try {
-                new RemoteViewEvent(channel,Direction.DOWN,this,new Group(groupID)).go();
+                if(Appia.getAppiaThread() == Thread.currentThread()){
+                    new RemoteViewEvent(channel,Direction.DOWN,this,new Group(groupID)).go();
+                }
+                else{
+                    RemoteViewEvent rve = new RemoteViewEvent();
+                    rve.setGroup(new Group(groupID));
+                    rve.asyncGo(channel, Direction.DOWN);                    
+                }
             } catch (AppiaEventException e) {
                 e.printStackTrace();
             }
