@@ -19,8 +19,11 @@
 package net.sf.appia.demo.jgcs.opengroup;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Hashtable;
 
+import net.sf.appia.demo.jgcs.opengroup.Constants.MessageType;
 import net.sf.appia.jgcs.AppiaGroup;
 import net.sf.appia.jgcs.AppiaProtocolFactory;
 import net.sf.appia.jgcs.AppiaService;
@@ -37,6 +40,7 @@ import net.sf.jgcs.NotJoinedException;
 import net.sf.jgcs.Protocol;
 import net.sf.jgcs.ProtocolFactory;
 import net.sf.jgcs.Service;
+import net.sf.jgcs.ServiceListener;
 import net.sf.jgcs.UnsupportedServiceException;
 import net.sf.jgcs.membership.BlockListener;
 import net.sf.jgcs.membership.BlockSession;
@@ -61,8 +65,10 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
     /*
      * Class that implements a message listener
      */
-	private class GroupMessageListener implements MessageListener{
+	private class GroupMessageListener implements MessageListener,ServiceListener{
 
+	    Service uniform = new AppiaService("uniform_total_order");
+	    
 	    /*
 	     * All messages arrive here. Messages can be sent from
 	     * clients or servers. Messages from servers are totally ordered
@@ -70,53 +76,102 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 	     * communication channel.
 	     */
 		public Object onMessage(Message msg) {
-			byte[] bytes = msg.getPayload();
-			if(bytes[0] == Constants.CLIENT_MESSAGE)
-				return handleClientMessage(new String(bytes), msg.getSenderAddress());
-			else if(bytes[0] == Constants.SERVER_MESSAGE)
-				return handleServerMessage(new String(bytes));
-			else
-				return null;
-		}
-		
-		private Object handleServerMessage(String msg){
-			System.out.println("Received message from Server: "+msg);
+			ProtocolMessage protoMsg=null;
+            try {
+                protoMsg = Constants.createMessageInstance(msg.getPayload());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            
+            if(protoMsg == null)
+                return null;
+			
+			if(protoMsg instanceof ClientMessage){
+                handleClientMessage((ClientMessage) protoMsg,msg.getSenderAddress());
+                return null;
+			}
+			else if(protoMsg instanceof ServerMessage){
+			    return msg;
+			}
 			return null;
 		}
 		
-		private Object handleClientMessage(String msg, SocketAddress sender){
-			System.out.println("Received message from Client "+sender+" :"+msg);
-			Message replyMsg = null, groupMsg = null;
+        public void onServiceEnsured(Object context, Service service) {
+            try {
+                if(service.compare(uniform)>=0){
+                    handleServerMessage((Message) context);
+                }
+            } catch (UnsupportedServiceException e) {
+                e.printStackTrace();
+            }
+        }
+		
+		private void handleClientMessage(ClientMessage msg, SocketAddress addr){
+			System.out.println("Received message from Client "+addr);
 			try {
-				replyMsg = groupSession.createMessage();
+                msg.unmarshal();
+            } catch (IOException e2) {
+                // TODO Auto-generated catch block
+                e2.printStackTrace();
+            } catch (ClassNotFoundException e2) {
+                // TODO Auto-generated catch block
+                e2.printStackTrace();
+            }
+			Message groupMsg = null;
+			try {
 				groupMsg = groupSession.createMessage();
 			} catch (ClosedSessionException e) {
 				e.printStackTrace();
 			}
-			// message for the client
-			replyMsg.setPayload("Reply!".getBytes());
-			byte[] payload = msg.getBytes();
-			// message for the servers
-			payload[0]=Constants.SERVER_MESSAGE;
-			groupMsg.setPayload(payload);
+			ServerMessage serverMsg = new ServerMessage(msg.id,addr);
 			try {
-			    // reply message to sender, using the "clients" Service
-				groupSession.send(replyMsg,clients,null,sender,(Annotation[])null);
+                serverMsg.marshal();
+                byte[] bytes = Constants.createMessageToSend(MessageType.SERVER, serverMsg.getByteArray());
+                groupMsg.setPayload(bytes);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+			try {
+			    times.put(msg.id, System.nanoTime());
+			    System.out.println("added time for message #"+msg.id);
 				// forward message to the servers, using the "group" Service
-				groupSession.multicast(groupMsg,group, null, (Annotation[])null);
+			    System.out.println("multicasting message to the group");
+				groupSession.multicast(groupMsg,group, null);
 			} catch (UnsupportedServiceException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
-			}
-			
-			return null;
+			}			
 		}
+
+		private void handleServerMessage(Message msg){
+		    if(msg.getSenderAddress().equals(control.getLocalAddress())){
+	            try {
+	                ServerMessage smsg = (ServerMessage) Constants.createMessageInstance(msg.getPayload());
+	                smsg.unmarshal();
+	                long deltaT = System.nanoTime()-times.remove(smsg.id);
+	                System.out.println("TIME for message "+smsg.id+" : "+deltaT);
+	                Message climsg = groupSession.createMessage();
+	                ClientMessage myMsg = new ClientMessage(smsg.id);
+	                myMsg.marshal();
+	                byte[] bytes = Constants.createMessageToSend(MessageType.CLIENT, myMsg.getByteArray());
+	                climsg.setPayload(bytes);
+	                groupSession.send(climsg, clients, null, smsg.addr);
+	            } catch (IOException e) {
+	                e.printStackTrace();
+	            } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+		    }
+		}
+
 	} // end of class GroupMessageListener
 
 	private ControlSession control;
 	private DataSession groupSession;
 	private Service clients, group;
+	
+	private Hashtable<Integer, Long> times = new Hashtable<Integer, Long>();
 	
 	public ServerOpenGroupTest(ControlSession control, DataSession grSession, Service cl, Service gr) 
 	throws JGCSException {
@@ -126,7 +181,9 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 		this.group = gr;
 
 		// set listeners
-		groupSession.setMessageListener(new GroupMessageListener());
+		GroupMessageListener l = new GroupMessageListener();
+		groupSession.setMessageListener(l);
+		groupSession.setServiceListener(l);
 		control.setControlListener(this);
 		control.setExceptionListener(this);
 		if (control instanceof MembershipSession)
@@ -182,21 +239,8 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 	    // joins the group
 		control.join();
 
-		// sends some dummy messages
-		for (int i = 0; i < 3; i++) {
-			Thread.sleep(1000);
-			Message m = groupSession.createMessage();
-			byte[] bytes = ("_ hello world! " +i).getBytes();
-			bytes[0] = Constants.SERVER_MESSAGE;
-			m.setPayload(bytes);			
-			groupSession.multicast(m, group, null);
-		}
-
 		// wait forever.
 		Thread.sleep(Long.MAX_VALUE);
-
-		// leaves the group.....
-		control.leave();
 	}
 
 	public static void main(String[] args) {

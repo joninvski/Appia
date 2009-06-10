@@ -18,12 +18,15 @@
  */
 package net.sf.appia.demo.jgcs.opengroup;
 
+import java.io.IOException;
 import java.net.SocketAddress;
 
+import net.sf.appia.demo.jgcs.opengroup.Constants.MessageType;
 import net.sf.appia.jgcs.AppiaGroup;
 import net.sf.appia.jgcs.AppiaProtocolFactory;
 import net.sf.appia.jgcs.AppiaService;
 import net.sf.jgcs.Annotation;
+import net.sf.jgcs.ControlSession;
 import net.sf.jgcs.DataSession;
 import net.sf.jgcs.ExceptionListener;
 import net.sf.jgcs.JGCSException;
@@ -32,6 +35,7 @@ import net.sf.jgcs.MessageListener;
 import net.sf.jgcs.Protocol;
 import net.sf.jgcs.ProtocolFactory;
 import net.sf.jgcs.Service;
+import net.sf.jgcs.UnsupportedServiceException;
 
 /**
  * 
@@ -50,16 +54,28 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 
     // only the data session is used
 	private DataSession data;
+	private ControlSession control;
 	private Service rpcService;
+	private long tInit=0;
+	private int id=0;
 	
-	public ClientOpenGroupTest(DataSession data, Service serviceVSC) {
+	public ClientOpenGroupTest(DataSession data, ControlSession control, Service serviceVSC) {
 		this.data = data;
 		this.rpcService = serviceVSC;		
+		this.control = control;
 	}
 
 	// messages are received here.
 	public Object onMessage(Message msg) {
-		System.out.println("Message from "+msg.getSenderAddress()+": "+new String(msg.getPayload()));
+	    long deltaT = System.nanoTime()-tInit;
+		System.out.println("Message from "+msg.getSenderAddress()+" TIME = "+deltaT+" nanos");
+		try {
+            sendMessage();
+        } catch (UnsupportedServiceException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 		return null;
 	}
 
@@ -79,25 +95,23 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 		System.out.println("-- EXCEPTION: " + arg0.getMessage());
 		arg0.printStackTrace();
 	}
+	
+	private void sendMessage() throws UnsupportedServiceException, IOException{
+	    System.out.println("sending message #"+id);
+        Message m = data.createMessage();
+        ClientMessage climsg = new ClientMessage(id++);
+        climsg.marshal();
+        byte[] bytes = Constants.createMessageToSend(MessageType.CLIENT, climsg.getByteArray());
+        m.setPayload(bytes);
+//        m.setSenderAddress(control.getLocalAddress());
+        tInit=System.nanoTime();
+        data.send(m, rpcService, null,null,(Annotation[])null);	    
+	}
 
 	public void run() throws Exception {
-	    // sends dummy messages with no destination address.
-	    // an underlying protocol (in Appia) will discover
-	    // one address that belongs to the group and send the message
-	    // to that member.
-	    // Replies can be received from any group member.
-		for (int i = 0; true; i++) {
-			Thread.sleep(1000);
-			Message m = data.createMessage();
-			byte[] bytes =("C hello world from the client! " +i).getBytes();
-			bytes[0] = Constants.CLIENT_MESSAGE;
-			m.setPayload(bytes);
-			data.send(m, rpcService, null,null,(Annotation[])null);
-		}
-
-		// waits 5 seconds before ending.
-//		Thread.sleep(5000);
-
+//	    control.join();
+	    sendMessage();
+	    Thread.sleep(Long.MAX_VALUE);
 	}
 
 	public static void main(String[] args) {
@@ -113,8 +127,9 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 			g.setManagementMBeanID("id1");
 			Protocol p = pf.createProtocol();
 			DataSession session = p.openDataSession(g);
+			ControlSession control = p.openControlSession(g);
 			Service service = new AppiaService("rrpc");
-			ClientOpenGroupTest test = new ClientOpenGroupTest(session, service);
+			ClientOpenGroupTest test = new ClientOpenGroupTest(session, control, service);
 			session.setMessageListener(test);
 			session.setExceptionListener(test);
 			test.run();

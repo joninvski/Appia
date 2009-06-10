@@ -18,8 +18,44 @@
  */
 package net.sf.appia.demo.jgcs.opengroup;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 public abstract class Constants {
 
-	public static final byte CLIENT_MESSAGE = 'C';
-	public static final byte SERVER_MESSAGE = 'S';
+	   enum MessageType {
+	        CLIENT, SERVER;
+	        ProtocolMessage createMessage(byte[] buffer) throws IOException{
+	            switch(this){
+	            case CLIENT:
+	                return new ClientMessage(buffer);
+	            case SERVER:
+	                return new ServerMessage(buffer);
+	            default:
+	                return null;    
+	            }
+	        }
+	    }
+
+	   public static ProtocolMessage createMessageInstance(byte[] buffer) throws IOException{
+	        ByteBuffer bb = ByteBuffer.wrap(buffer);
+	        byte[] strBytes = new byte[bb.getInt()];
+	        bb.get(strBytes);
+	        byte[] msg = new byte[bb.remaining()];
+	        bb.get(msg);
+	        return MessageType.valueOf(new String(strBytes)).createMessage(msg);
+	    }
+	   
+	    public static byte[] createMessageToSend(MessageType type,byte[] msg){
+	        byte[] msgName = type.name().getBytes();
+	        ByteBuffer bb = ByteBuffer.allocate(msgName.length+msg.length+4);
+	        bb.putInt(msgName.length);
+	        bb.put(msgName);
+	        bb.put(msg);
+	        bb.flip();
+	        byte[] ret = bb.array();
+	        return ret;
+	    }
+
+
 }
