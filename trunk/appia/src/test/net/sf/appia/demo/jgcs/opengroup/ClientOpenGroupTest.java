@@ -110,6 +110,7 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 			AppiaGroup g = new AppiaGroup();
 			g.setConfigFileName(args[0]);
 			g.setGroupName("group");
+			g.setManagementMBeanID("id1");
 			Protocol p = pf.createProtocol();
 			DataSession session = p.openDataSession(g);
 			Service service = new AppiaService("rrpc");
