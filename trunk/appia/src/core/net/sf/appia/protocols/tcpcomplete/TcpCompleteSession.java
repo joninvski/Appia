@@ -284,6 +284,10 @@ public class TcpCompleteSession extends Session
           otherReaders.remove(dest).close();
           if(log.isDebugEnabled())
               log.debug("Closing TCP socket for destination: "+dest);
+      } else if(existsSocket(ourReaders,dest)){
+          ourReaders.remove(dest).close();
+          if(log.isDebugEnabled())
+              log.debug("Closing TCP socket for destination: "+dest);
       }
       else
           log.debug("Requested to close socket "+dest+" but the socket does not exist.");
