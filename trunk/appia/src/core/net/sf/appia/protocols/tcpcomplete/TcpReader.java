@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 import net.sf.appia.core.*;
@@ -214,6 +215,9 @@ public class TcpReader implements Runnable {
 		if(!running && !s.isClosed())
 		try {
             s.shutdownInput();
+        } catch (SocketException se){
+            if(log.isDebugEnabled())
+                se.printStackTrace();
         } catch (IOException e) {
             if(log.isDebugEnabled())
                 e.printStackTrace();
