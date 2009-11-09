@@ -19,7 +19,6 @@
 package net.sf.appia.demo.jgcs.opengroup;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Hashtable;
 
@@ -27,7 +26,6 @@ import net.sf.appia.demo.jgcs.opengroup.Constants.MessageType;
 import net.sf.appia.jgcs.AppiaGroup;
 import net.sf.appia.jgcs.AppiaProtocolFactory;
 import net.sf.appia.jgcs.AppiaService;
-import net.sf.jgcs.Annotation;
 import net.sf.jgcs.ClosedSessionException;
 import net.sf.jgcs.ControlListener;
 import net.sf.jgcs.ControlSession;
@@ -62,6 +60,8 @@ import net.sf.jgcs.membership.MembershipSession;
 public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 		MembershipListener, BlockListener {
 	
+    private long viewChangeTime=0;
+    
     /*
      * Class that implements a message listener
      */
@@ -83,6 +83,8 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
                 e.printStackTrace();
             }
             
+            System.out.println("RECEIVED MESSAGE: "+protoMsg);
+            
             if(protoMsg == null)
                 return null;
 			
@@ -91,19 +93,20 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
                 return null;
 			}
 			else if(protoMsg instanceof ServerMessage){
-			    return msg;
+			    handleServerMessage((ServerMessage)protoMsg,msg.getSenderAddress());
+			    return null;
 			}
 			return null;
 		}
 		
         public void onServiceEnsured(Object context, Service service) {
-            try {
-                if(service.compare(uniform)>=0){
-                    handleServerMessage((Message) context);
-                }
-            } catch (UnsupportedServiceException e) {
-                e.printStackTrace();
-            }
+//            try {
+//                if(service.compare(uniform)>=0){
+//                    handleServerMessage((Message) context);
+//                }
+//            } catch (UnsupportedServiceException e) {
+//                e.printStackTrace();
+//            }
         }
 		
 		private void handleClientMessage(ClientMessage msg, SocketAddress addr){
@@ -144,24 +147,23 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 			}			
 		}
 
-		private void handleServerMessage(Message msg){
-		    if(msg.getSenderAddress().equals(control.getLocalAddress())){
-	            try {
-	                ServerMessage smsg = (ServerMessage) Constants.createMessageInstance(msg.getPayload());
-	                smsg.unmarshal();
-	                long deltaT = System.nanoTime()-times.remove(smsg.id);
-	                System.out.println("TIME for message "+smsg.id+" : "+deltaT);
-	                Message climsg = groupSession.createMessage();
-	                ClientMessage myMsg = new ClientMessage(smsg.id);
-	                myMsg.marshal();
-	                byte[] bytes = Constants.createMessageToSend(MessageType.CLIENT, myMsg.getByteArray());
-	                climsg.setPayload(bytes);
-	                groupSession.send(climsg, clients, null, smsg.addr);
-	            } catch (IOException e) {
-	                e.printStackTrace();
-	            } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                }
+		private void handleServerMessage(ServerMessage smsg, SocketAddress addr){
+		    try {
+		        smsg.unmarshal();
+		        if(addr.equals(control.getLocalAddress())){
+		            long deltaT = System.nanoTime()-times.remove(smsg.id);
+		            System.out.println("TIME for message "+smsg.id+" : "+deltaT);
+		        }
+		        Message climsg = groupSession.createMessage();
+		        ClientMessage myMsg = new ClientMessage(smsg.id);
+		        myMsg.marshal();
+		        byte[] bytes = Constants.createMessageToSend(MessageType.CLIENT, myMsg.getByteArray());
+		        climsg.setPayload(bytes);
+		        groupSession.send(climsg, clients, null, smsg.addr);
+		    } catch (IOException e) {
+		        e.printStackTrace();
+		    } catch (ClassNotFoundException e) {
+		        e.printStackTrace();
 		    }
 		}
 
@@ -170,7 +172,7 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 	private ControlSession control;
 	private DataSession groupSession;
 	private Service clients, group;
-	
+
 	private Hashtable<Integer, Long> times = new Hashtable<Integer, Long>();
 	
 	public ServerOpenGroupTest(ControlSession control, DataSession grSession, Service cl, Service gr) 
@@ -206,6 +208,7 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 	}
 
 	public void onMembershipChange() {
+        System.out.println("MEMBERSHIP: "+(System.currentTimeMillis()-viewChangeTime));
 		try {
 			System.out.println("-- NEW MEMBERSHIP: " + ((MembershipSession) control).getMembership());
 		} catch (NotJoinedException e) {
@@ -219,6 +222,8 @@ public class ServerOpenGroupTest implements ControlListener, ExceptionListener,
 	// (using the blockOk() method). After this, no message can be sent
 	// while waiting for a new view.
 	public void onBlock() {
+	    viewChangeTime = System.currentTimeMillis();
+	    System.out.println("BLOCK: "+viewChangeTime);
 		try {
 			((BlockSession) control).blockOk();
 		} catch (JGCSException e) {

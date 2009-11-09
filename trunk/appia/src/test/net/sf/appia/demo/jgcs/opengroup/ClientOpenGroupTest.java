@@ -52,12 +52,15 @@ import net.sf.jgcs.UnsupportedServiceException;
  */
 public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 
+    private static final int MAX_MESSAGES=2;
+    
     // only the data session is used
 	private DataSession data;
 	private ControlSession control;
 	private Service rpcService;
 	private long tInit=0;
 	private int id=0;
+	private int lastReceivedMessage = -1;
 	
 	public ClientOpenGroupTest(DataSession data, ControlSession control, Service serviceVSC) {
 		this.data = data;
@@ -67,16 +70,33 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 
 	// messages are received here.
 	public Object onMessage(Message msg) {
-	    long deltaT = System.nanoTime()-tInit;
-		System.out.println("Message from "+msg.getSenderAddress()+" TIME = "+deltaT+" nanos");
-		try {
-            sendMessage();
-        } catch (UnsupportedServiceException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+	    boolean canSend=false;
+	    try {
+            ClientMessage cliMsg = (ClientMessage) Constants.createMessageInstance(msg.getPayload());
+            cliMsg.unmarshal();
+            if(cliMsg.id > lastReceivedMessage){
+                lastReceivedMessage = cliMsg.id;
+                canSend = true;
+            }
+        } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-		return null;
+	    long deltaT = System.nanoTime()-tInit;
+	    System.out.println("Message from "+msg.getSenderAddress()+" TIME = "+deltaT+" nanos");
+	    if(canSend){
+	        try {
+	            sendMessage();
+	        } catch (UnsupportedServiceException e) {
+	            e.printStackTrace();
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    }
+	    return null;
 	}
 
 	public void onJoin(SocketAddress peer) {
@@ -97,7 +117,6 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
 	}
 	
 	private void sendMessage() throws UnsupportedServiceException, IOException{
-	    System.out.println("sending message #"+id);
         Message m = data.createMessage();
         ClientMessage climsg = new ClientMessage(id++);
         climsg.marshal();
@@ -105,7 +124,8 @@ public class ClientOpenGroupTest implements MessageListener, ExceptionListener {
         m.setPayload(bytes);
 //        m.setSenderAddress(control.getLocalAddress());
         tInit=System.nanoTime();
-        data.send(m, rpcService, null,null,(Annotation[])null);	    
+        System.out.println("sending message #"+(id-1)+" PAYLOAD="+bytes.length);
+        data.send(m, rpcService, null,null);
 	}
 
 	public void run() throws Exception {
