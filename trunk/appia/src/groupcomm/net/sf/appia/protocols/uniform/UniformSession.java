@@ -81,7 +81,9 @@ public class UniformSession extends Session implements InitializableSession{
 
 
     public void init(SessionProperties params) {
-        
+        if(params.containsKey("uniform_info_period")){
+            unifInfoPeriod = params.getLong("uniform_info_period");
+        }        
     }
 	
 	/** 
@@ -165,7 +167,7 @@ public class UniformSession extends Session implements InitializableSession{
 			e.printStackTrace();
 		}
 		
-		if (!utSet) {
+		if (!utSet && unifInfoPeriod > 0) {
 			try {
 				new UniformTimer(unifInfoPeriod,view.getChannel(),Direction.DOWN,this,EventQualifier.ON).go();
 				utSet = true;
@@ -206,6 +208,8 @@ public class UniformSession extends Session implements InitializableSession{
 			} catch (AppiaEventException e) {
 				e.printStackTrace();
 			}
+			if(unifInfoPeriod == 0)
+			    sendUniformInfo(event.getChannel());
 		}	
 	}
 	
