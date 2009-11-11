@@ -42,6 +42,8 @@ import net.sf.appia.protocols.group.events.GroupSendableEvent;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.sync.BlockOk;
 import net.sf.appia.protocols.total.common.UniformServiceEvent;
+import net.sf.appia.xml.interfaces.InitializableSession;
+import net.sf.appia.xml.utils.SessionProperties;
 
 
 /**
@@ -49,11 +51,11 @@ import net.sf.appia.protocols.total.common.UniformServiceEvent;
  * 
  * @author Jose Mocito
  */
-public class UniformSession extends Session {
+public class UniformSession extends Session implements InitializableSession{
 	
-	private static final long UNIFORM_INFO_PERIOD = 100;
+	private static final long DEFAULT_UNIFORM_INFO_PERIOD = 100;
 		
-	private long sn;
+	private long sn,unifInfoPeriod=DEFAULT_UNIFORM_INFO_PERIOD;
 	private long[][] snInfoList;
 
 	private boolean isBlocked = true;
@@ -77,6 +79,10 @@ public class UniformSession extends Session {
 		super(layer);
 	}
 
+
+    public void init(SessionProperties params) {
+        
+    }
 	
 	/** 
 	 * Main handler of events.
@@ -161,7 +167,7 @@ public class UniformSession extends Session {
 		
 		if (!utSet) {
 			try {
-				new UniformTimer(UNIFORM_INFO_PERIOD,view.getChannel(),Direction.DOWN,this,EventQualifier.ON).go();
+				new UniformTimer(unifInfoPeriod,view.getChannel(),Direction.DOWN,this,EventQualifier.ON).go();
 				utSet = true;
 			} catch (AppiaEventException e) {
 				e.printStackTrace();
@@ -204,7 +210,7 @@ public class UniformSession extends Session {
 	}
 	
 	private void handleUniformTimer(UniformTimer timer) {
-	    if (!isBlocked && timeProvider.currentTimeMillis() - timeLastMsgSent >= UNIFORM_INFO_PERIOD) {
+	    if (!isBlocked && timeProvider.currentTimeMillis() - timeLastMsgSent >= unifInfoPeriod) {
 	        sendUniformInfo(timer.getChannel());
 	    }
 	}
