@@ -20,63 +20,40 @@
  
 package net.sf.appia.protocols.tcpcomplete;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class SenderQueue<T> {
 
-	private ConcurrentLinkedQueue<T> mailbox =new ConcurrentLinkedQueue<T>();
-	private final ReentrantLock lock = new ReentrantLock();
-	private final Condition isEmpty = lock.newCondition();
+	private BlockingQueue<T> mailbox = new LinkedBlockingQueue<T>();
 
 	public SenderQueue() {}
 
 	public void add(T item){
-		lock.lock();
-		try{
-			mailbox.add(item);
-			isEmpty.signalAll();
-		}
-		finally{
-			lock.unlock();
-		}
+	    try {
+            mailbox.put(item);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 	}
 	
 	public T removeNext(){
-		lock.lock();
-		try{
-			while(mailbox.isEmpty())
-				try {
-					isEmpty.await();
-				} catch (InterruptedException e) {
-					return null;
-				}
-			return mailbox.remove();
-		}
-		finally{
-			lock.unlock();
-		}
+	    try {
+            return mailbox.take();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return null;
+        }
 	}
 
 	public T removeNext(long millis){
-		lock.lock();
-		try{
-			while(mailbox.isEmpty())
-				try {
-					isEmpty.await(millis,TimeUnit.MILLISECONDS);
-				} catch (InterruptedException e) {
-					return null;
-				}
-				if (!mailbox.isEmpty()) 
-					return mailbox.remove();
-				else 
-					return null;		
-		}
-		finally{
-			lock.unlock();
-		}
+        try {
+            return mailbox.poll(millis,TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return null;
+        }
 	}
 	
 	public int getSize(){
