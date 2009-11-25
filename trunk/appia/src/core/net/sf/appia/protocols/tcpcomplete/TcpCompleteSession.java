@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Random;
@@ -103,7 +104,7 @@ public class TcpCompleteSession extends Session
   
   private Channel timerChannel=null;
   
-  private Measures measures=new Measures();
+  private Measures measures;
   
   /**
    * Constructor for NewTcpSession.
@@ -121,6 +122,7 @@ public class TcpCompleteSession extends Session
     
     socketLock = new Object();
     channelLock = new Object();
+    measures = new Measures(this);
   }
   
   /**
@@ -545,6 +547,19 @@ public class TcpCompleteSession extends Session
 
   private void debug(String msg){
   		log.debug(msg);
+  }
+  
+  protected int getGlobalQueueSize(){
+      int sum=0;
+      synchronized (socketLock) {
+          Enumeration<SocketInfoContainer> e = ourReaders.elements();
+          while (e.hasMoreElements())
+              sum += (e.nextElement().sender.getQueue().getSize());
+          e = otherReaders.elements();
+          while (e.hasMoreElements())
+              sum += (e.nextElement().sender.getQueue().getSize());
+      }
+      return sum;
   }
 
   /**

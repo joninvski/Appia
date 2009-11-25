@@ -43,6 +43,7 @@ public class Measures {
     public static final String THRPUT_BYTES_PER_SECOND_UP = "bytes_per_second_up";
     public static final String THRPUT_BYTES_PER_SECOND_DOWN = "bytes_per_second_down";
     public static final String REFRESH_INTERVAL = "refresh_interval";
+    public static final String QUEUE_SIZE = "queue_size";
 
     private static final float MINIMUM_VALUE = 0.05F;
     private static final long DEFAULT_REFRESH_INTERVAL = 5000;
@@ -51,6 +52,8 @@ public class Measures {
     private Map<String,String>jmxFeaturesMap = new Hashtable<String,String>();
 
     private long refreshInterval = DEFAULT_REFRESH_INTERVAL;
+    
+    private TcpCompleteSession session;
 
     /**
      * This class defines a Throughput.
@@ -107,18 +110,20 @@ public class Measures {
         }
     }
     
-    public Measures(TimeProvider tp){
+    public Measures(TimeProvider tp, TcpCompleteSession s){
         msgPerSecondUp = new Throughput(tp);
         msgPerSecondDown = new Throughput(tp);
         bytesPerSecondUp = new Throughput(tp);
-        bytesPerSecondDown = new Throughput(tp);        
+        bytesPerSecondDown = new Throughput(tp);
+        session = s;
     }
 
-    public Measures(){
+    public Measures(TcpCompleteSession s){
         msgPerSecondUp = new Throughput();
         msgPerSecondDown = new Throughput();
         bytesPerSecondUp = new Throughput();
-        bytesPerSecondDown = new Throughput();        
+        bytesPerSecondDown = new Throughput();
+        session = s;
     }
 
     public void setTimeProvider(TimeProvider tp){
@@ -155,6 +160,8 @@ public class Measures {
             return bytesPerSecondDown.get();
         if(parameter.equals(REFRESH_INTERVAL))
             return refreshInterval;
+        if(parameter.equals(QUEUE_SIZE))
+            return session.getGlobalQueueSize();
         throw new AppiaManagementException("Parameter '"+parameter+"' not defined in session "+this.getClass().getName());
     }
 
@@ -178,6 +185,7 @@ public class Measures {
         jmxFeaturesMap.put(sid+THRPUT_MSG_PER_SECOND_DOWN,THRPUT_MSG_PER_SECOND_DOWN);
         jmxFeaturesMap.put(sid+THRPUT_MSG_PER_SECOND_UP,THRPUT_MSG_PER_SECOND_UP);
         jmxFeaturesMap.put(sid+REFRESH_INTERVAL,REFRESH_INTERVAL);
+        jmxFeaturesMap.put(sid+QUEUE_SIZE,QUEUE_SIZE);
         return new MBeanAttributeInfo[]{
                 new MBeanAttributeInfo(sid+THRPUT_BYTES_PER_SECOND_DOWN,
                         "float","gets the throughput value",
@@ -191,9 +199,12 @@ public class Measures {
                                         new MBeanAttributeInfo(sid+THRPUT_MSG_PER_SECOND_UP,
                                                 "float","gets the throughput value",
                                                 true,false,false),
-                new MBeanAttributeInfo(sid+REFRESH_INTERVAL,
-                        "long","gets and sets the refresh interval",
-                        true,true,false),
+                                                new MBeanAttributeInfo(sid+REFRESH_INTERVAL,
+                                                        "long","gets and sets the refresh interval",
+                                                        true,true,false),
+                                                        new MBeanAttributeInfo(sid+QUEUE_SIZE,
+                                                                "long","gets the queue size of sending messages",
+                                                                true,false,false),
         };
     }
 
