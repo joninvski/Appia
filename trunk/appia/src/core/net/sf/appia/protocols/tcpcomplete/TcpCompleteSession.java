@@ -580,6 +580,8 @@ public class TcpCompleteSession extends Session
           MessageContainer container = null;
           while(isRunning()){
               container = queue.removeNext();
+              if(container == null)
+                  continue;
               try {
                   if (TcpCompleteConfig.debugOn)
                       debug("Sending message to the socket for "+container.who+" with "+container.data.length+" bytes");
