@@ -48,7 +48,7 @@ public class VSyncMultiplexerSession extends Session {
     
     private static Logger log = Logger.getLogger(VSyncMultiplexerSession.class);
 
-	private HashMap channels;
+	private HashMap<Channel,Object> channels;
 	private int blockOkCounter;
 	
 	/**
@@ -56,7 +56,7 @@ public class VSyncMultiplexerSession extends Session {
 	 */
 	public VSyncMultiplexerSession(Layer layer) {
 		super(layer);
-		channels = new HashMap();
+		channels = new HashMap<Channel, Object>();
 		blockOkCounter = 0;
 	}
 
@@ -122,15 +122,17 @@ public class VSyncMultiplexerSession extends Session {
 	 */
 	private void handleView(View view) {
         
-        log.debug("Replicating view to all channels");
+	    log.debug("Replicating view to all channels view "+view.view_id+" with size "+view.vs.addresses.length);
+	    System.out.println("Multiplexer: Replicating view to all channels view "+view.view_id+" with size "+view.vs.addresses.length);
         
 	  view.vs.version="MULTI";
 	  
-	  Iterator it = channels.keySet().iterator();
+	  Iterator<Channel> it = channels.keySet().iterator();
 	  for ( ; it.hasNext() ; ){
-	    Channel c = (Channel) it.next();
+	    Channel c = it.next();
 	    if( ! c.equals(view.getChannel())){
 	      try {
+	          System.out.println("Multiplexer: sending to "+c.getChannelID());
 	        View copy = new View(view.vs, view.ls, c, view.getDir(), this);
 	        copy.go();
 	      } catch (AppiaEventException e2) {
@@ -140,6 +142,7 @@ public class VSyncMultiplexerSession extends Session {
 	  }
 	  
 	  try {
+          System.out.println("Multiplexer: sending to "+view.getChannel().getChannelID());
 	    view.go();
 	  } catch (AppiaEventException e1) {
 	    e1.printStackTrace();
@@ -156,9 +159,9 @@ public class VSyncMultiplexerSession extends Session {
 	    
 	    BlockOk blockok=(BlockOk)echo.getEvent();
 	    
-	    Iterator it = channels.keySet().iterator();
+	    Iterator<Channel> it = channels.keySet().iterator();
 	    for ( ; it.hasNext() ; ){
-	      Channel c = (Channel) it.next();
+	      Channel c = it.next();
 	      if( ! c.equals(echo.getChannel())){
 	        try {
 	          EchoEvent copy = new EchoEvent(new BlockOk(blockok.group,blockok.view_id), c, echo.getDir(), this);

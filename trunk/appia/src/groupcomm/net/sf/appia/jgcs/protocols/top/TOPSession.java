@@ -87,6 +87,7 @@ public class TOPSession extends Session implements InitializableSession {
 	private InetSocketAddress myAddress = null;
 	private int numberOfChannels = 0, numberOfBlocks=1, numberOfViews = 1;
 	private List<Channel>channels = null;
+	private List<Event> pendingReceivedEvents = null;
 	private boolean sentRSE = false;
 	private Group myGroup=null;
 	private String jgcsGroupName;
@@ -105,6 +106,7 @@ public class TOPSession extends Session implements InitializableSession {
 		isBlocked = true;
 		eventsPending = new LinkedList<GroupSendableEvent>();
 		channels = new LinkedList<Channel>();
+		pendingReceivedEvents = new LinkedList<Event>();
 	}
 	
 	/**
@@ -273,24 +275,42 @@ public class TOPSession extends Session implements InitializableSession {
 	private void handleGroupEvent(GroupSendableEvent event) {
 		// event from the network
 		if(event.getDir() == Direction.UP){
-			mailbox.add(event);
-			try {
-				event.go();
-			} catch (AppiaEventException e) {
-				e.printStackTrace();
-			}
+		    if(isBlocked){
+		        pendingReceivedEvents.add(event);
+		        // this is needed in the case that Appia was configured to use several
+		        // channels, the views were multiplexed and one of the channels is 
+		        // holding the view. events will be flushed when all the views (one from
+		        // each channel) are collected.
+		    }
+		    else{
+	            mailbox.add(event);
+	            try {
+	                event.go();
+	            } catch (AppiaEventException e) {
+	                e.printStackTrace();
+	            }		        
+		    }
 		}
 	}
 
 	private void handleSendableEvent(JGCSSendableEvent event) {
 		// event from the network
 		if(event.getDir() == Direction.UP) {
-			mailbox.add(event);
-			try {
-				event.go();
-			} catch (AppiaEventException e) {
-				e.printStackTrace();
-			}
+            if(isBlocked){
+                pendingReceivedEvents.add(event);
+                // this is needed in the case that Appia was configured to use several
+                // channels, the views were multiplexed and one of the channels is 
+                // holding the view. events will be flushed when all the views (one from
+                // each channel) are collected.
+            }
+            else{
+                mailbox.add(event);
+                try {
+                    event.go();
+                } catch (AppiaEventException e) {
+                    e.printStackTrace();
+                }               
+            }
 		}
 	}
 
@@ -364,6 +384,8 @@ public class TOPSession extends Session implements InitializableSession {
 	 * @param e the new view
 	 */
 	private void handleNewView(View e) {
+        System.out.println("TOP: Received view from channel "+e.getChannel().getChannelID()+" WITH ID "+e.vs.id);
+		logger.debug("Received view from channel "+e.getChannel().getChannelID());
 		
 		if(numberOfViews < numberOfChannels){
 			numberOfViews++;
@@ -397,6 +419,16 @@ public class TOPSession extends Session implements InitializableSession {
 		
 		if(requestedLeave && leaveChannel != null)
 		    sendLeave(e.getChannel());
+		
+		while(!pendingReceivedEvents.isEmpty()){
+		    Event pendingEvent = pendingReceivedEvents.remove(0);
+		    mailbox.add(pendingEvent);
+		    try {
+                pendingEvent.go();
+            } catch (AppiaEventException e1) {
+                e1.printStackTrace();
+            }
+		}
 	}
 	
 	/*
