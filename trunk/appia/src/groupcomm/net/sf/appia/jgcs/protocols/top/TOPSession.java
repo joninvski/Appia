@@ -88,6 +88,7 @@ public class TOPSession extends Session implements InitializableSession {
 	private int numberOfChannels = 0, numberOfBlocks=1, numberOfViews = 1;
 	private List<Channel>channels = null;
 	private List<Event> pendingReceivedEvents = null;
+	private ViewID currentWaitingViewID = null;
 	private boolean sentRSE = false;
 	private Group myGroup=null;
 	private String jgcsGroupName;
@@ -387,9 +388,20 @@ public class TOPSession extends Session implements InitializableSession {
         System.out.println("TOP: Received view from channel "+e.getChannel().getChannelID()+" WITH ID "+e.vs.id);
 		logger.debug("Received view from channel "+e.getChannel().getChannelID());
 		
-		if(numberOfViews < numberOfChannels){
-			numberOfViews++;
-			return;
+		// FIXME: reset if view ID is not the same... verify this code!!!
+		if(currentWaitingViewID == null)
+		    currentWaitingViewID = e.view_id;
+		
+		if(e.view_id.equals(currentWaitingViewID)){
+		    if(numberOfViews < numberOfChannels){
+		        numberOfViews++;
+		        return;
+		    }
+		}
+		else{
+	        numberOfViews = 1;
+	        currentWaitingViewID = e.view_id;
+		    return;
 		}
 		
 		numberOfViews = 1;
