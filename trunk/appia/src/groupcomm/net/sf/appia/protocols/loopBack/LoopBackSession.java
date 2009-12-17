@@ -25,8 +25,6 @@ import net.sf.appia.protocols.group.*;
 import net.sf.appia.protocols.group.events.*;
 import net.sf.appia.protocols.group.intra.*;
 
-
-
 /**
  * Class LoopBackSession provides the dynamic behavior for the
  * LoopBack Protocol
@@ -56,8 +54,9 @@ public class LoopBackSession extends Session {
 	if(e instanceof ChannelInit) {}
 
 	if(e instanceof View){
-	    myRank = ((View)e).ls.my_rank;
-	    myEndpt = ((View)e).vs.view[myRank];
+	    View view = (View) e;
+	    myRank = view.ls.my_rank;
+	    myEndpt = view.vs.view[myRank];
 	}
 
 	if(e instanceof GroupSendableEvent && !(e instanceof Send) && e.getDir() == Direction.DOWN)
@@ -72,7 +71,7 @@ public class LoopBackSession extends Session {
     
     private void handleGroupSendableEvent(GroupSendableEvent e){
         GroupSendableEvent cloned=null;
-
+       
         //clones event, invert direction and send it upward.
         try{
             cloned= (GroupSendableEvent)e.cloneEvent();

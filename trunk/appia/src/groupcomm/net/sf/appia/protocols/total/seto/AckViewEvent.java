@@ -26,7 +26,6 @@ import net.sf.appia.core.message.Message;
 import net.sf.appia.protocols.group.Group;
 import net.sf.appia.protocols.group.ViewID;
 import net.sf.appia.protocols.group.events.GroupSendableEvent;
-import net.sf.appia.protocols.group.events.Send;
 
 public class AckViewEvent extends GroupSendableEvent {
 

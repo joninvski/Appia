@@ -285,12 +285,12 @@ public class SETOSession extends Session implements InitializableSession {
             // Due to view synchrony sender and receiver have seen the same messages
             lastOrderList[ack.orig] = lastOrderList[ls.my_rank];
             ackCounter++;
-            System.out.println("SETO: received Ack for view "+vs.id+" Num "+ackCounter+" from "+ack.orig+" I am "+ls.my_rank);
             if (ackCounter == vs.view.length) {
                 deliverUniform();
                 deliverPendingView();
             }
         }
+        System.out.println("SETO: received Ack for view "+ack.view_id+" Num "+ackCounter+" from "+ack.orig+" I am "+ls.my_rank);
     }
     
     private void deliverPendingView() {
@@ -564,23 +564,18 @@ public class SETOSession extends Session implements InitializableSession {
 	}
 	
 	private void sendUniformInfo(Channel channel) {
-		if (!isBlocked) {
-			UniformInfoEvent event = new UniformInfoEvent();
-			
-			Message msg = event.getMessage();
-			for (int i = 0; i < lastOrderList.length; i++)
-				msg.pushLong(lastOrderList[i]);
-			
-			event.setChannel(channel);
-			event.setDir(Direction.DOWN);
-			event.setSourceSession(this);
-			try {
-				event.init();
-				event.go();
-			} catch (AppiaEventException e) {
-				e.printStackTrace();
-			}
-		}
+	    if (!isBlocked) {
+	        try {
+	            UniformInfoEvent event = new UniformInfoEvent(channel,Direction.DOWN,this,vs.group,vs.id);
+	            Message msg = event.getMessage();
+	            for (int i = 0; i < lastOrderList.length; i++)
+	                msg.pushLong(lastOrderList[i]);
+
+	            event.go();
+	        } catch (AppiaEventException e) {
+	            e.printStackTrace();
+	        }
+	    }
 	}
 	
 	private void handleUniformInfo(UniformInfoEvent event) {

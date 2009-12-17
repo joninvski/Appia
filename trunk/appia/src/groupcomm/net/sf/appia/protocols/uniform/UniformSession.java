@@ -220,25 +220,21 @@ public class UniformSession extends Session implements InitializableSession{
 	}
 	
 	private void sendUniformInfo(Channel channel) {
-		if (!isBlocked) {
-			final UniformInfoEvent event = new UniformInfoEvent();
-			
-			final Message msg = event.getMessage();
-			for (int i = 0; i < snInfoList[ls.my_rank].length; i++)
-				msg.pushLong(snInfoList[ls.my_rank][i]);
-			
-			event.setChannel(channel);
-			event.setDir(Direction.DOWN);
-			event.setSourceSession(this);
-			try {
-				event.init();
-				event.go();
-			} catch (AppiaEventException e) {
-				e.printStackTrace();
-			}
-		}
+	    if (!isBlocked) {
+	        try {
+	            final UniformInfoEvent event = new UniformInfoEvent(channel,Direction.DOWN,this,vs.group,vs.id);
+
+	            final Message msg = event.getMessage();
+	            for (int i = 0; i < snInfoList[ls.my_rank].length; i++)
+	                msg.pushLong(snInfoList[ls.my_rank][i]);
+
+	            event.go();
+	        } catch (AppiaEventException e) {
+	            e.printStackTrace();
+	        }
+	    }
 	}
-	
+
 	private void handleUniformInfo(UniformInfoEvent event) {
 	    // If I do not have a view, I should not receive this message...
 	    // FIXME: for now, I'm ignoring the message, but this should work without this... fix later

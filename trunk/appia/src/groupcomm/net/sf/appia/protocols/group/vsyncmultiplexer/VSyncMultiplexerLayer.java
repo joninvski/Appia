@@ -24,6 +24,7 @@ import net.sf.appia.core.Session;
 import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.core.events.channel.EchoEvent;
+import net.sf.appia.protocols.group.events.GroupSendableEvent;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.sync.BlockOk;
 
@@ -37,6 +38,7 @@ public class VSyncMultiplexerLayer extends Layer {
 	public VSyncMultiplexerLayer(){
 		
 		evProvide = new Class[]{
+		        View.class,
 		};
 		
 		evRequire = new Class[]{
@@ -48,6 +50,7 @@ public class VSyncMultiplexerLayer extends Layer {
 			EchoEvent.class,
 			View.class,
 			BlockOk.class,
+			GroupSendableEvent.class,
 			ChannelInit.class,
 			ChannelClose.class,
 		};

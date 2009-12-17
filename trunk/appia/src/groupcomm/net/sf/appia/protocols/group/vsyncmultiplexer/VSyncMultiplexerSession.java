@@ -25,17 +25,23 @@ package net.sf.appia.protocols.group.vsyncmultiplexer;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
+import net.sf.appia.core.Direction;
 import net.sf.appia.core.Event;
 import net.sf.appia.core.Layer;
 import net.sf.appia.core.Session;
 import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.core.events.channel.EchoEvent;
+import net.sf.appia.protocols.group.ViewState;
+import net.sf.appia.protocols.group.events.GroupSendableEvent;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.sync.BlockOk;
+import net.sf.appia.protocols.total.seto.AckViewEvent;
 
 import org.apache.log4j.Logger;
 
@@ -50,6 +56,8 @@ public class VSyncMultiplexerSession extends Session {
 
 	private HashMap<Channel,Object> channels;
 	private int blockOkCounter;
+	private ViewState vs = null;
+	private List<GroupSendableEvent> pendingEvents = null;
 	
 	/**
 	 * @param layer
@@ -58,10 +66,13 @@ public class VSyncMultiplexerSession extends Session {
 		super(layer);
 		channels = new HashMap<Channel, Object>();
 		blockOkCounter = 0;
+		pendingEvents = new LinkedList<GroupSendableEvent>();
 	}
 
 	public void handle(Event e){
-		if(e instanceof EchoEvent)
+	    if(e instanceof GroupSendableEvent)
+	        handleGroupSendable((GroupSendableEvent)e);
+	    else if(e instanceof EchoEvent)
 			handleEchoEvent((EchoEvent)e);
 		else if (e instanceof View)
 			handleView((View)e);
@@ -103,17 +114,36 @@ public class VSyncMultiplexerSession extends Session {
 		}
 	}
 
+	private void handleGroupSendable(GroupSendableEvent ev){
+	    if(ev instanceof AckViewEvent && ev.getDir() == Direction.UP){
+	        System.out.println("Multiplexer: received event: "+ev+" FROM "+ev.orig);
+	        System.out.println("ACK: "+ev.getChannel().getChannelID()+" "+ev.view_id);
+	    }
+	    
+	    if(ev.getDir() == Direction.UP && (vs == null || !vs.id.equals(ev.view_id))){
+	        System.out.println("Multiplexer: holding event "+ev);
+	        pendingEvents.add(ev);
+	    }
+        else
+            try {
+                ev.go();
+            } catch (AppiaEventException e) {
+                e.printStackTrace();
+            }
+	}
+	
 	/**
 	 * @param ok
 	 */
 	private void handleBlockOk(BlockOk ok) {
-        log.debug("Collecting blockok events :: counter = "+blockOkCounter);
-	  if((--blockOkCounter) == 0)
-	    try {
-            log.debug("Delivering blockok on channel: "+ok.getChannel().getChannelID());
-	      ok.go();
-	    } catch (AppiaEventException e) {
-	      e.printStackTrace();
+	    log.debug("Collecting blockok events :: counter = "+blockOkCounter);
+	    if((--blockOkCounter) == 0){
+	        try {
+	            log.debug("Delivering blockok on channel: "+ok.getChannel().getChannelID());
+	            ok.go();
+	        } catch (AppiaEventException e) {
+	            e.printStackTrace();
+	        }
 	    }
 	}
 
@@ -126,6 +156,7 @@ public class VSyncMultiplexerSession extends Session {
 	    System.out.println("Multiplexer: Replicating view to all channels view "+view.view_id+" with size "+view.vs.addresses.length);
         
 	  view.vs.version="MULTI";
+	  vs = view.vs;
 	  
 	  Iterator<Channel> it = channels.keySet().iterator();
 	  for ( ; it.hasNext() ; ){
@@ -146,6 +177,24 @@ public class VSyncMultiplexerSession extends Session {
 	    view.go();
 	  } catch (AppiaEventException e1) {
 	    e1.printStackTrace();
+	  }
+
+	  // dump pending events
+	  if(!pendingEvents.isEmpty()){
+	      Iterator<GroupSendableEvent> eventIt = pendingEvents.iterator();
+	      while(eventIt.hasNext()){
+	          GroupSendableEvent ev = eventIt.next();
+	          if(ev.view_id.equals(vs.id)){
+	              eventIt.remove();
+	              try {
+	                  ev.go();
+	              } catch (AppiaEventException e) {
+	                  e.printStackTrace();
+	              }
+	          }
+	          else 
+	              break;
+	      }
 	  }
 	}
 
