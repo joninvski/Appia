@@ -391,19 +391,16 @@ public class TOPSession extends Session implements InitializableSession {
 		// FIXME: reset if view ID is not the same... verify this code!!!
 		if(currentWaitingViewID == null)
 		    currentWaitingViewID = e.view_id;
-		
-		if(e.view_id.equals(currentWaitingViewID)){
-		    if(numberOfViews < numberOfChannels){
-		        numberOfViews++;
-		        return;
-		    }
-		}
-		else{
-	        numberOfViews = 1;
-	        currentWaitingViewID = e.view_id;
-		    return;
+		else if(!e.view_id.equals(currentWaitingViewID)){ //reset...
+            numberOfViews = 1;
+            currentWaitingViewID = e.view_id;
 		}
 		
+		if(numberOfViews < numberOfChannels){
+                numberOfViews++;
+                return;
+		}
+
 		numberOfViews = 1;
 		isBlocked = false;
 		vs = e.vs;
