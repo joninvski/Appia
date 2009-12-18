@@ -115,13 +115,13 @@ public class VSyncMultiplexerSession extends Session {
 	}
 
 	private void handleGroupSendable(GroupSendableEvent ev){
-	    if(ev instanceof AckViewEvent && ev.getDir() == Direction.UP){
-	        System.out.println("Multiplexer: received event: "+ev+" FROM "+ev.orig);
-	        System.out.println("ACK: "+ev.getChannel().getChannelID()+" "+ev.view_id);
-	    }
+//	    if(ev instanceof AckViewEvent && ev.getDir() == Direction.UP){
+//	        System.out.println("Multiplexer: received event: "+ev+" FROM "+ev.orig);
+//	        System.out.println("ACK: "+ev.getChannel().getChannelID()+" "+ev.view_id);
+//	    }
 	    
 	    if(ev.getDir() == Direction.UP && (vs == null || !vs.id.equals(ev.view_id))){
-	        System.out.println("Multiplexer: holding event "+ev);
+//	        System.out.println("Multiplexer: holding event "+ev);
 	        pendingEvents.add(ev);
 	    }
         else
@@ -165,6 +165,7 @@ public class VSyncMultiplexerSession extends Session {
 	      try {
 	          System.out.println("Multiplexer: sending to "+c.getChannelID());
 	        View copy = new View(view.vs, view.ls, c, view.getDir(), this);
+	        copy.setPriority(copy.getPriority()+1);
 	        copy.go();
 	      } catch (AppiaEventException e2) {
 	        e2.printStackTrace();
