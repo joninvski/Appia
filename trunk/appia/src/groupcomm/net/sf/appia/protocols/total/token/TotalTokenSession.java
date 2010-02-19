@@ -23,6 +23,10 @@ package net.sf.appia.protocols.total.token;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
+import javax.management.Attribute;
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanOperationInfo;
+
 import net.sf.appia.core.AppiaError;
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.AppiaException;
@@ -36,6 +40,8 @@ import net.sf.appia.core.events.SendableEvent;
 import net.sf.appia.core.events.channel.ChannelClose;
 import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.core.message.Message;
+import net.sf.appia.management.AppiaManagementException;
+import net.sf.appia.management.ManagedSession;
 import net.sf.appia.protocols.group.LocalState;
 import net.sf.appia.protocols.group.ViewState;
 import net.sf.appia.protocols.group.events.GroupSendableEvent;
@@ -53,7 +59,7 @@ import org.apache.log4j.Logger;
  * @author Nuno Carvalho
  *
  */
-public class TotalTokenSession extends Session implements InitializableSession {
+public class TotalTokenSession extends Session implements InitializableSession, ManagedSession {
 
 	private static Logger log = Logger.getLogger(TotalTokenSession.class);
 
@@ -70,6 +76,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 	
     private boolean sentExplicitToken = false;
     private long silentPeriod = DEFAULT_SILENT_PERIOD;
+    private Measures measures;
 	
 	public TotalTokenSession(Layer layer) {
 		super(layer);
@@ -79,6 +86,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
 		rankWidthToken = 0;
 		numMessagesPerToken = DEFAULT_NUM_MESSAGES_PER_TOKEN;
 		isBlocked = true;
+		measures = new Measures(this);
 	}
 
       /**
@@ -295,7 +303,7 @@ public class TotalTokenSession extends Session implements InitializableSession {
         }
     }
     
-	private boolean iHaveToken(){
+	protected boolean iHaveToken(){
 		return (rankWidthToken == localState.my_rank);
 	}
 	
@@ -371,25 +379,49 @@ public class TotalTokenSession extends Session implements InitializableSession {
 			}			
 		}
 	}
-	
-	  private void storeUndelivered(GroupSendableEvent ev, long seq) {
-		  ev.getMessage().pushLong(seq);
-		    final ListIterator<GroupSendableEvent> aux=undeliveredMessages.listIterator();
-		    while (aux.hasPrevious()) {
-		      final SendableEvent evaux=(SendableEvent)aux.previous();
-		      final long seqaux= evaux.getMessage().peekLong();
-		      if (seqaux == seq) {
-		        //debug("Received undelivered message already stored. Discarding new copy.");
-		        return;
-		      }
-		      if (seqaux < seq) {
-		        aux.next();
-		        aux.add(ev);
-		        return;
-		      }
-		    }
-		    undeliveredMessages.addFirst(ev);
-		  }
+
+	private void storeUndelivered(GroupSendableEvent ev, long seq) {
+	    ev.getMessage().pushLong(seq);
+	    if  (undeliveredMessages.isEmpty()) {
+	        undeliveredMessages.add(ev);
+	        return;
+	    }
+	    final ListIterator<GroupSendableEvent> aux=undeliveredMessages.listIterator();
+	    while (aux.hasNext()) {
+	        final SendableEvent evaux=(SendableEvent)aux.next();
+	        final long seqaux= evaux.getMessage().peekLong();
+	        if (seqaux == seq) {
+	            log.debug("Received undelivered message already stored. Discarding new copy.");
+	            return;
+	        }
+	        if (seq < seqaux) {
+	            aux.previous();
+	            aux.add(ev);
+	            return;
+	        }
+	    }
+	    undeliveredMessages.addLast(ev);
+	}
+
+	public Object attributeGetter(String attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+	    return measures.attributeGetter(attribute, info);
+	}
+
+	public void attributeSetter(Attribute attribute, MBeanAttributeInfo info) throws AppiaManagementException {
+	    measures.attributeSetter(attribute, info);
+	}
+
+	public MBeanAttributeInfo[] getAttributes(String sessionID) {
+	    return measures.getAttributes(sessionID);
+	}
+
+	public MBeanOperationInfo[] getOperations(String sessionID) {
+	    return null;
+	}
+
+	public Object invoke(String action, MBeanOperationInfo info, Object[] params, String[] signature) throws AppiaManagementException {
+	    return measures.invoke(action, info, params, signature);
+	}
 
 
 }
