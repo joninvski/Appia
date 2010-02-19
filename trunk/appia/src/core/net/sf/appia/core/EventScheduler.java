@@ -68,7 +68,7 @@ public class EventScheduler {
     ) {
       if (event.getDir() == currentDirection) {
         
-        if (mainHead == null) {
+        if (mainHead == null) { // if queue is empty
           event.setSchedulerData(null);
           mainHead=mainTail=event;
         } else {
@@ -86,7 +86,7 @@ public class EventScheduler {
         }
         mainLast=event;
         
-      } else {
+      } else { // inserting in the opposite direction
         event.setSchedulerData(null);
         if (reverseHead == null)
           reverseHead=event;
@@ -94,7 +94,7 @@ public class EventScheduler {
           reverseTail.setSchedulerData(event);
         reverseTail=event;
       }
-    } else {
+    } else { // inserting on a different channel, etc
     	synchronized (this) {
     		event.setSchedulerData(null);
     		if(waitingTail == null || event.getPriority() <= waitingTail.getPriority()){
