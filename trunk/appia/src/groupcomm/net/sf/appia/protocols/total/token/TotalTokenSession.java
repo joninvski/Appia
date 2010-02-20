@@ -271,10 +271,10 @@ public class TotalTokenSession extends Session implements InitializableSession, 
 			}
 			
 			if(iHaveToken() && ! isBlocked)
-                if(sentExplicitToken && localState.my_rank == 0 && event instanceof TokenEvent
-                        && pendingMessages.isEmpty())
-                    insertTokenDelay(event.getChannel());
-                else
+//                if(sentExplicitToken && localState.my_rank == 0 && event instanceof TokenEvent
+//                        && pendingMessages.isEmpty())
+//                    insertTokenDelay(event.getChannel());
+//                else
                     sendMessages(event.getChannel());
 		}
 	}
