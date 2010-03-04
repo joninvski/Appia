@@ -354,6 +354,8 @@ public class EventScheduler {
 
         boolean queueBlocked = blocked.get(currentChannel.channelID).get(currentSessionQueueIndex);
         
+        //%%%%%%%%%%%%%%%%%%%%%%%%%% BLOQUEIO DAS FILAS
+        
         if(!queueBlocked) //se a fila não estiver bloqueada retorna o evento
             return vectors[currentSessionQueueIndex].remove(0);
         else{ //se a fila estiver bloqueada não consome eventos
