@@ -59,10 +59,13 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 
+import org.apache.log4j.Logger;
+
 
 import net.sf.appia.core.*;
 import net.sf.appia.core.memoryManager.*;
 import net.sf.appia.core.message.MsgBuffer;
+import net.sf.appia.protocols.group.sync.VSyncSession;
 import net.sf.appia.protocols.utils.ParseUtils;
 
 
@@ -76,6 +79,7 @@ import net.sf.appia.protocols.utils.ParseUtils;
  * @version 1.0
  */
 public class Message implements Cloneable {
+    private static Logger log = Logger.getLogger(Message.class);
 
     private HashMap<String, Object> elements;
 
@@ -158,21 +162,20 @@ public class Message implements Cloneable {
         if (AppiaConfig.QUOTA_ON)
             bind(length);
 
-        int i = ParseUtils.byteArrayToInt(data, offset+length-4);
+        int i = ParseUtils.byteArrayToInt(data, offset+length-INTSIZE);
     
-        Block b = new Block(data, offset , length-4-i, offset);
+        Block b = new Block(data, offset , length-INTSIZE-i, offset);
         first = b;
-        size = length;
+        size = length-INTSIZE-i; // Bugfix? old:size=length vs new:size=length-INTSIZE-i
         init();
 
         //added April 2009
         //Desserializes the hashmap that contains the pool of headers 
         byte[] hash = new byte[i];
-        System.arraycopy(data, offset+length-4-i, hash, 0, i);
+        System.arraycopy(data, offset+length-INTSIZE-i, hash, 0, i);
 
         ByteArrayInputStream bin = new ByteArrayInputStream(hash);  
         ObjectInputStream in;
-        HashMap<String, Object> hashmap = null;
           
        try {
             in = new ObjectInputStream(bin);
@@ -180,10 +183,8 @@ public class Message implements Cloneable {
             in.close();  
 
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         
@@ -355,7 +356,7 @@ public class Message implements Cloneable {
      */
     public void discardAll(){
         if (AppiaConfig.QUOTA_ON)
-            unBind(size);	  
+            unBind(size);     
         size = 0;
         while(first != null){
             first.refs--;
@@ -691,9 +692,11 @@ public class Message implements Cloneable {
             off += b.len;
         }
 
+        // copy "hash" from 0 to "array" from off --- sizeH units
         System.arraycopy(hash, 0, array, off, sizeH);
         off += sizeH;
 
+        // convert sizeH to a byte array and put it starting in array[off]
         ParseUtils.intToByteArray(sizeH, array, off);        
         off += INTSIZE;
   
@@ -963,7 +966,7 @@ public class Message implements Cloneable {
                     throw new AppiaOutOfMemory("" + this.getClass().getName() + " : setMemoryManager");
                 memoryManager.free(size);
             }
-            memoryManager = newMM;			
+            memoryManager = newMM;          
         }
         // just for debugging
         if (AppiaConfig.MM_DEBUG_ON && debug != null)
@@ -2003,7 +2006,7 @@ public class Message implements Cloneable {
         if (aos == null)
             aos=new AuxOutputStream();
         if (ais == null)
-            ais=new AuxInputStream();	
+            ais=new AuxInputStream();   
 
         byte[] aux = new byte[24];
         aos.setBuffer(aux, 0, aux.length);
@@ -2118,7 +2121,7 @@ public class Message implements Cloneable {
      * @param header the header to be added to the messsage
      */
     public void addHeader(String label, Object header){
-
+        log.debug("addHeader("+label+")");
         if(elements == null){
             elements = new HashMap<String, Object>();
         }
@@ -2132,6 +2135,13 @@ public class Message implements Cloneable {
      * @return the header associated with the given label
      */
     public Object getHeader(String label){
+        if (elements.containsKey(label))
+            log.debug("getHeader("+label+")");
+        else {
+            log.debug("WARNING: getHeader("+label+") that header doesn't exist!");
+            return null;
+        }
+        
         return elements.get(label);
     }
     
@@ -2140,6 +2150,7 @@ public class Message implements Cloneable {
      * @param label label the label that represents the header to remove
      */
     public void removeHeader(String label){
+        log.debug("removeHeader("+label+")");
         elements.remove(label);
     }
     
@@ -2149,9 +2160,21 @@ public class Message implements Cloneable {
      * @return true if the header exists in the pool, false if not
      */
     public boolean hasHeader(String label){
+        log.debug("hasHeader("+label+")");
         return elements.containsKey(label);  
+    }
+
+    /**
+     * Produces a textual representation of the headers present in the
+     * message
+     */
+    public String headers() {
+        String hs = "Message headers: ";
+        for(String header : elements.keySet())
+            hs = hs + header + " ";
+        
+        return hs;
     }
     
 
 } // end of class Message
-
