@@ -385,7 +385,7 @@ public class TOPSession extends Session implements InitializableSession {
 	 * @param e the new view
 	 */
 	private void handleNewView(View e) {
-        System.out.println("TOP: Received view from channel "+e.getChannel().getChannelID()+" WITH ID "+e.vs.id);
+//        System.out.println("TOP: Received view from channel "+e.getChannel().getChannelID()+" WITH ID "+e.vs.id);
 		logger.debug("Received view from channel "+e.getChannel().getChannelID());
 		
 		// FIXME: reset if view ID is not the same... verify this code!!!

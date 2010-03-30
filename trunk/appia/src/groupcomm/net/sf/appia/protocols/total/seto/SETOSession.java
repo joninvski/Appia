@@ -237,7 +237,7 @@ public class SETOSession extends Session implements InitializableSession {
         
         pendingView = view;
         
-        System.out.println("SETO: received view "+vs.id);
+//        System.out.println("SETO: received view "+vs.id);
         
         if (vs_old != null) {
             survivors = vs.getSurvivingMembers(vs_old);
@@ -265,7 +265,7 @@ public class SETOSession extends Session implements InitializableSession {
 	
     private void ackView(Channel ch) {
         try {
-            System.out.println("SETO: sending ack for view "+vs.id);
+//            System.out.println("SETO: sending ack for view "+vs.id);
             AckViewEvent ack = new AckViewEvent(ch, Direction.DOWN, this, vs.group, vs.id);
 //            int dest[] = new int[survivors.length];
 //            for (int i = 0; i < dest.length; i++)
@@ -290,11 +290,11 @@ public class SETOSession extends Session implements InitializableSession {
                 deliverPendingView();
             }
         }
-        System.out.println("SETO: received Ack for view "+ack.view_id+" Num "+ackCounter+" from "+ack.orig+" I am "+ls.my_rank);
+//        System.out.println("SETO: received Ack for view "+ack.view_id+" Num "+ackCounter+" from "+ack.orig+" I am "+ls.my_rank);
     }
     
     private void deliverPendingView() {
-        System.out.println("SETO: delivering view "+pendingView.vs.id);
+//        System.out.println("SETO: delivering view "+pendingView.vs.id);
         try {
             pendingView.go();
         } catch (AppiaEventException e) {

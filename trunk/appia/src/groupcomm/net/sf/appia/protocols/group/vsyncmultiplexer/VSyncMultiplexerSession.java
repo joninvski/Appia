@@ -41,7 +41,6 @@ import net.sf.appia.protocols.group.ViewState;
 import net.sf.appia.protocols.group.events.GroupSendableEvent;
 import net.sf.appia.protocols.group.intra.View;
 import net.sf.appia.protocols.group.sync.BlockOk;
-import net.sf.appia.protocols.total.seto.AckViewEvent;
 
 import org.apache.log4j.Logger;
 
@@ -153,7 +152,7 @@ public class VSyncMultiplexerSession extends Session {
 	private void handleView(View view) {
         
 	    log.debug("Replicating view to all channels view "+view.view_id+" with size "+view.vs.addresses.length);
-	    System.out.println("Multiplexer: Replicating view to all channels view "+view.view_id+" with size "+view.vs.addresses.length);
+//	    System.out.println("Multiplexer: Replicating view to all channels view "+view.view_id+" with size "+view.vs.addresses.length);
         
 	  view.vs.version="MULTI";
 	  vs = view.vs;
@@ -163,7 +162,7 @@ public class VSyncMultiplexerSession extends Session {
 	    Channel c = it.next();
 	    if( ! c.equals(view.getChannel())){
 	      try {
-	          System.out.println("Multiplexer: sending to "+c.getChannelID());
+//	          System.out.println("Multiplexer: sending to "+c.getChannelID());
 	        View copy = new View(view.vs, view.ls, c, view.getDir(), this);
 	        copy.setPriority(copy.getPriority()+1);
 	        copy.go();
@@ -174,7 +173,7 @@ public class VSyncMultiplexerSession extends Session {
 	  }
 	  
 	  try {
-          System.out.println("Multiplexer: sending to "+view.getChannel().getChannelID());
+//          System.out.println("Multiplexer: sending to "+view.getChannel().getChannelID());
 	    view.go();
 	  } catch (AppiaEventException e1) {
 	    e1.printStackTrace();
