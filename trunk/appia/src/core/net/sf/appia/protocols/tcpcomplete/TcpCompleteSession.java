@@ -211,7 +211,7 @@ public class TcpCompleteSession extends Session
     if(ourPort < 0){
         if(e.port == RegisterSocketEvent.FIRST_AVAILABLE){
             try {
-                ss = new ServerSocket(0);
+                ss = new ServerSocket(0, 50, e.localHost);
             } catch (IOException ex) {
                 log.debug("Exception when trying to create a server socket in First Available mode: "+ex);
             }
@@ -225,7 +225,7 @@ public class TcpCompleteSession extends Session
                 p = rand.nextInt(Short.MAX_VALUE);
                 
                 try {
-                    ss = new ServerSocket(p);
+                    ss = new ServerSocket(p, 50, e.localHost);
                     done = true;
                 } catch(IllegalArgumentException ex){
                     log.debug("Exception when trying to create a server socket in Randomly Available mode: "+ex);
@@ -236,7 +236,7 @@ public class TcpCompleteSession extends Session
         }
         else{
             try {
-                ss = new ServerSocket(e.port);
+                ss = new ServerSocket(e.port, 50, e.localHost);
             } catch (IOException ex) {
                 log.debug("Exception when trying to create a server socket using the port: "+e.port+"\nException: "+ex);
             }
@@ -253,7 +253,7 @@ public class TcpCompleteSession extends Session
       t.setName("TCP Accept thread from port "+ourPort);
       t.start();
       
-      e.localHost=HostUtils.getLocalAddress();
+      e.localHost=ss.getInetAddress();
       e.port=ourPort;
       e.error=false;
     } else {
