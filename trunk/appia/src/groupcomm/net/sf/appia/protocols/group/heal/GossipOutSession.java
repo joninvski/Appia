@@ -350,6 +350,7 @@ public class GossipOutSession extends Session implements InitializableSession {
             oCursor.setSession(this);
 
             oChannel.start();
+            outCreated = true;
 
             if (debugFull) {
                 log.debug("Sharing UDP ? "+(udp_layer_class == null)+" (share_udp="+share_udp+" udp_layer="+udp_layer_name+" main_bottom_layer="+main_bottom_layer+")");
