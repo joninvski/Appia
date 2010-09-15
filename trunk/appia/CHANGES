@@ -1,6 +1,30 @@
 ==========================
+16/09/2010   Version 4.1.1
+==========================
+
+(SVN revision 432)
+
+Removed NPE in ViewState.java;
+Added parameterized code in several classes;
+Fixed several bugs in the JMX management interfaces of Appia and added a wrapper for client applications to connect and manage an Appia process;
+Added management interfaces to the RemoteAddress protocol;
+Fixed some bugs in the JMX interfaces;
+Improved the code of the JMX interfaces and added the possibility to retrieve a local instance of the Channel dynamic managed bean;
+Improved the "open group" tests;
+Fixed minor issues in the TCPComplete protocol;
+Added the symmetric total order protocol;
+Added the hybrid total order protocol implemented by Pedro Vicente;
+Added a configuration for the uniformity info periodic timer;
+Solved an ArrayIndexOutOfBounds exception that hapened when Appia was configured to use several channels, the views were multiplexed and one of the channels is holding the view;
+Added JMX management to the token based total order protocol;
+Removed (commented) the code that delays the rotation of the token;
+Bugfix on the register socket event when the user wanted to bind to a specific address.
+
+==========================
 16/01/2009   Version 4.1.0
 ==========================
+
+(SVN revision 387)
 
 Refactored all the code to separate the Appia core and the group communication protocols.
 With this change, now the Appia core can be used without having to carry lots of uneeded
