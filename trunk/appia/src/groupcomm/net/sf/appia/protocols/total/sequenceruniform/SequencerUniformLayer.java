@@ -40,9 +40,9 @@ import net.sf.appia.protocols.total.common.UniformTimer;
  * @author nunomrc
  *
  */
-public class SETOLayer extends Layer {
+public class SequencerUniformLayer extends Layer {
 
-	public SETOLayer(){
+	public SequencerUniformLayer(){
 		super();
 		evAccept = new Class[]{
 				ChannelInit.class,
@@ -69,7 +69,7 @@ public class SETOLayer extends Layer {
 	 * @see appia.Layer#createSession()
 	 */
 	public Session createSession() {
-		return new SETOSession(this);
+		return new SequencerUniformSession(this);
 	}
 
 }

@@ -61,9 +61,9 @@ import org.apache.log4j.Logger;
  * 
  * @author Nuno Carvalho and Jose Mocito
  */
-public class SETOSession extends Session implements InitializableSession {
+public class SequencerUniformSession extends Session implements InitializableSession {
 	
-	private static Logger log = Logger.getLogger(SETOSession.class);
+	private static Logger log = Logger.getLogger(SequencerUniformSession.class);
 	
 	private long globalSN;
 	private long localSN;
@@ -95,7 +95,7 @@ public class SETOSession extends Session implements InitializableSession {
 	 * 
 	 * @param layer
 	 */
-	public SETOSession(Layer layer) {
+	public SequencerUniformSession(Layer layer) {
 		super(layer);
 		reset();
 	}
@@ -598,20 +598,6 @@ public class SETOSession extends Session implements InitializableSession {
 		}
         deliverRegular();
 	}
-
-	// FIXME: why is this NOT being used???
-	private boolean hasMajority() {
-		if (vs_old != null) {
-			int count = 0;
-			for (int i = 0; i < vs_old.view.length; i++)
-				for (int j = 0; j < vs.view.length; j++)
-					if (vs_old.view[i].equals(vs.view[j]))
-						count++;
-			if (count >= vs.view.length / 2 + 1)
-				return true;
-		}
-		return false;
-	}
 	
     private int nextDeterministicCounter;
     /**
@@ -693,20 +679,6 @@ public class SETOSession extends Session implements InitializableSession {
 	}
 	
 	/**
-	 * Get the next ordered message.
-	 */
-	private ListSEQContainer getOrderedMessage(long ord){
-		for (ListIterator<ListSEQContainer> li=S.listIterator(); li.hasNext();){
-			ListSEQContainer cont = li.next();
-			if(cont.header.order == ord){
-				li.remove();
-				return cont;
-			}
-		}
-		return null;
-	}
-
-	/**
 	 * List the order.<br>
 	 * <b>FOR DEBUGGING PURPOSES ONLY!</b>
 	 */
@@ -714,17 +686,6 @@ public class SETOSession extends Session implements InitializableSession {
 	    for (ListSEQContainer cont : S){
             log.debug("Element: "+cont.header);
 	    }
-	}
-
-	/**
-	 * MAX of a list of numbers.
-	 */
-	private long max(long[] a){
-		long m=a[0];
-		for(int i=1; i< a.length; i++)
-			if(a[i]>m)
-				m=a[i];
-		return m;
 	}
 	
 	/**
