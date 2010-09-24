@@ -27,17 +27,20 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
+import org.apache.log4j.Logger;
+
 import net.sf.appia.core.Channel;
 import net.sf.appia.protocols.utils.ParseUtils;
 
 
 
 /**
- * @author pedrofrv
+ * @author Pedro Vicente
  *
  */
 public class AcceptReader implements Runnable {
   
+    private static Logger log = Logger.getLogger(AcceptReader.class);
     private static final int INT_SIZE = 4;
     
   private ServerSocket socket;
@@ -72,13 +75,13 @@ public class AcceptReader implements Runnable {
     while(isRunning()){
       newSocket=null;
       
-      if(TcpCompleteConfig.debugOn)
-        debug("accepting connections");
+      if(log.isDebugEnabled())
+        log.debug("accepting connections");
       
       try {
         newSocket = socket.accept();
-        if(TcpCompleteConfig.debugOn)
-          debug("new connection");
+        if(log.isDebugEnabled())
+          log.debug("new connection");
       } catch(SocketTimeoutException ste){
       } catch (IOException ex) {
           if(isRunning())
@@ -99,11 +102,11 @@ public class AcceptReader implements Runnable {
             else
               session.addSocket(session.ourReaders,iwp,newSocket,channel);
           }
-          if(TcpCompleteConfig.debugOn)
-            debug("created socket");
+          if(log.isDebugEnabled())
+            log.debug("created socket");
         } catch (IOException ex) {
-          if(TcpCompleteConfig.debugOn)
-            debug("error initiating connection. closing connection.");
+          if(log.isDebugEnabled())
+            log.debug("error initiating connection. closing connection.");
           try {
             newSocket.close();
           } catch (IOException ex1) {}
@@ -126,8 +129,8 @@ public class AcceptReader implements Runnable {
     
     port = ParseUtils.byteArrayToInt(bufferPort,0);
     
-    if(TcpCompleteConfig.debugOn)
-      debug("received remote port:: "+port);
+    if(log.isDebugEnabled())
+      log.debug("received remote port:: "+port);
     
     return port;
   }
@@ -161,7 +164,4 @@ public class AcceptReader implements Runnable {
         return socket.getLocalPort();
     }
     
-  private void debug(String msg){
-    //	System.out.println("[AcceptReader]:: "+msg);
-  }
 }

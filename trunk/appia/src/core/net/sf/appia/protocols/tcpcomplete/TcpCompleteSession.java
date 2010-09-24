@@ -177,8 +177,8 @@ public class TcpCompleteSession extends Session
 		  return;
 	  }
 	  
-    if(TcpCompleteConfig.debugOn)
-      debug("preparing to send ::"+e+" CHANNEL: "+e.getChannel().getChannelID());
+    if(log.isDebugEnabled())
+      log.debug("preparing to send ::"+e+" CHANNEL: "+e.getChannel().getChannelID());
     
     byte[] data=format(e);
     
@@ -379,32 +379,32 @@ public class TcpCompleteSession extends Session
       if(existsSocket(ourReaders,dest)){
         //if so use that socket
         container = getSocket(ourReaders,dest);
-        if(TcpCompleteConfig.debugOn)
-          debug("our socket, sending...");
+        if(log.isDebugEnabled())
+          log.debug("our socket, sending...");
       }
 //    check if socket exist in sockets created by the other
       else if(existsSocket(otherReaders,dest)){
           //if so	use that socket
           container = getSocket(otherReaders,dest);
-          if(TcpCompleteConfig.debugOn)
-            debug("other socket, sending...");
+          if(log.isDebugEnabled())
+            log.debug("other socket, sending...");
         }
         else{//if not
           //create new socket and put it open sockets created by us
           container = createSocket(ourReaders,dest,channel);
-          if(TcpCompleteConfig.debugOn)
-            debug("created new socket, sending...");
+          if(log.isDebugEnabled())
+            log.debug("created new socket, sending...");
         }
       //send event by the chosen socket -> formatAndSend()
-      if (TcpCompleteConfig.debugOn)
-        debug("Adding to socket Queue of "+container.sender+" Queue has now #Items: "+container.sender.getQueue().getSize());
+      if (log.isDebugEnabled())
+        log.debug("Adding to socket Queue of "+container.sender+" Queue has now #Items: "+container.sender.getQueue().getSize());
       measures.countBytesDown(data.length);
       measures.countMessagesDown(1);      
       container.sender.getQueue().add(new MessageContainer(data,dest,channel));
     } catch (IOException ex) {
-      if(TcpCompleteConfig.debugOn) {
+      if(log.isDebugEnabled()) {
         ex.printStackTrace();
-        debug("Node "+dest+" failed.");
+        log.debug("Node "+dest+" failed.");
       }
     }
   }
@@ -441,8 +441,8 @@ public class TcpCompleteSession extends Session
       
       
       newSocket.getOutputStream().write(bPort);
-      if(TcpCompleteConfig.debugOn)
-        debug("Sending our original port "+ourPort);
+      if(log.isDebugEnabled())
+        log.debug("Sending our original port "+ourPort);
 
       return addSocket(hr, iwp, newSocket, channel);
     }
@@ -472,8 +472,8 @@ public class TcpCompleteSession extends Session
       else if(existsSocket(otherReaders,iwp))
           otherReaders.remove(iwp).close();
       else{
-        if(TcpCompleteConfig.debugOn)
-          debug("No socket to remove.");
+        if(log.isDebugEnabled())
+          log.debug("No socket to remove.");
       }
     }
   }
@@ -544,10 +544,6 @@ public class TcpCompleteSession extends Session
       }
       removeSocket(who);
   }
-
-  private void debug(String msg){
-  		log.debug(msg);
-  }
   
   protected int getGlobalQueueSize(){
       int sum=0;
@@ -583,24 +579,26 @@ public class TcpCompleteSession extends Session
               if(container == null)
                   continue;
               try {
-                  if (TcpCompleteConfig.debugOn)
-                      debug("Sending message to the socket for "+container.who+" with "+container.data.length+" bytes");
+                  if (log.isDebugEnabled())
+                      log.debug("Sending message to the socket for "+container.who+" with "+container.data.length+" bytes");
                   socket.getOutputStream().write(container.data);
-                  if (TcpCompleteConfig.debugOn)
-                      debug("Flushing data...");
+                  if (log.isDebugEnabled())
+                      log.debug("Flushing data...");
                   socket.getOutputStream().flush();
-                  if (TcpCompleteConfig.debugOn)
-                      debug("Flushing done...");
+                  if (log.isDebugEnabled())
+                      log.debug("Flushing done...");
               } catch (IOException e) {
                   if(isRunning()){
                       sendASyncUndelivered(container.channel, container.who);
-                      if(TcpCompleteConfig.debugOn)
-                          e.printStackTrace();
+                      if(log.isDebugEnabled()){
+                          log.debug("Exception when send ASyncUndelivered:\n");
+                          e.printStackTrace();                          
+                      }
                   }
               }
           }
           try {
-              if(TcpCompleteConfig.debugOn && log.isDebugEnabled())
+              if(log.isDebugEnabled())
                   log.debug("Closing socket "+socket);
             socket.close();
         } catch (IOException e) {

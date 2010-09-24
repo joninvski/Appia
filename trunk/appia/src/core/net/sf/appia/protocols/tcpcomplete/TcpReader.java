@@ -34,7 +34,7 @@ import net.sf.appia.protocols.utils.ParseUtils;
 import org.apache.log4j.Logger;
 
 /**
- * @author pedrofrv
+ * @author Pedro Vicente
  *
  */
 public class TcpReader implements Runnable {
@@ -74,7 +74,7 @@ public class TcpReader implements Runnable {
 		} catch (IOException ex) {
 			InetSocketAddress iwp = new InetSocketAddress(s.getInetAddress(),remotePort);
 
-			if(TcpCompleteConfig.debugOn && log.isDebugEnabled()){
+			if(log.isDebugEnabled()){
 				log.debug("message reception from "+iwp+" failed. Sending Undelivered event back. Exception:");
                 ex.printStackTrace();
             }            
@@ -93,7 +93,7 @@ public class TcpReader implements Runnable {
 		        event = receiveAndFormat();
 		        clearInactiveCounter();
 		        if(event != null){
-		            if(TcpCompleteConfig.debugOn && log.isDebugEnabled())
+		            if(log.isDebugEnabled())
 		                log.debug("received an event. sending it to the appia stack: "+event+" Channel: "+event.getChannel());
 		            event.asyncGo(event.getChannel(), Direction.UP);
 		            measures.countBytesUp(event.getMessage().length());
@@ -104,11 +104,11 @@ public class TcpReader implements Runnable {
 		    } catch(SocketTimeoutException ste){
 		        log.debug("TIMEOUT EXCEPTION");
 		    } catch (IOException ex) {
-		        //send_undelivered :(
+		        //send undelivered event
 		        try {
 		            InetSocketAddress iwp = new InetSocketAddress(s.getInetAddress(),remotePort);
 
-		            if(TcpCompleteConfig.debugOn && log.isDebugEnabled()){
+		            if(log.isDebugEnabled()){
 		                log.debug("Message reception from "+iwp+" failed. Send undelivered event up.");
 		                ex.printStackTrace();
 		            }
@@ -197,24 +197,23 @@ public class TcpReader implements Runnable {
 			e.setMessage(msgChannel.getMessageFactory().newMessage(data,curPos,total-curPos));
         } catch(IOException ste){
         	throw ste;
-		}
-		catch(Exception ex) {
-			
-                  if (TcpCompleteConfig.debugOn) {
-                    ex.printStackTrace();
-                    System.err.println("Exception catched while processing message from "+s.getInetAddress().getHostName()+":"+remotePort+". Continuing operation.");
-                  }
-                  throw new IOException();
-		}
-
-		return e;
-    	}
+        }
+        catch(Exception ex) {
+            if (log.isDebugEnabled()) {
+                ex.printStackTrace();
+                log.debug("Exception catched while processing message from "+s.getInetAddress().getHostName()+":"+remotePort+". Continuing operation.");
+            }
+            throw new IOException(ex);
+        }
+        return e;
+	}
 	
 	public synchronized void setRunning(boolean r){
 		running = r;
 		if(!running && !s.isClosed())
 		try {
-            s.shutdownInput();
+//            s.shutdownInput();
+            s.close();
         } catch (SocketException se){
             if(log.isDebugEnabled())
                 se.printStackTrace();

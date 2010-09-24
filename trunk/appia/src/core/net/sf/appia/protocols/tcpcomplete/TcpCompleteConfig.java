@@ -23,7 +23,9 @@
  * @author pedrofrv
  *
  */
+@Deprecated
 public class TcpCompleteConfig {
 
-	public static final boolean debugOn = false;
+    @Deprecated
+	public static final boolean debugOn = true;
 }
