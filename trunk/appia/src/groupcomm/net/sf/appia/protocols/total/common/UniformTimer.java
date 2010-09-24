@@ -18,7 +18,7 @@
  * Initial developer(s): Jose Mocito.
  * Contributor(s): See Appia web page for a list of contributors.
  */
- package net.sf.appia.protocols.total.seto;
+ package net.sf.appia.protocols.total.common;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.AppiaException;

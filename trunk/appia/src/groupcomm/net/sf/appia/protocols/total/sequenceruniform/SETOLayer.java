@@ -18,7 +18,7 @@
  * Initial developer(s): Nuno Carvalho and Jose' Mocito.
  * Contributor(s): See Appia web page for a list of contributors.
  */
-package net.sf.appia.protocols.total.seto;
+package net.sf.appia.protocols.total.sequenceruniform;
 
 import net.sf.appia.core.Layer;
 import net.sf.appia.core.Session;
@@ -30,7 +30,6 @@ import net.sf.appia.protocols.group.leave.LeaveEvent;
 import net.sf.appia.protocols.group.sync.BlockOk;
 import net.sf.appia.protocols.total.common.AckViewEvent;
 import net.sf.appia.protocols.total.common.RegularServiceEvent;
-import net.sf.appia.protocols.total.common.SETOServiceEvent;
 import net.sf.appia.protocols.total.common.SeqOrderEvent;
 import net.sf.appia.protocols.total.common.UniformInfoEvent;
 import net.sf.appia.protocols.total.common.UniformServiceEvent;
@@ -53,7 +52,6 @@ public class SETOLayer extends Layer {
 				BlockOk.class,
                 AckViewEvent.class,
 				SeqOrderEvent.class,
-				SETOTimer.class,
 				UniformTimer.class,
 				UniformInfoEvent.class,
                 LeaveEvent.class,
@@ -64,7 +62,6 @@ public class SETOLayer extends Layer {
 		evProvide = new Class[]{
 				UniformServiceEvent.class,
 				RegularServiceEvent.class,
-				SETOServiceEvent.class,
 		};
 	}
 	

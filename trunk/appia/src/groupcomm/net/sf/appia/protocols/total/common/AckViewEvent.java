@@ -1,6 +1,6 @@
 /**
  * Appia: Group communication and protocol composition framework library
- * Copyright 2006 University of Lisbon
+ * Copyright 2006-2007 University of Lisbon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
  * Initial developer(s): Nuno Carvalho and Jose' Mocito.
  * Contributor(s): See Appia web page for a list of contributors.
  */
-package net.sf.appia.protocols.total.seto;
+package net.sf.appia.protocols.total.common;
 
 import net.sf.appia.core.AppiaEventException;
 import net.sf.appia.core.Channel;
@@ -27,29 +27,22 @@ import net.sf.appia.protocols.group.Group;
 import net.sf.appia.protocols.group.ViewID;
 import net.sf.appia.protocols.group.events.GroupSendableEvent;
 
+public class AckViewEvent extends GroupSendableEvent {
 
-/**
- * Sequencer message containing the sequence number of some data message.
- * 
- * @author Nuno Carvalho
- */
-public class SeqOrderEvent extends GroupSendableEvent {
+    public AckViewEvent() {
+        super();
+    }
 
-	public SeqOrderEvent(Channel channel, int dir, Session source, Group group,
-			ViewID view_id) throws AppiaEventException {
-		super(channel, dir, source, group, view_id);
-	}
+    public AckViewEvent(Channel channel, int dir, Session source, Group group, ViewID view_id, Message omsg) throws AppiaEventException {
+        super(channel, dir, source, group, view_id, omsg);
+    }
 
-	public SeqOrderEvent() {
-		super();
-	}
+    public AckViewEvent(Channel channel, int dir, Session source, Group group, ViewID view_id) throws AppiaEventException {
+        super(channel, dir, source, group, view_id);
+    }
 
-	public SeqOrderEvent(Channel channel, int dir, Session source, Group group,
-			ViewID view_id, Message omsg) throws AppiaEventException {
-		super(channel, dir, source, group, view_id, omsg);
-	}
+    public AckViewEvent(Message omsg) {
+        super(omsg);
+    }
 
-	public SeqOrderEvent(Message omsg) {
-		super((Message) omsg);
-	}
 }

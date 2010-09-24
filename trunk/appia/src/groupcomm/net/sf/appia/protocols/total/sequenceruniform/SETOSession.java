@@ -1,7 +1,7 @@
 
 /**
  * Appia: Group communication and protocol composition framework library
- * Copyright 2006 University of Lisbon
+ * Copyright 2010 University of Lisbon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  * Initial developer(s): Nuno Carvalho and Jose' Mocito.
  * Contributor(s): See Appia web page for a list of contributors.
  */
-package net.sf.appia.protocols.total.seto;
+package net.sf.appia.protocols.total.sequenceruniform;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +40,6 @@ import net.sf.appia.core.events.channel.ChannelInit;
 import net.sf.appia.core.message.Message;
 import net.sf.appia.protocols.group.Endpt;
 import net.sf.appia.protocols.group.LocalState;
-import net.sf.appia.protocols.group.ViewID;
 import net.sf.appia.protocols.group.ViewState;
 import net.sf.appia.protocols.group.events.GroupSendableEvent;
 import net.sf.appia.protocols.group.intra.View;
@@ -48,7 +47,6 @@ import net.sf.appia.protocols.group.leave.LeaveEvent;
 import net.sf.appia.protocols.group.sync.BlockOk;
 import net.sf.appia.protocols.total.common.AckViewEvent;
 import net.sf.appia.protocols.total.common.RegularServiceEvent;
-import net.sf.appia.protocols.total.common.SETOServiceEvent;
 import net.sf.appia.protocols.total.common.SeqOrderEvent;
 import net.sf.appia.protocols.total.common.UniformInfoEvent;
 import net.sf.appia.protocols.total.common.UniformServiceEvent;
@@ -59,9 +57,7 @@ import net.sf.appia.xml.utils.SessionProperties;
 import org.apache.log4j.Logger;
 
 /**
- * Optimistical total order protocol implementing the algorithm described in the paper
- * <i>Optimistic Total Order in Wide Area Networks</i> from A. Sousa, J. Pereira,
- * F. Moura and R. Oliveira.
+ * Sequencer based total order protocol with optimistic deliveries. 
  * 
  * @author Nuno Carvalho and Jose Mocito
  */
@@ -69,10 +65,6 @@ public class SETOSession extends Session implements InitializableSession {
 	
 	private static Logger log = Logger.getLogger(SETOSession.class);
 	
-	private int lastsender;
-	private long lastfinal;
-	private long lastfast;
-	private double alfa;
 	private long globalSN;
 	private long localSN;
 	private long sendingLocalSN;
@@ -83,14 +75,11 @@ public class SETOSession extends Session implements InitializableSession {
 	private ViewState vs, vs_old = null;
 //	private Channel channel = null;
 	private TimeProvider timeProvider = null;
-	private final int seq = 0;
 	
 	
 	private LinkedList<ListContainer> R = new LinkedList<ListContainer>(); // Received 
 	private LinkedList<ListSEQContainer> S = new LinkedList<ListSEQContainer>();  // Sequence
-    private LinkedList<ListContainer> O = new LinkedList<ListContainer>();  // Optimistic
 	private LinkedList<ListSEQContainer> G = new LinkedList<ListSEQContainer>();  // Regular
-	private long [] delay = null, r_delay = null;
 	
 	private long[] lastOrderList;
 	private long timeLastMsgSent;
@@ -108,7 +97,6 @@ public class SETOSession extends Session implements InitializableSession {
 	 */
 	public SETOSession(Layer layer) {
 		super(layer);
-		alfa=0.95; // default
 		reset();
 	}
 
@@ -116,21 +104,16 @@ public class SETOSession extends Session implements InitializableSession {
        * Initializes the session using the parameters given in the XML configuration.
        * Possible parameters:
        * <ul>
-       * <li><b>alfa</b> is used to tune the protocol and is a value between 0 and 1.
+       * <li><b>uniform_info_period</b> is used to tune the periodic information exchange about uniformity of messages (ms).
        * </ul>
        * 
        * @param params The parameters given in the XML configuration.
        * @see net.sf.appia.xml.interfaces.InitializableSession#init(SessionProperties)
        */
 	public void init(SessionProperties params) {
-	    if(params.containsKey("alfa")){
-	        alfa = params.getDouble("alfa");			
-	    }
 	    if(params.containsKey("uniform_info_period")){
 	        uniformInfoPeriod = params.getLong("uniform_info_period");
 	    }
-
-	    log.info("Initializing static parameter alfa. Set to "+alfa);
 	}
 
 	/** 
@@ -148,8 +131,6 @@ public class SETOSession extends Session implements InitializableSession {
 			handleNewView((View)event);
         else if(event instanceof AckViewEvent)
             handleAckViewEvent((AckViewEvent) event);
-		else if(event instanceof SETOTimer)
-			handleTimer((SETOTimer)event);
 		else if(event instanceof SeqOrderEvent)
 			handleSequencerMessage((SeqOrderEvent)event);
 		else if (event instanceof UniformInfoEvent)
@@ -224,6 +205,7 @@ public class SETOSession extends Session implements InitializableSession {
         }
     }
 
+    //FIXME: check why this is not used
     private Endpt[] survivors;
     private View pendingView;
     
@@ -241,8 +223,6 @@ public class SETOSession extends Session implements InitializableSession {
         
         pendingView = view;
         
-//        System.out.println("SETO: received view "+vs.id);
-        
         if (vs_old != null) {
             survivors = vs.getSurvivingMembers(vs_old);
             convertUniformInfo();
@@ -255,22 +235,21 @@ public class SETOSession extends Session implements InitializableSession {
             ackView(view.getChannel());
 //            deliverPendingView();
         }
-
         reset();
-        delay = new long[vs.addresses.length];
-        Arrays.fill(delay,0);
-        r_delay = new long[vs.addresses.length];
-        Arrays.fill(r_delay,0);
-        
-		log.debug(vs.toString());
-		log.debug(ls.toString());
-		log.debug("NEW VIEW: My rank: "+ls.my_rank+" My ADDR: "+vs.addresses[ls.my_rank]);
+
+        if(log.isDebugEnabled()){
+            log.debug(vs.toString());
+            log.debug(ls.toString());
+            log.debug("NEW VIEW: My rank: "+ls.my_rank+" My ADDR: "+vs.addresses[ls.my_rank]);
+        }
 	}
 	
     private void ackView(Channel ch) {
         try {
-//            System.out.println("SETO: sending ack for view "+vs.id);
+            if(log.isDebugEnabled())
+                log.debug("Sending ack for view "+vs.id);
             AckViewEvent ack = new AckViewEvent(ch, Direction.DOWN, this, vs.group, vs.id);
+            //FIXME: why was this removed???
 //            int dest[] = new int[survivors.length];
 //            for (int i = 0; i < dest.length; i++)
 //                dest[i] = vs.getRank(survivors[i]);
@@ -294,11 +273,13 @@ public class SETOSession extends Session implements InitializableSession {
                 deliverPendingView();
             }
         }
-//        System.out.println("SETO: received Ack for view "+ack.view_id+" Num "+ackCounter+" from "+ack.orig+" I am "+ls.my_rank);
+        if(log.isDebugEnabled())
+            log.debug("Received Ack for view "+ack.view_id+" Num "+ackCounter+" from "+ack.orig+" I am "+ls.my_rank);
     }
     
     private void deliverPendingView() {
-//        System.out.println("SETO: delivering view "+pendingView.vs.id);
+        if(log.isDebugEnabled())
+            log.debug("Delivering view "+pendingView.vs.id);
         try {
             pendingView.go();
         } catch (AppiaEventException e) {
@@ -339,16 +320,17 @@ public class SETOSession extends Session implements InitializableSession {
                         event.getSourceSession()+". Ignoring it.");
                 return;
 			}
-			long msgDelay = max(delay) - delay[seq];
-			reliableDATAMulticast(event, msgDelay);
+			reliableDATAMulticast(event);
 		}
 		// events from the network
 		else {
-            if (pendingView != null) {
-                log.debug("Received GroupSendableEvent but still haven't delivered pending view");
-                log.debug("Buffering event for future delivery");
-                pendingMessages.add(event);
-            }
+		    if (pendingView != null) {
+		        if(log.isDebugEnabled()){
+		            log.debug("Received GroupSendableEvent but still haven't delivered pending view");
+		            log.debug("Buffering event for future delivery");
+		        }
+		        pendingMessages.add(event);
+		    }
             else {
                 reliableDATADeliver(event);
             }
@@ -359,15 +341,15 @@ public class SETOSession extends Session implements InitializableSession {
 	 * Multicast a DATA event to the group.
 	 * 
 	 * @param event the event to be multicast.
-	 * @param msgDelay the message delay associated with the event.
 	 */
-	private void reliableDATAMulticast(GroupSendableEvent event, long msgDelay) {
-		DATAHeader header = new DATAHeader(ls.my_rank, sendingLocalSN++, msgDelay);
-		DATAHeader.push(header,event.getMessage());
-		Message msg = event.getMessage();
+	private void reliableDATAMulticast(GroupSendableEvent event) {
+		Header header = new Header(ls.my_rank, sendingLocalSN++);
+        Message msg = event.getMessage();
+		header.pushMe(msg);
 		for (int i = 0; i < lastOrderList.length; i++)
 			msg.pushLong(lastOrderList[i]);
-		log.debug("Sending DATA message from appl. Rank="+ls.my_rank+" SN="+sendingLocalSN+" Delay="+msgDelay);
+		if(log.isDebugEnabled())
+		    log.debug("Sending DATA message from appl. Rank="+ls.my_rank+" SN="+(sendingLocalSN-1));
 		try {
 			event.go();
 		} catch (AppiaEventException e) {
@@ -387,14 +369,19 @@ public class SETOSession extends Session implements InitializableSession {
 		for (int i = uniformInfo.length; i > 0; i--)
 			uniformInfo[i-1] = msg.popLong();
 		mergeUniformInfo(uniformInfo);
-		DATAHeader header = DATAHeader.pop(event.getMessage());
-		log.debug("Received DATA message: "+header.id+":"+header.sn+" timestpamp is "+timeProvider.currentTimeMillis());
-		header.setTime(delay[header.id]+timeProvider.currentTimeMillis());
+		Header header = new Header();
+		header.popMe(event.getMessage());
+		if(log.isDebugEnabled())
+		    log.debug("Received DATA message: "+header.id+":"+header.sn+" timestpamp is "+timeProvider.currentTimeMillis());
 		ListContainer container = new ListContainer(event, header);
 		// add the event to the RECEIVED list...
 		R.addLast(container);
-		// ... and set a timer to be delivered later, according to the delay that came with the message
-		setTimer(container,delay[header.id],vs.id);
+        if(coordinator() && !isBlocked) {
+            if(log.isDebugEnabled())
+                log.debug("I'm the coordinator. Sending message to order");
+            globalSN++;
+            reliableSEQMulticast(container);
+        }
 		
 		// Deliver event to the upper layer (spontaneous order)
 		try {
@@ -407,53 +394,16 @@ public class SETOSession extends Session implements InitializableSession {
 	}
 	
 	/**
-	 * Received a message delayed by a timer.
-	 * @param timer
-	 */
-	private void handleTimer(SETOTimer timer) {
-		if (timer.vid.equals(vs.id)) {
-			long now = timeProvider.currentTimeMillis();
-			log.debug(ls.my_rank+": received timer on "+now);
-			deliverOptimistic(timer.container);
-		}
-		else
-			log.debug(ls.my_rank+": received SETOTimer from a previous view... discarding!");
-	}
-	
-	private void deliverOptimistic(ListContainer container) {
-		if (!O.contains(container)) {
-		    if(log.isDebugEnabled())
-		        log.debug("Delivering optimistic message.");
-			try {
-				SETOServiceEvent sse = new SETOServiceEvent(container.event.getChannel(), Direction.UP, this, container.event.getMessage());
-				sse.go();
-			} catch (AppiaEventException e1) {
-				e1.printStackTrace();
-			}
-			O.add(container);
-			if(coordinator() && !isBlocked) {
-				log.debug("I'm the coordinator. Sending message to order");
-				globalSN++;
-				reliableSEQMulticast(container);
-				r_delay[container.header.id] = container.header.get_delay();
-				delay[ls.my_rank] = max(r_delay);
-			}
-		}
-        else
-            O.remove(container);
-	}
-	
-	/**
 	 * Multicast a SEQUENCER message to the group.
 	 * 
 	 * @param container the container of the message to be sequenced.
 	 */
 	private void reliableSEQMulticast(ListContainer container) {
-		SEQHeader header = new SEQHeader(container.header.sender(), container.header.sn(), globalSN);
+		SEQHeader header = new SEQHeader(container.header.getId(), container.header.getSn(), globalSN);
 		SeqOrderEvent event;
 		try {
 			event = new SeqOrderEvent(container.event.getChannel(),Direction.DOWN,this,vs.group,vs.id);
-			SEQHeader.push(header,event.getMessage());
+			header.pushMe(event.getMessage());
 			Message msg = event.getMessage();
 			for (int i = 0; i < lastOrderList.length; i++)
 				msg.pushLong(lastOrderList[i]);
@@ -485,8 +435,10 @@ public class SETOSession extends Session implements InitializableSession {
 		for (int i = uniformInfo.length; i > 0; i--)
 			uniformInfo[i-1] = msg.popLong();
 		mergeUniformInfo(uniformInfo);
-		SEQHeader header = SEQHeader.pop(event.getMessage());
-		log.debug("["+ls.my_rank+"] Received SEQ message "+header.id+":"+header.sn+" timestamp is "+timeProvider.currentTimeMillis());
+		SEQHeader header = new SEQHeader();
+		header.popMe(event.getMessage());
+		if(log.isDebugEnabled())
+		    log.debug("["+ls.my_rank+"] Received SEQ message "+header.id+":"+header.sn+" timestamp is "+timeProvider.currentTimeMillis());
 		lastOrderList[ls.my_rank] = header.order;
 		newUniformInfo = true;
 		// add it to the sequencer list
@@ -522,38 +474,6 @@ public class SETOSession extends Session implements InitializableSession {
 	                e1.printStackTrace();
 	            }
 	            G.addLast(orderedMsg);
-
-	            // Avoid delivery of optimistic service after the regular service
-	            if (O.contains(msgContainer))
-	                O.remove(msgContainer);
-	            else
-	                O.add(msgContainer);
-
-	            if (pendingView == null) {
-	                // ADJUSTING DELAYS
-	                log.debug(ls.my_rank+": Adjusting delays...");
-	                long _final = orderedMsg.time;
-	                long _fast = msgContainer.header.getTime();
-	                int _sender = msgContainer.header.id;
-	                if(lastsender != -1){
-	                    log.debug("continuing adjusting the delays!");
-	                    log.debug("_final:"+_final+" | lastfinal:"+lastfinal+" | _fast:"+_fast+" | lastfast:"+lastfast);
-	                    long delta = (_final - lastfinal) - (_fast - lastfast);
-	                    log.debug("DELTA: "+delta);
-	                    if(delta > 0) {
-	                        log.debug("adjust("+lastsender+","+_sender+","+delta+")");
-	                        adjust(lastsender,_sender,delta);
-	                    }
-	                    else if (delta < 0) {
-	                        log.debug("adjust("+_sender+","+lastsender+","+delta+")");
-	                        adjust(_sender,lastsender,-delta);
-	                    }
-	                }
-	                lastsender = _sender;
-	                lastfast = _fast;
-	                lastfinal = _final;
-	                localSN++;
-	            }
 	        }
 	        li.remove();
 	    }
@@ -608,15 +528,18 @@ public class SETOSession extends Session implements InitializableSession {
 	 * Tries to deliver Uniform messages.
 	 */
 	private void deliverUniform() {
-		log.debug("Trying to deliver FINAL messages!");
+	    if(log.isDebugEnabled())
+	        log.debug("Trying to deliver FINAL messages!");
 		ListIterator<ListSEQContainer> it = G.listIterator();
 		while (it.hasNext()) {
 			ListSEQContainer nextMsg = it.next();
 			if (isUniform(nextMsg.header)) {
-				ListContainer msgContainer = getRemoveMessage(nextMsg.header,R);
-				log.debug("Delivering message: "+msgContainer.event);
-				log.debug("["+ls.my_rank+"] Delivering final "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMillis());
-				try {
+			    ListContainer msgContainer = getRemoveMessage(nextMsg.header,R);
+			    if(log.isDebugEnabled()){
+			        log.debug("Delivering message: "+msgContainer.event);
+			        log.debug("["+ls.my_rank+"] Delivering final "+msgContainer.header.id+":"+msgContainer.header.sn+" timestamp "+timeProvider.currentTimeMillis());
+			    }
+			    try {
 					// deliver uniform notification
 					UniformServiceEvent use = new UniformServiceEvent(msgContainer.event.getChannel(), Direction.UP, this, msgContainer.event.getMessage());
 					use.go();
@@ -649,13 +572,10 @@ public class SETOSession extends Session implements InitializableSession {
 	/**
 	 * Resets all sequence numbers and auxiliary variables
 	 */
-	private void reset(){
+	void reset(){
 		globalSN = 0;
 		localSN = 0;
 		sendingLocalSN = 0;
-		lastfinal=-1;
-		lastfast=-1;
-		lastsender=-1;
 	}
 	
 	/**
@@ -670,7 +590,7 @@ public class SETOSession extends Session implements InitializableSession {
 			if(log.isDebugEnabled()){
 				log.debug("Message in deterministic order with SN="+(localSN+1)+" -> "+container);
 			}
-			SEQHeader header = new SEQHeader(container.header.sender(), container.header.sn(), ++lastOrderList[ls.my_rank]);
+			SEQHeader header = new SEQHeader(container.header.getId(), container.header.getSn(), ++lastOrderList[ls.my_rank]);
             lastOrderList[ls.my_rank] = header.order;
 			S.add(new ListSEQContainer(header,timeProvider.currentTimeMillis()));
 			log.debug("Resending message to Appl: "+container.event);
@@ -679,6 +599,7 @@ public class SETOSession extends Session implements InitializableSession {
         deliverRegular();
 	}
 
+	// FIXME: why is this NOT being used???
 	private boolean hasMajority() {
 		if (vs_old != null) {
 			int count = 0;
@@ -795,39 +716,6 @@ public class SETOSession extends Session implements InitializableSession {
 	    }
 	}
 
-	
-	/**
-	 * Delivers a message to the layer above.
-	 */
-	private void delivery(GroupSendableEvent event){
-		try {
-			event.setSourceSession(this);
-			event.init();
-			event.go();
-		} catch (AppiaEventException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	/**
-	 * Sets a timer to delay a message that came from the network.
-	 */
-	private void setTimer(ListContainer container, long timeout, ViewID vid) {
-		try {
-			log.debug("TIME Container: "+container.header.getTime());
-			SETOTimer timer = new SETOTimer(timeout/1000, container.event.getChannel(), 
-					Direction.DOWN, this, EventQualifier.ON, container, vid);
-				timer.go();
-				if(log.isDebugEnabled())
-					log.debug("Setting new timer. NOW is "+
-							timeProvider.currentTimeMillis()+" timer to "+timer.getTimeout());
-		} catch (AppiaEventException e) {
-			e.printStackTrace();
-		} catch (AppiaException e) {
-			e.printStackTrace();
-		}
-	}
-	
 	/**
 	 * MAX of a list of numbers.
 	 */
@@ -847,18 +735,6 @@ public class SETOSession extends Session implements InitializableSession {
 		return ls != null && ls.my_rank == 0;
 	}
 	
-	/**
-	 * Adjust the delays.
-	 */
-	private void adjust(int i, int j, long d){
-		double v = ((delay[i] * alfa) + (delay[i] - d) * (1 - alfa));
-		if(v >= 0)
-			delay[i] = Math.round(v);
-		else{
-			delay[i] = 0;
-			delay[j] = delay[j] - Math.round(v);
-		}
-	}
 }
 
 
@@ -874,9 +750,9 @@ public class SETOSession extends Session implements InitializableSession {
  */
 class ListContainer {
 	GroupSendableEvent event;
-	DATAHeader header;
+	Header header;
 
-	public ListContainer(GroupSendableEvent e, DATAHeader h) {//, long t){
+	public ListContainer(GroupSendableEvent e, Header h) {//, long t){
 		event = e;
 		header = h;
 	}
@@ -904,8 +780,15 @@ class ListSEQContainer {
  */
 class Header {
 	
-	int id;
-	long sn;
+	protected int id = -1;
+	protected long sn = -1;
+	
+	Header(){}
+	
+	Header(int id, long sn){
+	    this.id = id;
+	    this.sn = sn;
+	}
 	
 	public boolean equals(Object o){
 		if(o instanceof Header){
@@ -918,6 +801,35 @@ class Header {
 	public String toString(){
 		return "Header ID="+id+" SN="+sn; 
 	}
+
+    public int getId() {
+        return id;
+    }
+
+    public long getSn() {
+        return sn;
+    }
+    
+    /**
+     * Push all parameters of a Header into an Appia Message.
+     * @param header header to push into the message
+     * @param message message to put the header
+     */
+    public void pushMe(Message message){
+        message.pushInt(this.id);
+        message.pushLong(this.sn);
+    }
+    
+    
+    /**
+     * Pops a header from a message. Creates a new Header from the values contained by the message.
+     * @param message message that contains the info to build the header
+     * @return a header built from the values of contained by the message
+     */
+    public void popMe(Message message){
+        this.sn = message.popLong();
+        this.id = message.popInt();
+    }
 }
 
 /**
@@ -927,19 +839,21 @@ class Header {
  */
 class SEQHeader extends Header {
 	
-	long order;
+	protected long order;
 	
 	public SEQHeader(){
-		id = -1;
-		sn = order = -1;
+	    super();
 	}
 	
 	public SEQHeader(int id, long sn, long order){
-		this.id = id;
-		this.sn = sn;
+	    super(id,sn);
 		this.order = order;
 	}
 	
+    public long getOrder() {
+        return order;
+    }
+
 	public String toString(){
 		return super.toString()+" ORDER="+order;
 	}
@@ -949,156 +863,20 @@ class SEQHeader extends Header {
 	 * @param header header to push into the message
 	 * @param message message to put the header
 	 */
-	public static void push(SEQHeader header, Message message){
-		message.pushInt(header.id);
-		message.pushLong(header.sn);
-		message.pushLong(header.order);
+	public void pushMe(Message message){
+	    super.pushMe(message);
+		message.pushLong(this.order);
 	}
 	
 	
 	/**
 	 * Pops a header from a message. Creates a new Header from the values contained by the message.
 	 * @param message message that contains the info to build the header
-	 * @return a header builted from the values of contained by the message
+	 * @return a header built from the values of contained by the message
 	 */
-	public static SEQHeader pop(Message message){
-		SEQHeader header = new SEQHeader();
-		header.order = message.popLong();
-		header.sn = message.popLong();
-		header.id = message.popInt();
-		return header;
+	public void popMe(Message message){
+		this.order = message.popLong();
+		super.popMe(message);
 	}
 
-}
-
-/**
- * Header of DATA messages.
- * 
- * @author Nuno Carvalho
- */
-class DATAHeader extends Header {
-	/**
-	 * delay of the message
-	 */
-	private long delay;
-	/**
-	 * Time when the message was sent.
-	 */
-	private long time;
-
-	private int stable_id;
-	private long stable_seqno;
-	
-	public DATAHeader(int sender, long sn, long d, long t){
-		this.id=sender;
-		this.sn=sn;
-		delay=d;
-		time=t;
-	}
-	
-	public DATAHeader(int sender, long sn, long d){
-		this.id=sender;
-		this.sn=sn;
-		delay=d;
-	}
-
-	public DATAHeader(int sender, long sn){
-		this.id=sender;
-		this.sn=sn;
-		delay=0;
-	}
-
-	public DATAHeader(DATAHeader obj){
-		this.id=obj.sender();
-		this.sn=obj.sn();
-		delay=obj.get_delay();
-	}
-	
-	/**
-	 * gets the sender od the message.
-	 * @return sender of the message
-	 */
-	public int sender(){
-		return id;
-	}
-
-	/**
-	 * Gets the Serial Number of the message.
-	 * @return serial number of the message
-	 */
-	public long sn(){
-		return sn;
-	}
-
-	/**
-	 * sets the delay of the message.
-	 * @param i delay of the message
-	 */
-	public void set_delay(int i){
-		delay=i;
-	}
-
-	/**
-	 * Gets the delay of the message.
-	 * @return delay of the message
-	 */
-	public long get_delay(){
-		return delay;
-	}
-
-	public void setStableId(int stable_id) {
-		this.stable_id = stable_id;
-	}
-	
-	public int getStableId() {
-		return stable_id;
-	}
-	
-	public void setStableSeqNo(long seqno) {
-		this.stable_seqno = seqno;
-	}
-	
-	public long getStableSeqNo() {
-		return stable_seqno;
-	}
-	
-	/**
-	 * Push all parameters of a Header into a Appia Message.
-	 * @param header header to push into the message
-	 * @param message message to put the header
-	 */
-	public static void push(DATAHeader header, Message message){
-		message.pushInt(header.id);
-		message.pushLong(header.sn);
-		message.pushLong(header.delay);
-	}
-	
-	
-	/**
-	 * Pops a header from a message. Creates a new Header from the values contained by the message.
-	 * @param message message that contains the info to build the header
-	 * @return a header builted from the values of contained by the message
-	 */
-	public static DATAHeader pop(Message message){
-		DATAHeader header = new DATAHeader(-1,-1);
-		header.delay = message.popLong();
-		header.sn = message.popLong();
-		header.id = message.popInt();
-		return header;
-	}
-	
-	/**
-	 * @return Returns the time.
-	 */
-	public long getTime() {
-		return time;
-	}
-	
-	/**
-	 * @param time The time to set.
-	 */
-	public void setTime(long time) {
-		this.time = time;
-	}
-	
 }
