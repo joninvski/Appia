@@ -208,6 +208,10 @@ public class TcpCompleteSession extends Session
           log.debug("TCP Session received RegisterSocketEvent to register a socket in port "+e.port);
     ServerSocket ss= null;
     
+    if(e.localHost == null){
+        e.localHost = HostUtils.getLocalAddress();
+    }
+    
     if(ourPort < 0){
         if(e.port == RegisterSocketEvent.FIRST_AVAILABLE){
             try {
