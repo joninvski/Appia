@@ -1,9 +1,9 @@
 APPIA README.txt
 
-Last Updated: 2010/10/16
+Last Updated: 2011/01/04
 
 Copyright (C) 2006-2007 University of Lisboa
-Copyright (C) 2008-2010 University of Lisboa / INESC-ID
+Copyright (C) 2008-2011 University of Lisboa / INESC-ID
 
 Appia is a layered communication framework implemented in Java and
 providing extended configuration and programming possibilities. 
@@ -33,11 +33,11 @@ installed in your computer. Appia currently requires the JDK version
 document. See http://java.sun.com/ for more info about this
 subject.
 
-Appia was tested under Linux Mandrake, Ubuntu, Windows XP and 
+Appia was tested under Linux Ubuntu, Windows XP and 
 MacOS X.
 
-Appia requires at most 19Mb of disk space (space required if you compile all
-the source code, build the jar and the documentation).
+Appia requires at most 31Mb of disk space (space required if you compile all
+the source code, build the jars and the documentation).
 
 __________________________________________________________________________
 

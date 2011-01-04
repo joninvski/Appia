@@ -1,4 +1,17 @@
 ==========================
+04/01/2011   Version 4.1.2
+==========================
+
+(SVN revision 440)
+
+- Bug fix on the TcpComplete protocol (RegisterSocketEvent) on the case that no IP address was given 
+  and several network interfaces are present in the machine;
+- Added a sequencer based total order protocol that is based on SETO, but without the estimated optimistic deliveries. 
+  The new protocol (SequencerUniform) provides Uniform Total Order with optimistic deliveries.
+- Small fixes and code improvements.
+
+
+==========================
 15/09/2010   Version 4.1.1
 ==========================
 
