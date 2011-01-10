@@ -113,7 +113,7 @@ public class InterSession extends Session implements InitializableSession {
     private ViewState vs=null;
     private LocalState ls;
     private int round;
-    private ArrayList views=new ArrayList();
+    private ArrayList<ViewInfo> views=new ArrayList<ViewInfo>();
     private boolean waited;
     private ViewInfo myInfo;
     private boolean sent_viewchange;
@@ -308,7 +308,7 @@ public class InterSession extends Session implements InitializableSession {
                 reset();
                 return false;
             } 
-            myInfo=(ViewInfo)views.get(myIndex);
+            myInfo=views.get(myIndex);
             sendTimers(channel, true);
         } else {
             int i;
@@ -327,7 +327,7 @@ public class InterSession extends Session implements InitializableSession {
 
             if ((newElements > 0) || (round > r)) {
                 for (i=0 ; i < views.size() ; i++) {
-                    ViewInfo info=(ViewInfo)views.get(i);
+                    ViewInfo info=views.get(i);
                     info.decided=false;
                 }
                 if (commonElements == originalSize) {
@@ -380,7 +380,7 @@ public class InterSession extends Session implements InitializableSession {
     }
 
     private void receiveIdenticalDecide(int sender, ViewState sender_vs) {
-        ViewInfo info=(ViewInfo)views.get(sender);
+        ViewInfo info=views.get(sender);
         info.vs=sender_vs;
         info.decided=true;
         conclude();
@@ -394,7 +394,7 @@ public class InterSession extends Session implements InitializableSession {
     private void conclude() {
         int i;
         for(i=0 ; i < views.size() ; i++) {
-            ViewInfo info=(ViewInfo)views.get(i);
+            ViewInfo info=views.get(i);
             if (!info.decided)
                 return;
         }
@@ -414,7 +414,7 @@ public class InterSession extends Session implements InitializableSession {
     private int find(ViewID id) {
         int i;
         for (i=0 ; i < views.size() ; i++) {
-            ViewInfo no=(ViewInfo)views.get(i);
+            ViewInfo no=views.get(i);
             if (no.id.equals(id))
                 return i;
         }
@@ -424,7 +424,7 @@ public class InterSession extends Session implements InitializableSession {
     private void addSorted(ViewInfo info) {
         int i;
         for (i=0 ; i < views.size() ; i++) {
-            ViewInfo no=(ViewInfo)views.get(i);
+            ViewInfo no=views.get(i);
             if (info.id.ltime > no.id.ltime || 
                     ((info.id.ltime == no.id.ltime) && (info.id.coord.id.compareTo(no.id.coord.id) < 0))) {
                 views.add(i, info);
@@ -437,7 +437,7 @@ public class InterSession extends Session implements InitializableSession {
     private boolean validateProposal() {
         int i,j,k;
         for (i=0 ; i < views.size() ; i++) {
-            ViewInfo info=(ViewInfo)views.get(i);
+            ViewInfo info=views.get(i);
             for (k=0 ; k < vs.previous.length ; k++) {
                 if (info.id.equals(vs.previous[k])) {
                     if (debugFull)
@@ -446,7 +446,7 @@ public class InterSession extends Session implements InitializableSession {
                 }
             }
             for (j=i+1 ; j < views.size() ; j++) {
-                ViewInfo aux=(ViewInfo)views.get(j);
+                ViewInfo aux=views.get(j);
                 if (info.addr.equals(aux.addr)) {
                     if (debugFull)
                         log.debug("validateProposal: duplicate address.");
@@ -458,12 +458,15 @@ public class InterSession extends Session implements InitializableSession {
     }
 
     private ViewState mergeViews() {
-        ArrayList vss=new ArrayList(views.size());
-        int i;
-        for (i=0 ; i < views.size() ; i++) {
-            ViewInfo info=(ViewInfo)views.get(i);
+        ArrayList<ViewState> vss=new ArrayList<ViewState>(views.size());
+        for(ViewInfo info : views){
             vss.add(info.vs);
         }
+//        int i;
+//        for (i=0 ; i < views.size() ; i++) {
+//            ViewInfo info=views.get(i);
+//            vss.add(info.vs);
+//        }
 
         ViewState newVS=null;
         try {
@@ -518,7 +521,7 @@ public class InterSession extends Session implements InitializableSession {
         Object[] dests=new Object[n-1];
         for (j=0 ; j < n ; j++) {
             if (j != sender) {
-                ViewInfo dest=(ViewInfo)views.get(j);
+                ViewInfo dest=views.get(j);
                 dests[i++]=dest.addr;
             }
         }
@@ -548,7 +551,7 @@ public class InterSession extends Session implements InitializableSession {
         Object[] dests=new Object[n-1];    
         for (j=0 ; j < n ; j++) {
             if (j != sender) {
-                ViewInfo dest=(ViewInfo)views.get(j);
+                ViewInfo dest=views.get(j);
                 dests[i++]=dest.addr;
             }
         }
@@ -575,7 +578,7 @@ public class InterSession extends Session implements InitializableSession {
         int n=views.size();
 
         for (j=0 ; j < n ; j++) {
-            ViewInfo dest=(ViewInfo)views.get(j);
+            ViewInfo dest=views.get(j);
             if (!dest.id.equals(vs.id)) {
                 sendAbort(channel,(InetSocketAddress)dest.addr);
             }
@@ -601,7 +604,7 @@ public class InterSession extends Session implements InitializableSession {
         int n=views.size();
 
         for (i=n-1 ; i >= 0 ; i--) {
-            ViewInfo info=(ViewInfo)views.get(i);
+            ViewInfo info=views.get(i);
             msg.pushObject(info.addr);
             ViewID.push(info.id, msg);
         }
@@ -615,7 +618,7 @@ public class InterSession extends Session implements InitializableSession {
             addrs[i]=(InetSocketAddress) msg.popObject();
 
             if (equal) {
-                ViewInfo info=(ViewInfo)views.get(i);
+                ViewInfo info=views.get(i);
                 if (!info.id.equals(vids[i]))
                     equal=false;
             }
@@ -696,7 +699,7 @@ public class InterSession extends Session implements InitializableSession {
 
     private void debugViews(String s) {
         if (log.isDebugEnabled()) {
-            ListIterator iter=views.listIterator();
+            ListIterator<ViewInfo> iter=views.listIterator();
             log.debug("appia:group:InterSession:VIEWS("+round+"): "+s);
             while (iter.hasNext()) {
                 ViewInfo info=(ViewInfo)iter.next();

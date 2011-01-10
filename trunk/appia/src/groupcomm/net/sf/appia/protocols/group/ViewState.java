@@ -236,12 +236,12 @@ public class ViewState implements Externalizable {
 	 * @throws AppiaGroupException See {@linkplain ViewState#ViewState(String, Group, ViewID, ViewID[], Endpt[], SocketAddress[])}
 	 * @throws NullPointerException See {@linkplain ViewState#ViewState(String, Group, ViewID, ViewID[], Endpt[], SocketAddress[])}
 	 */
-	public static ViewState merge(List l) throws NullPointerException, AppiaGroupException {
-		ListIterator iter=l.listIterator(l.size());
+	public static ViewState merge(List<ViewState> l) throws NullPointerException, AppiaGroupException {
+		ListIterator<ViewState> iter=l.listIterator(l.size());
 		int viewsize=0;
 		int prevsize=0;
 		while (iter.hasPrevious()) {
-			ViewState aux=(ViewState)iter.previous();
+			ViewState aux=iter.previous();
 			viewsize+=aux.view.length;
 			prevsize+=aux.previous.length;
 		}
@@ -255,7 +255,7 @@ public class ViewState implements Externalizable {
 		int iprevs=0,iendpts=0,iaddrs=0;
 		
 		while (iter.hasNext()) {
-			ViewState aux=(ViewState)iter.next();
+			ViewState aux=iter.next();
 			if ((v == null) || (aux.version.compareTo(v) < 0))
 				v=aux.version;
 			if (g == null)
