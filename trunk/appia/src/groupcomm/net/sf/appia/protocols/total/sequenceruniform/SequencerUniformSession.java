@@ -1,7 +1,7 @@
 
 /**
  * Appia: Group communication and protocol composition framework library
- * Copyright 2010 University of Lisbon
+ * Copyright 2010 Technical University of Lisbon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,27 +73,32 @@ public class SequencerUniformSession extends Session implements InitializableSes
 	
 	private LocalState ls = null;
 	private ViewState vs, vs_old = null;
-//	private Channel channel = null;
 	private TimeProvider timeProvider = null;
 	
 	
 	private LinkedList<ListContainer> R = new LinkedList<ListContainer>(); // Received 
-	private LinkedList<ListSEQContainer> S = new LinkedList<ListSEQContainer>();  // Sequence
-	private LinkedList<ListSEQContainer> G = new LinkedList<ListSEQContainer>();  // Regular
+	private LinkedList<OrderedHeader> S = new LinkedList<OrderedHeader>();  // Sequence
+	private LinkedList<OrderedHeader> G = new LinkedList<OrderedHeader>();  // Regular
 	
 	private long[] lastOrderList;
 	private long timeLastMsgSent;
 	private static final long DEFAULT_UNIFORM_INFO_PERIOD = 100;
+    private static final int DEFAULT_SEQUENCER_BATCHING = 1;
+    private static final long MAX_SEQUENCER_SILENT_TIME = 1000;
 	private long uniformInfoPeriod=DEFAULT_UNIFORM_INFO_PERIOD;
+	private int sequencerBatching=DEFAULT_SEQUENCER_BATCHING;
+	private long latestSeqMessageSent=0;
 	private boolean utSet; // Uniform timer is set?
 	private boolean newUniformInfo = false;
+	private boolean isTimerOn=false;
 	
     List<GroupSendableEvent> pendingMessages=new ArrayList<GroupSendableEvent>();
+    List<Header> toBeOrdered;
     
 	/**
-	 * Constructs a new SETOSession.
+	 * Constructs a new SequencerUniformSession.
 	 * 
-	 * @param layer
+	 * @param layer the corresponding layer
 	 */
 	public SequencerUniformSession(Layer layer) {
 		super(layer);
@@ -105,6 +110,7 @@ public class SequencerUniformSession extends Session implements InitializableSes
        * Possible parameters:
        * <ul>
        * <li><b>uniform_info_period</b> is used to tune the periodic information exchange about uniformity of messages (ms).
+       * <li><b>sequencer_batching</b> maximum number of messages that a sequencer waits before sending order information. Defaults to 1 (no batching).
        * </ul>
        * 
        * @param params The parameters given in the XML configuration.
@@ -114,6 +120,10 @@ public class SequencerUniformSession extends Session implements InitializableSes
 	    if(params.containsKey("uniform_info_period")){
 	        uniformInfoPeriod = params.getLong("uniform_info_period");
 	    }
+        if(params.containsKey("sequencer_batching")){
+            sequencerBatching = params.getInt("sequencer_batching");
+        }
+        toBeOrdered = new ArrayList<Header>(sequencerBatching);
 	}
 
 	/** 
@@ -121,7 +131,9 @@ public class SequencerUniformSession extends Session implements InitializableSes
 	 * @see net.sf.appia.core.Session#handle(Event)
 	 */
 	public void handle(Event event){
-		if(event instanceof ChannelInit)
+	    if(event instanceof BatchingTimer)
+	        handleBatchingTimer((BatchingTimer)event);
+	    else if(event instanceof ChannelInit)
 			handleChannelInit((ChannelInit) event);
 		else if(event instanceof ChannelClose)
 			handleChannelClose((ChannelClose)event);
@@ -161,10 +173,22 @@ public class SequencerUniformSession extends Session implements InitializableSes
 
 	private void handleChannelInit(ChannelInit init) {
 		timeProvider = init.getChannel().getTimeProvider();
+        latestSeqMessageSent = timeProvider.currentTimeMillis();
 		try {
 			init.go();
 		} catch (AppiaEventException e) {
 			e.printStackTrace();
+		}
+		
+		if(coordinator() && sequencerBatching > 1){ 
+		    try {
+                new BatchingTimer(MAX_SEQUENCER_SILENT_TIME, init.getChannel(), Direction.DOWN, this, EventQualifier.ON).go();
+                isTimerOn = true;
+            } catch (AppiaEventException e) {
+                e.printStackTrace();
+            } catch (AppiaException e) {
+                e.printStackTrace();
+            }
 		}
 	}
 	
@@ -286,6 +310,25 @@ public class SequencerUniformSession extends Session implements InitializableSes
             e.printStackTrace();
         }
         
+        if(isTimerOn && !coordinator()){
+            try {
+                new BatchingTimer(MAX_SEQUENCER_SILENT_TIME, pendingView.getChannel(), Direction.DOWN, this, EventQualifier.OFF).go();
+            } catch (AppiaEventException e) {
+                e.printStackTrace();
+            } catch (AppiaException e) {
+                e.printStackTrace();
+            }
+        }
+        else if(!isTimerOn && coordinator()){
+            try {
+                new BatchingTimer(MAX_SEQUENCER_SILENT_TIME, pendingView.getChannel(), Direction.DOWN, this, EventQualifier.ON).go();
+            } catch (AppiaEventException e) {
+                e.printStackTrace();
+            } catch (AppiaException e) {
+                e.printStackTrace();
+            }
+        }
+        
         if(!pendingMessages.isEmpty()){
             log.debug("Delivering "+pendingMessages.size()+" pending messages");
             for(GroupSendableEvent event : pendingMessages){
@@ -358,6 +401,19 @@ public class SequencerUniformSession extends Session implements InitializableSes
 		timeLastMsgSent = timeProvider.currentTimeMillis();
 	}
 	
+	private void handleBatchingTimer(BatchingTimer timer) {
+	    if(log.isDebugEnabled())
+	        log.debug("received batching timer...");
+        if(coordinator() && !isBlocked) {
+            sendSequencerMessage(timer.getChannel());
+        }
+	    try {
+            timer.go();
+        } catch (AppiaEventException e) {
+            e.printStackTrace();
+        }
+	}
+	
 	/**
 	 * Deliver a DATA event received from the network.
 	 * 
@@ -372,15 +428,13 @@ public class SequencerUniformSession extends Session implements InitializableSes
 		Header header = new Header();
 		header.popMe(event.getMessage());
 		if(log.isDebugEnabled())
-		    log.debug("Received DATA message: "+header.id+":"+header.sn+" timestpamp is "+timeProvider.currentTimeMillis());
+		    log.debug("Received DATA message: "+header.id+":"+header.sn);
 		ListContainer container = new ListContainer(event, header);
 		// add the event to the RECEIVED list...
 		R.addLast(container);
         if(coordinator() && !isBlocked) {
-            if(log.isDebugEnabled())
-                log.debug("I'm the coordinator. Sending message to order");
-            globalSN++;
-            reliableSEQMulticast(container);
+            toBeOrdered.add(container.header);
+            sendSequencerMessage(event.getChannel());
         }
 		
 		// Deliver event to the upper layer (spontaneous order)
@@ -393,16 +447,30 @@ public class SequencerUniformSession extends Session implements InitializableSes
 		    sendUniformInfo(event.getChannel());
 	}
 	
+	private void sendSequencerMessage(Channel channel){
+        long currentTime = timeProvider.currentTimeMillis();
+        if(toBeOrdered.size() >= sequencerBatching || 
+                (toBeOrdered.size() > 0 && (currentTime-latestSeqMessageSent) > MAX_SEQUENCER_SILENT_TIME)){
+            if(log.isDebugEnabled())
+                log.debug("I'm the coordinator. Sending message to order");
+            reliableSEQMulticast(toBeOrdered, channel);
+            globalSN+=toBeOrdered.size();
+            toBeOrdered.clear();
+            latestSeqMessageSent = currentTime;
+        }
+	}
+	
 	/**
 	 * Multicast a SEQUENCER message to the group.
 	 * 
 	 * @param container the container of the message to be sequenced.
 	 */
-	private void reliableSEQMulticast(ListContainer container) {
-		SEQHeader header = new SEQHeader(container.header.getId(), container.header.getSn(), globalSN);
+	private void reliableSEQMulticast(List<Header> container, Channel channel) {
+	    
+		SEQHeader header = new SEQHeader(container, globalSN);
 		SeqOrderEvent event;
 		try {
-			event = new SeqOrderEvent(container.event.getChannel(),Direction.DOWN,this,vs.group,vs.id);
+			event = new SeqOrderEvent(channel,Direction.DOWN,this,vs.group,vs.id);
 			header.pushMe(event.getMessage());
 			Message msg = event.getMessage();
 			for (int i = 0; i < lastOrderList.length; i++)
@@ -435,15 +503,18 @@ public class SequencerUniformSession extends Session implements InitializableSes
 		for (int i = uniformInfo.length; i > 0; i--)
 			uniformInfo[i-1] = msg.popLong();
 		mergeUniformInfo(uniformInfo);
-		SEQHeader header = new SEQHeader();
-		header.popMe(event.getMessage());
+		SEQHeader seqHeader = new SEQHeader();
+		seqHeader.popMe(event.getMessage());
 		if(log.isDebugEnabled())
-		    log.debug("["+ls.my_rank+"] Received SEQ message "+header.id+":"+header.sn+" timestamp is "+timeProvider.currentTimeMillis());
-		lastOrderList[ls.my_rank] = header.order;
+		    log.debug("["+ls.my_rank+"] Received SEQ message "+seqHeader.getOrder()+" with "+seqHeader.getMessageHeaders().size()+" messages.");
+		lastOrderList[ls.my_rank] = seqHeader.getOrder()+seqHeader.getMessageHeaders().size()-1;
 		newUniformInfo = true;
 		// add it to the sequencer list
-		S.add(new ListSEQContainer(header,timeProvider.currentTimeMillis()));
-		log.debug("Received SEQ from "+event.orig+" at time "+timeProvider.currentTimeMillis());
+		long order = seqHeader.getOrder();
+        for(Header h : seqHeader.getMessageHeaders()){
+            S.add(new OrderedHeader(h,order++));
+            log.debug("Received SEQ from "+event.orig+" at time "+timeProvider.currentTimeMillis());
+        }
 		// and tries to deliver messages that already have the order
 		deliverRegular();
 		deliverUniform();
@@ -453,8 +524,8 @@ public class SequencerUniformSession extends Session implements InitializableSes
 	 * Tries to deliver REGULAR message.
 	 */
 	private void deliverRegular() {
-	    for (ListIterator<ListSEQContainer> li = S.listIterator(); li.hasNext(); ) {
-	        ListSEQContainer orderedMsg = li.next();
+	    for (ListIterator<OrderedHeader> li = S.listIterator(); li.hasNext(); ) {
+	        OrderedHeader orderedMsg = li.next();
 	        if (log.isDebugEnabled()) {
 	            log.debug("Message in order with SN="+(localSN+1)+" -> "+orderedMsg);
 	            log.debug("Messages in S {");
@@ -530,10 +601,10 @@ public class SequencerUniformSession extends Session implements InitializableSes
 	private void deliverUniform() {
 	    if(log.isDebugEnabled())
 	        log.debug("Trying to deliver FINAL messages!");
-		ListIterator<ListSEQContainer> it = G.listIterator();
+		ListIterator<OrderedHeader> it = G.listIterator();
 		while (it.hasNext()) {
-			ListSEQContainer nextMsg = it.next();
-			if (isUniform(nextMsg.header)) {
+		    OrderedHeader nextMsg = it.next();
+			if (isUniform(nextMsg)) {
 			    ListContainer msgContainer = getRemoveMessage(nextMsg.header,R);
 			    if(log.isDebugEnabled()){
 			        log.debug("Delivering message: "+msgContainer.event);
@@ -559,13 +630,15 @@ public class SequencerUniformSession extends Session implements InitializableSes
 	 * @param header the header of the message.
 	 * @return <tt>true</tt> if the message is uniform, <tt>false</tt> otherwise.
 	 */
-	private boolean isUniform(SEQHeader header) {
+	private boolean isUniform(OrderedHeader header) {
 		int seenCount = 0;
 		for (int i = 0; i < lastOrderList.length; i++)
 			if (lastOrderList[i] >= header.order)
 				seenCount++;
 		if (seenCount >= lastOrderList.length/2 + 1)			
 			return true;
+		if(log.isDebugEnabled())
+		    log.debug("message "+header.header.id+":"+header.header.sn+" with order "+header.order+" NOT uniform.");
 		return false;
 	}
 	
@@ -578,7 +651,7 @@ public class SequencerUniformSession extends Session implements InitializableSes
 		sendingLocalSN = 0;
 	}
 	
-	/**
+	/*
 	 * In a view change, if there are messages that were not delivered, deliver them
 	 * in a deterministic order. This can be done because VSync ensures that when a new View
 	 * arrives, all members have the same set of messages.
@@ -590,10 +663,10 @@ public class SequencerUniformSession extends Session implements InitializableSes
 			if(log.isDebugEnabled()){
 				log.debug("Message in deterministic order with SN="+(localSN+1)+" -> "+container);
 			}
-			SEQHeader header = new SEQHeader(container.header.getId(), container.header.getSn(), ++lastOrderList[ls.my_rank]);
+			OrderedHeader header = new OrderedHeader(container.header, ++lastOrderList[ls.my_rank]);
             lastOrderList[ls.my_rank] = header.order;
-			S.add(new ListSEQContainer(header,timeProvider.currentTimeMillis()));
-			log.debug("Resending message to Appl: "+container.event);
+			S.add(header);
+			log.debug("Delivering message to Appl: "+container.event);
 			//getRemoveMessage(container.header,R);
 		}
         deliverRegular();
@@ -667,10 +740,10 @@ public class SequencerUniformSession extends Session implements InitializableSes
 	/**
 	 * Check if the list has the given message.
 	 */
-	private boolean hasMessage(ListSEQContainer msg, LinkedList<ListSEQContainer> list) {
-		ListIterator<ListSEQContainer> it = list.listIterator();
+	private boolean hasMessage(OrderedHeader msg, LinkedList<OrderedHeader> list) {
+		ListIterator<OrderedHeader> it = list.listIterator();
 		while(it.hasNext()){
-			ListSEQContainer cont = it.next();
+		    OrderedHeader cont = it.next();
 			if(cont.header.equals(msg.header)) {
 				return true;
 			}
@@ -683,7 +756,7 @@ public class SequencerUniformSession extends Session implements InitializableSes
 	 * <b>FOR DEBUGGING PURPOSES ONLY!</b>
 	 */
 	private void listOrderedMessage(){
-	    for (ListSEQContainer cont : S){
+	    for (OrderedHeader cont : S){
             log.debug("Element: "+cont.header);
 	    }
 	}
@@ -724,13 +797,13 @@ class ListContainer {
  * 
  * @author Nuno Carvalho
  */
-class ListSEQContainer {
-	SEQHeader header;
-	long time;
+class OrderedHeader {
+	Header header;
+	long order;
 	
-	public ListSEQContainer(SEQHeader h, long t){
+	public OrderedHeader(Header h, long o){
 		header = h;
-		time = t;
+		order = o;
 	}
 }
 
@@ -798,37 +871,45 @@ class Header {
  * 
  * @author Nuno Carvalho
  */
-class SEQHeader extends Header {
-	
+class SEQHeader {
+
+    protected LinkedList<Header> messages;
 	protected long order;
 	
 	public SEQHeader(){
 	    super();
 	}
 	
-	public SEQHeader(int id, long sn, long order){
-	    super(id,sn);
+	public SEQHeader(List<Header> msgs, long order){
+	    this.messages = new LinkedList<Header>();
+	    for(Header h : msgs)
+	        messages.add(h);
 		this.order = order;
 	}
 	
     public long getOrder() {
         return order;
     }
+    
+    public List<Header> getMessageHeaders(){
+        return messages;
+    }
 
 	public String toString(){
-		return super.toString()+" ORDER="+order;
+		return "ORDER="+order;
 	}
 	
 	/**
-	 * Push all parameters of a Header into a Appia Message.
+	 * Push all parameters of a Header into an Appia Message.
 	 * @param header header to push into the message
 	 * @param message message to put the header
 	 */
 	public void pushMe(Message message){
-	    super.pushMe(message);
+	    for(Header h : messages)
+	        h.pushMe(message);
+        message.pushInt(messages.size());
 		message.pushLong(this.order);
 	}
-	
 	
 	/**
 	 * Pops a header from a message. Creates a new Header from the values contained by the message.
@@ -836,8 +917,14 @@ class SEQHeader extends Header {
 	 * @return a header built from the values of contained by the message
 	 */
 	public void popMe(Message message){
-		this.order = message.popLong();
-		super.popMe(message);
+        this.order = message.popLong();
+	    int msgSize = message.popInt();
+		this.messages = new LinkedList<Header>();
+		for(int i=msgSize-1; i>=0; i--){
+		    Header h = new Header();
+		    h.popMe(message);
+            this.messages.addFirst(h);
+		}
 	}
 
 }

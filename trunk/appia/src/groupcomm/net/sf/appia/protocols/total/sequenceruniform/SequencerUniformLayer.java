@@ -1,7 +1,7 @@
 
 /**
  * Appia: Group communication and protocol composition framework library
- * Copyright 2006 University of Lisbon
+ * Copyright 2010 Technical University of Lisbon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import net.sf.appia.protocols.total.common.UniformTimer;
 
 
 /**
- * @author nunomrc
+ * @author Nuno Carvalho
  *
  */
 public class SequencerUniformLayer extends Layer {
@@ -55,6 +55,7 @@ public class SequencerUniformLayer extends Layer {
 				UniformTimer.class,
 				UniformInfoEvent.class,
                 LeaveEvent.class,
+                BatchingTimer.class,
 		};
 		
 		evRequire = new Class[]{};
@@ -62,10 +63,12 @@ public class SequencerUniformLayer extends Layer {
 		evProvide = new Class[]{
 				UniformServiceEvent.class,
 				RegularServiceEvent.class,
+                BatchingTimer.class,
 		};
 	}
 	
-	/* (non-Javadoc)
+	/**
+	 * Creates a new SequencerUniform Session.
 	 * @see appia.Layer#createSession()
 	 */
 	public Session createSession() {
