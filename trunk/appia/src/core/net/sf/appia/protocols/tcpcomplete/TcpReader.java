@@ -109,8 +109,9 @@ public class TcpReader implements Runnable {
 		            InetSocketAddress iwp = new InetSocketAddress(s.getInetAddress(),remotePort);
 
 		            if(log.isDebugEnabled()){
-		                log.debug("Message reception from "+iwp+" failed. Send undelivered event up.");
-		                ex.printStackTrace();
+		                System.out.println("received IOE");
+		                log.debug("Message reception from "+iwp+" failed. Send undelivered event up.\nException: "+ex.getMessage());
+		                //ex.printStackTrace();
 		            }
 		            TcpUndeliveredEvent undelivered = new TcpUndeliveredEvent(iwp);    
 		            undelivered.asyncGo(channel,Direction.UP);
@@ -126,7 +127,8 @@ public class TcpReader implements Runnable {
 		try {
             s.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            if(log.isDebugEnabled())
+                e.printStackTrace();
         }
 	}
 	
