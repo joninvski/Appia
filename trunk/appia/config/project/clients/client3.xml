@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE appia PUBLIC "-//DTDName//DTD//EN"
+"../../xml/appiaxml.dtd">
+<appia>
+    <template name="client_t">
+        <session name="tcp_listen_s" sharing="global">
+            <protocol>net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
+        </session>
+        <session name="fifo" sharing="private">
+			<protocol>net.sf.appia.protocols.fifo.FifoLayer</protocol>
+		</session>
+        <session name="vs_stub_s" sharing="global">
+            <protocol>net.sf.appia.project.group.client.VsStubLayer</protocol>
+        </session>
+        <session name="example_s" sharing="global">
+            <protocol>net.sf.appia.project.group.exampleApp.ExampleClientLayer</protocol>
+        </session>
+    </template>
+
+    <channel name="listen_c" template="client_t" initialized="yes">
+        <chsession name="vs_stub_s">
+            <parameter name="serverhost">172.20.41.68</parameter>
+            <parameter name="serverport">4000</parameter>
+        </chsession>
+        <chsession name="example_s">
+            <parameter name="username">CLIENT_3</parameter>
+            <parameter name="localport">3000</parameter>
+        </chsession>
+    </channel>
+</appia>

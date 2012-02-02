@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE appia PUBLIC "-//DTDName//DTD//EN"
+"../../xml/appiaxml.dtd">
+<appia>
+    <template name="server_listen_t">
+        <session name="tcp_listen_s" sharing="global">
+            <protocol>net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
+        </session>
+         <session name="fifo" sharing="private">
+			<protocol>net.sf.appia.protocols.fifo.FifoLayer</protocol>
+		</session>
+        <session name="vs_proxy_s" sharing="global">
+            <protocol>net.sf.appia.project.group.server.VsProxyLayer</protocol>
+        </session>
+    </template>
+
+    <template name="server_vs_t">
+        <session name="tcp_vs_s" sharing="global">
+            <protocol>net.sf.appia.protocols.tcpcomplete.TcpCompleteLayer</protocol>
+        </session>
+        
+        <session name="nakfifo" sharing="private">
+			<protocol>net.sf.appia.protocols.nakfifo.NakFifoLayer</protocol>
+		</session>
+
+        <session name="gbl" sharing="label">
+            <protocol>net.sf.appia.protocols.group.bottom.GroupBottomLayer</protocol>
+        </session>
+        <session name="gol" sharing="label">
+            <protocol>net.sf.appia.protocols.group.heal.GossipOutLayer</protocol>
+        </session>
+        <session name="suspectl" sharing="label">
+            <protocol>net.sf.appia.protocols.group.suspect.SuspectLayer</protocol>
+        </session>
+        <session name="intral" sharing="label">
+            <protocol>net.sf.appia.protocols.group.intra.IntraLayer</protocol>
+        </session>
+        <session name="interl" sharing="label">
+            <protocol>net.sf.appia.protocols.group.inter.InterLayer</protocol>
+        </session>
+        <session name="hl" sharing="label">
+            <protocol>net.sf.appia.protocols.group.heal.HealLayer</protocol>
+        </session>
+        <session name="stablel" sharing="label">
+            <protocol>net.sf.appia.protocols.group.stable.StableLayer</protocol>
+        </session>
+        <session name="ll" sharing="label">
+            <protocol>net.sf.appia.protocols.group.leave.LeaveLayer</protocol>
+        </session>
+        <session name="vsl" sharing="label">
+            <protocol>net.sf.appia.protocols.group.sync.VSyncLayer</protocol>
+        </session>
+
+        <session name="vs_proxy_s" sharing="global">
+            <protocol>net.sf.appia.project.group.server.VsProxyLayer</protocol>
+        </session>
+    </template>
+
+
+    <channel name="listen_c" template="server_listen_t" initialized="yes">
+    </channel>
+
+    <channel name="server_vs_c" template="server_vs_t" initialized="yes">
+        <chsession name="vs_proxy_s">
+            <parameter name="localport">4000</parameter>
+            <parameter name="servername">MANEL</parameter>
+            <parameter name="gossiphost">172.20.41.68</parameter>
+            <parameter name="gossipport">5000</parameter>
+        </chsession>
+    </channel>
+</appia>

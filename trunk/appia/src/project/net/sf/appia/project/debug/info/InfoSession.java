@@ -1,0 +1,145 @@
+/**
+ * Appia: Group communication and protocol composition framework library
+ * Copyright 2006 University of Lisbon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License. 
+ *
+ * Initial developer(s): Alexandre Pinto and Hugo Miranda.
+ * Contributor(s): See Appia web page for a list of contributors.
+ */
+package net.sf.appia.project.debug.info;
+
+import java.util.Hashtable;
+
+import net.sf.appia.core.AppiaEventException;
+import net.sf.appia.core.Direction;
+import net.sf.appia.core.Event;
+import net.sf.appia.core.Session;
+import net.sf.appia.core.events.SendableEvent;
+import net.sf.appia.core.events.channel.ChannelClose;
+
+
+/**
+ * This class defines a Layer that counts the messages that go up and down.
+ * 
+ * @author Joao Trindade
+ * @version 1.0
+ */
+public class InfoSession extends Session {
+
+	/**
+	 * Creates a new EccoSession.
+	 * @param l
+	 */
+	public InfoSession(InfoLayer l) {
+		super(l);
+	}
+
+	/**
+	 * Main event handler.
+	 * @param ev the event to handle.
+	 * 
+	 * @see net.sf.appia.core.Session#handle(net.sf.appia.core.Event)
+	 */
+	public void handle(Event ev) {
+		System.out.println("########### START:  " + "Session " + this.getId() + " ###########");
+
+		if (ev instanceof ChannelClose)
+			handleChannelClose((ChannelClose) ev);
+
+		if (ev instanceof SendableEvent)
+			handleSendableEvent((SendableEvent) ev);
+		
+		else{ // Anything other type of event besides close
+			handleEvent(ev);
+		}
+		try {
+			ev.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+		System.out.println("########### END ###########");
+	}
+
+	private void handleEvent(Event ev) {
+		System.out.println("### Other - Direction: " + ev.getDir() 
+			+ " Origin:" + ev.getSourceSession() + " Type: " + ev.getClass().toString());
+		
+	}
+
+	/*
+	 * Handles any event
+	 */
+	private void handleSendableEvent(SendableEvent ev) {
+		Hashtable<String,String> basic = getBasicInformation(ev);
+		Hashtable<String,String> extended = getExtendedInformation(ev);
+
+		printCollectedInfo(basic, extended);
+	}
+
+	/*
+	 * ChannelClose
+	 */
+	private void handleChannelClose(ChannelClose close) {
+		try {
+			System.out.println("Counter channel closed");
+			close.go();
+		} catch (AppiaEventException e) {
+			e.printStackTrace();
+		}
+	}
+
+	
+	private Hashtable<String, String> getBasicInformation(SendableEvent ev) {
+		Hashtable<String, String> info = new Hashtable<String, String>();
+
+		if(ev.dest != null){
+			info.put("Destination", ev.dest.toString());
+		}
+
+		if(ev.source != null){
+			info.put("Source", ev.source.toString());
+		}
+
+		if(ev.getDir() == Direction.UP) 
+			info.put("Direction", "UP");
+		else if(ev.getDir() == Direction.DOWN) 
+			info.put("Direction", "DOWN");
+		else
+			info.put("Direction", "???");	
+
+		info.put("Type", ev.getClass().toString());
+
+		return info;
+	}
+
+	private Hashtable<String,String> getExtendedInformation(SendableEvent ev) {
+		return new Hashtable<String, String>();
+	}
+
+	private void printCollectedInfo(Hashtable<String, String> basic, Hashtable<String, String> extended) {		
+		String text = "";
+		text +=	"\tSource - " + basic.get("Source");
+		text += "\t Destination - " + basic.get("Destination");
+		text += "\t Direction - " + basic.get("Direction");
+		text += "\t Type - " + basic.get("Type");
+
+		for (String key : extended.keySet())
+		{
+			String value = extended.get(key);
+			text.concat(key + " - " + value + "\n");
+		}
+
+		System.out.println("### " + text);
+	}
+}
